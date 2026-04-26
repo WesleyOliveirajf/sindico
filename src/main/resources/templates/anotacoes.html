@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sindico App - Anotacoes</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f3f6f9;
+            --panel: #ffffff;
+            --ink: #13212f;
+            --muted: #596b7e;
+            --accent: #0e7490;
+            --accent-soft: #daf2f8;
+            --border: #d6e3ec;
+            --pin: #fde7be;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            color: var(--ink);
+            background: radial-gradient(circle at 15% 0, #e8f7ff 0, var(--bg) 52%, #eff6e9 100%);
+        }
+
+        .page {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        .hero {
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            background: linear-gradient(140deg, rgba(14, 116, 144, 0.12), rgba(255, 255, 255, 0.95));
+            box-shadow: 0 20px 46px rgba(18, 33, 47, 0.07);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        h1 {
+            margin: 14px 0 8px;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            max-width: 720px;
+        }
+
+        .actions {
+            margin-top: 16px;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #0f5f74;
+            font-weight: 700;
+        }
+
+        .board {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 14px;
+        }
+
+        .note {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            background: var(--panel);
+        }
+
+        .note::before {
+            content: "";
+            position: absolute;
+            right: 18px;
+            top: -8px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--pin);
+            box-shadow: 0 2px 8px rgba(26, 30, 35, 0.2);
+        }
+
+        .note h2 {
+            margin: 0 0 8px;
+            font-size: 1.05rem;
+        }
+
+        .category {
+            display: inline-block;
+            margin-bottom: 10px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 9px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .text {
+            margin: 0 0 10px;
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        .date {
+            margin: 0;
+            font-size: 0.86rem;
+            color: #3f5368;
+            font-weight: 700;
+        }
+
+        .empty {
+            margin-top: 18px;
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            background: #fbfdff;
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <section class="hero">
+        <div class="badge">Lembrancas do condominio</div>
+        <h1 th:text="${condominioNome}">Condominio Piloto</h1>
+        <p>Espaco para organizar recados importantes, pendencias e itens que nao podem ser esquecidos na rotina do sindico.</p>
+        <div class="actions">
+            <a class="back-link" th:href="@{/}">Voltar para a agenda principal</a>
+        </div>
+    </section>
+
+    <section class="board" th:if="${!#lists.isEmpty(anotacoes)}">
+        <article class="note" th:each="anotacao : ${anotacoes}">
+            <h2 th:text="${anotacao.titulo}">Titulo da anotacao</h2>
+            <span class="category" th:text="${anotacao.categoria}">Categoria</span>
+            <p class="text" th:text="${anotacao.descricao}">Descricao da anotacao.</p>
+            <p class="date" th:text="${anotacao.dataReferencia}">Data de referencia</p>
+        </article>
+    </section>
+
+    <p class="empty" th:if="${#lists.isEmpty(anotacoes)}">Ainda nao ha anotacoes cadastradas.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+/target/
+/.idea/
+/.vscode/
+*.iml
+*.log
+/.mvn/
+mvnw
+mvnw.cmd
+
+# Banco e uploads locais
+/data/
+/uploads/

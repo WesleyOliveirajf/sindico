@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "app.storage.upload-dir",
+      "type": "java.lang.String",
+      "description": "Diretorio local usado para armazenar anexos no piloto."
+    },
+    {
+      "name": "app.security.default-user.username",
+      "type": "java.lang.String",
+      "description": "Usuario padrao do piloto em ambiente local."
+    },
+    {
+      "name": "app.security.default-user.password",
+      "type": "java.lang.String",
+      "description": "Senha do usuario padrao do piloto em ambiente local."
+    }
+  ]
+}

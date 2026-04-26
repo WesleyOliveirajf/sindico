@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: sindico-app
+  profiles:
+    default: dev
+  thymeleaf:
+    cache: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      "[hibernate.format_sql]": false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  storage:
+    upload-dir: uploads
+  security:
+    default-user:
+      username: admin
+      password: admin123
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:file:./data/sindico;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  hikari:
+    maximum-pool-size: 5
+    minimum-idle: 1
+    connection-timeout: 20000
+    idle-timeout: 300000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  thymeleaf:
+    cache: true
+  datasource:
+    # CVE-2025-49146: sslmode=verify-full previne ataques MITM via fallback de channel binding
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sindico?sslmode=verify-full}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      data-source-properties:
+        sslMode: verify-full
