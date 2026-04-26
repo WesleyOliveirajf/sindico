@@ -24,11 +24,7 @@ public class DashboardController {
 
     @GetMapping("/")
     public String dashboard(Model model, @ModelAttribute("form") NovoCompromissoForm form) {
-        model.addAttribute("totalManutencoes", compromissoService.totalManutencoesAgendadas());
-        model.addAttribute("totalReunioes", compromissoService.totalReunioesAgendadas());
-        model.addAttribute("totalPendencias", compromissoService.totalPendencias());
-        model.addAttribute("condominioNome", "Condominio Piloto");
-        model.addAttribute("proximosCompromissos", compromissoService.proximos());
+        popularModelDashboard(model);
         if (!model.containsAttribute("form")) {
             model.addAttribute("form", new NovoCompromissoForm());
         }
@@ -69,11 +65,7 @@ public class DashboardController {
             Model model
     ) {
         if (bindingResult.hasErrors()) {
-            model.addAttribute("totalManutencoes", compromissoService.totalManutencoesAgendadas());
-            model.addAttribute("totalReunioes", compromissoService.totalReunioesAgendadas());
-            model.addAttribute("totalPendencias", compromissoService.totalPendencias());
-            model.addAttribute("condominioNome", "Condominio Piloto");
-            model.addAttribute("proximosCompromissos", compromissoService.proximos());
+            popularModelDashboard(model);
             return "dashboard";
         }
 
@@ -81,15 +73,19 @@ public class DashboardController {
             compromissoService.criar(form);
         } catch (IllegalArgumentException ex) {
             bindingResult.reject("data.invalida", ex.getMessage());
-            model.addAttribute("totalManutencoes", compromissoService.totalManutencoesAgendadas());
-            model.addAttribute("totalReunioes", compromissoService.totalReunioesAgendadas());
-            model.addAttribute("totalPendencias", compromissoService.totalPendencias());
-            model.addAttribute("condominioNome", "Condominio Piloto");
-            model.addAttribute("proximosCompromissos", compromissoService.proximos());
+            popularModelDashboard(model);
             return "dashboard";
         }
 
         redirectAttributes.addFlashAttribute("mensagem", "Compromisso salvo e sincronizacao iniciada com Google Agenda.");
         return "redirect:/";
+    }
+
+    private void popularModelDashboard(Model model) {
+        model.addAttribute("totalManutencoes", compromissoService.totalManutencoesAgendadas());
+        model.addAttribute("totalReunioes", compromissoService.totalReunioesAgendadas());
+        model.addAttribute("totalPendencias", compromissoService.totalPendencias());
+        model.addAttribute("condominioNome", "Condominio Piloto");
+        model.addAttribute("proximosCompromissos", compromissoService.proximos());
     }
 }
