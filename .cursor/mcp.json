@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "postgresql-sindico": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://sindico_user:${POSTGRES_PASSWORD}@76.13.163.235:5433/sindico"
+      ]
+    }
+  }
+}

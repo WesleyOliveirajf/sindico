@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <title>Sindico App - Agenda do Sindico</title>
     <style>
         :root {
@@ -158,6 +159,11 @@
             cursor: pointer;
         }
 
+        .btn[disabled] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .message {
             margin-bottom: 14px;
             border-radius: 12px;
@@ -173,6 +179,10 @@
         .message-error {
             background: var(--danger-soft);
             color: var(--danger);
+        }
+
+        .hidden {
+            display: none;
         }
 
         .list {
@@ -237,10 +247,10 @@
 <body>
 <main class="page">
     <section class="hero">
-         <div class="badge">Integracao com Google Agenda</div>
+         <div class="badge">Agenda do Condominio</div>
          <h1 th:text="${condominioNome}">Condominio Piloto</h1>
          <p>
-             Cadastre manutencoes e reunioes no app e sincronize os compromissos com o Google Agenda do sindico.
+             Cadastre manutencoes e reunioes para acompanhar os compromissos do condominio.
           </p>
         <div class="hero-actions">
             <a class="link-btn" th:href="@{/anotacoes}">Abrir anotacoes e lembrancas</a>
@@ -269,7 +279,10 @@
 
             <div class="message message-error" th:if="${#fields.hasErrors('*')}" th:each="err : ${#fields.errors('*')}" th:text="${err}"></div>
 
-            <form th:action="@{/compromissos}" th:object="${form}" method="post">
+            <div id="client-error" class="message message-error hidden" role="alert" aria-live="polite"></div>
+
+            <form th:action="@{/compromissos}" th:object="${form}" method="post" data-submit-once>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <div class="form-grid">
                     <div class="full">
                         <label for="titulo">Titulo</label>
@@ -307,7 +320,7 @@
                     </div>
 
                     <div class="full">
-                        <button class="btn" type="submit">Salvar compromisso</button>
+                        <button class="btn" type="submit" data-submit-btn>Salvar compromisso</button>
                     </div>
                 </div>
             </form>
@@ -333,5 +346,6 @@
         </article>
     </section>
 </main>
+<script th:src="@{/js/dashboard.js}"></script>
 </body>
 </html>

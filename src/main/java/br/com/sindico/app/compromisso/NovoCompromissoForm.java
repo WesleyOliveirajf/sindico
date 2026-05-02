@@ -2,6 +2,7 @@ package br.com.sindico.app.compromisso;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
@@ -9,8 +10,10 @@ import java.time.LocalDateTime;
 public class NovoCompromissoForm {
 
     @NotBlank(message = "Informe um titulo")
+    @Size(max = 150, message = "Titulo deve ter no maximo 150 caracteres")
     private String titulo;
 
+    @Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres")
     private String descricao;
 
     @NotNull(message = "Selecione o tipo")
@@ -24,6 +27,7 @@ public class NovoCompromissoForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime fimEm;
 
+    @Size(max = 150, message = "Local deve ter no maximo 150 caracteres")
     private String local;
 
     public String getTitulo() {

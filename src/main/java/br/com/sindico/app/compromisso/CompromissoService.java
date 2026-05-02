@@ -33,7 +33,7 @@ public class CompromissoService {
 
     @Transactional(readOnly = true)
     public List<Compromisso> proximos() {
-        return compromissoRepository.findTop10ByOrderByInicioEmAsc();
+        return compromissoRepository.findProximos(LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)

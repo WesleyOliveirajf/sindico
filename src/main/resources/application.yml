@@ -20,8 +20,8 @@ app:
     upload-dir: uploads
   security:
     default-user:
-      username: admin
-      password: admin123
+      username: ${APP_ADMIN_USERNAME:admin}
+      password: ${APP_ADMIN_PASSWORD:admin123}
 
 ---
 spring:
@@ -43,14 +43,35 @@ spring:
 spring:
   config:
     activate:
+      on-profile: vps
+  datasource:
+    # Conecta ao PostgreSQL da VPS via SSH tunnel (localhost:5433 -> VPS:5433)
+    # Antes de rodar: ./tunnel-vps.sh
+    url: jdbc:postgresql://localhost:5433/sindico
+    username: ${DB_USERNAME:sindico_user}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 3
+  hikari:
+    maximum-pool-size: 5
+    minimum-idle: 1
+    connection-timeout: 20000
+    idle-timeout: 300000
+
+---
+spring:
+  config:
+    activate:
       on-profile: prod
   thymeleaf:
     cache: true
   datasource:
     # CVE-2025-49146: sslmode=verify-full previne ataques MITM via fallback de channel binding
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/sindico?sslmode=verify-full}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/sindico}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20

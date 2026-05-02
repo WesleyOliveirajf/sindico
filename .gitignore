@@ -10,3 +10,8 @@ mvnw.cmd
 # Banco e uploads locais
 /data/
 /uploads/
+
+# Arquivos de ambiente com credenciais (nunca commitar)
+.env
+.env.*
+!.env.example

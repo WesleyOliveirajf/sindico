@@ -1,3 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
 # Persona: Desenvolvedor Sênior de Qualidade de Software
 
 ## Papel principal

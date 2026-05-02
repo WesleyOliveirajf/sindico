@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erro interno - Sindico App</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f8;
+            --panel: #ffffff;
+            --ink: #17212b;
+            --muted: #5f6f80;
+            --accent: #0f766e;
+            --border: #d8e0e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, #eef8ff 0%, var(--bg) 45%, #edf4ef 100%);
+            color: var(--ink);
+        }
+
+        .card {
+            width: min(620px, 100%);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(23, 33, 43, 0.08);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: clamp(1.8rem, 4vw, 2.4rem);
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            text-decoration: none;
+            border-radius: 10px;
+            border: 1px solid rgba(15, 118, 110, 0.35);
+            background: #c9f3eb;
+            color: #0f766e;
+            padding: 10px 14px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<main class="card">
+    <h1>500 - Erro interno</h1>
+    <p>Ocorreu um erro inesperado. Tente novamente em instantes. Se persistir, acione o suporte.</p>
+    <div class="actions">
+        <a class="btn" th:href="@{/}">Voltar ao painel</a>
+    </div>
+</main>
+</body>
+</html>

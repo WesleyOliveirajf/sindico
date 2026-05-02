@@ -77,7 +77,7 @@ public class DashboardController {
             return "dashboard";
         }
 
-        redirectAttributes.addFlashAttribute("mensagem", "Compromisso salvo e sincronizacao iniciada com Google Agenda.");
+        redirectAttributes.addFlashAttribute("mensagem", "Compromisso salvo com sucesso.");
         return "redirect:/";
     }
 
