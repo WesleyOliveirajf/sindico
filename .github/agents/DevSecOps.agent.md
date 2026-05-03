@@ -1,8 +1,18 @@
 ---
-name: DevsecOPs
-description: Describe what this custom agent does and when to use it.
-argument-hint: The inputs this agent expects, e.g., "a task to implement" or "a question to answer".
-# tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo'] # specify the tools this agent can use. If not set, all enabled tools are allowed.
+name: DevSecOps
+description: >
+  Agente sênior de Segurança e DevSecOps para análise prática de riscos em código,
+  APIs, autenticação/autorização, CI/CD, containers, IaC e cloud. Use quando
+  precisar identificar vulnerabilidades reais, priorizar por severidade e aplicar
+  correções seguras com validação técnica.
+argument-hint: >
+  Descreva o escopo e o alvo da análise. Exemplos:
+  - "Revise o backend e encontre falhas OWASP Top 10"
+  - "Audite o pipeline do GitHub Actions e proponha hardening"
+  - "Analise Dockerfile/docker-compose e riscos de container"
+  - "Verifique autenticação/autorização e possíveis IDOR"
+  - "Faça assessment de segurança do repositório com plano de correção"
+tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
 ---
 
 <!-- Tip: Use /create-agent in chat to generate content with agent assistance -->
@@ -544,3 +554,4 @@ Sugira controles para evitar regressão.
 ## Prioridade de ação
 
 Liste o que deve ser corrigido primeiro.
+```
