@@ -46,6 +46,9 @@ public class Compromisso {
     @Column(nullable = false, length = 30)
     private CompromissoStatus status;
 
+    @Column(name = "condominio_id", nullable = false)
+    private UUID condominioId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -112,6 +115,14 @@ public class Compromisso {
 
     public void setStatus(CompromissoStatus status) {
         this.status = status;
+    }
+
+    public UUID getCondominioId() {
+        return condominioId;
+    }
+
+    public void setCondominioId(UUID condominioId) {
+        this.condominioId = condominioId;
     }
 
     public LocalDateTime getCreatedAt() {

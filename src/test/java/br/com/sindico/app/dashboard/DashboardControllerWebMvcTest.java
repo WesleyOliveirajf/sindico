@@ -1,5 +1,6 @@
 package br.com.sindico.app.dashboard;
 
+import br.com.sindico.app.anotacao.AnotacaoService;
 import br.com.sindico.app.compromisso.Compromisso;
 import br.com.sindico.app.compromisso.CompromissoService;
 import br.com.sindico.app.config.SecurityConfig;
@@ -8,9 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(controllers = DashboardController.class)
-@Import({SecurityConfig.class, DashboardControllerWebMvcTest.TestBeans.class})
+@Import(SecurityConfig.class)
 class DashboardControllerWebMvcTest {
 
     @Autowired
@@ -36,8 +35,12 @@ class DashboardControllerWebMvcTest {
     @MockBean
     private CompromissoService compromissoService;
 
+    @MockBean
+    private AnotacaoService anotacaoService;
+
     @BeforeEach
     void setup() {
+        when(anotacaoService.nomeCondominioAtual()).thenReturn("Condominio Piloto");
         when(compromissoService.totalManutencoesAgendadas()).thenReturn(0L);
         when(compromissoService.totalReunioesAgendadas()).thenReturn(0L);
         when(compromissoService.totalPendencias()).thenReturn(0L);
@@ -88,13 +91,5 @@ class DashboardControllerWebMvcTest {
                 .andExpect(flash().attribute("mensagem", "Compromisso salvo com sucesso."));
 
         verify(compromissoService).criar(any());
-    }
-
-    @TestConfiguration
-    static class TestBeans {
-        @Bean
-        org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-            return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-        }
     }
 }

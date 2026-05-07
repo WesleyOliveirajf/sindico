@@ -1,0 +1,82 @@
+package br.com.sindico.app.cadastro;
+
+import br.com.sindico.app.condominio.Condominio;
+import br.com.sindico.app.condominio.CondominioRepository;
+import br.com.sindico.app.usuario.Usuario;
+import br.com.sindico.app.usuario.UsuarioCondominio;
+import br.com.sindico.app.usuario.UsuarioCondominioRepository;
+import br.com.sindico.app.usuario.UsuarioRepository;
+import java.util.Locale;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class CadastroService {
+
+    private final UsuarioRepository usuarioRepository;
+    private final CondominioRepository condominioRepository;
+    private final UsuarioCondominioRepository usuarioCondominioRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public CadastroService(
+            UsuarioRepository usuarioRepository,
+            CondominioRepository condominioRepository,
+            UsuarioCondominioRepository usuarioCondominioRepository,
+            PasswordEncoder passwordEncoder) {
+        this.usuarioRepository = usuarioRepository;
+        this.condominioRepository = condominioRepository;
+        this.usuarioCondominioRepository = usuarioCondominioRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * Cria usuario + condominio + vinculo SINDICO em uma unica transacao.
+     * Qualquer falha faz rollback completo.
+     */
+    @Transactional
+    public void cadastrar(CadastroForm form) {
+        String emailNorm = form.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        if (usuarioRepository.existsByEmailNormalizado(emailNorm)) {
+            throw new IllegalArgumentException("Ja existe uma conta com este e-mail.");
+        }
+
+        validarSenha(form.getSenha(), form.getConfirmarSenha());
+
+        // 1. Cria usuario
+        Usuario usuario = new Usuario();
+        usuario.setNome(form.getNome().trim());
+        usuario.setEmail(emailNorm);
+        usuario.setSenhaHash(passwordEncoder.encode(form.getSenha()));
+        usuario.setStatus("ativo");
+        usuario = usuarioRepository.save(usuario);
+
+        // 2. Cria condominio
+        Condominio condominio = new Condominio();
+        condominio.setNome(form.getNomeCondominio().trim());
+        condominio = condominioRepository.save(condominio);
+
+        // 3. Vincula usuario ao condominio como SINDICO
+        UsuarioCondominio vinculo = new UsuarioCondominio();
+        vinculo.setUsuario(usuario);
+        vinculo.setCondominio(condominio);
+        vinculo.setPerfil("SINDICO");
+        usuarioCondominioRepository.save(vinculo);
+    }
+
+    private static void validarSenha(String senha, String confirmar) {
+        if (senha == null || senha.length() < 8) {
+            throw new IllegalArgumentException("Senha deve ter no minimo 8 caracteres.");
+        }
+        if (!senha.equals(confirmar)) {
+            throw new IllegalArgumentException("As senhas nao conferem.");
+        }
+        // Minimo: 1 letra + 1 numero
+        boolean temLetra = senha.chars().anyMatch(Character::isLetter);
+        boolean temNumero = senha.chars().anyMatch(Character::isDigit);
+        if (!temLetra || !temNumero) {
+            throw new IllegalArgumentException("Senha deve conter letras e numeros.");
+        }
+    }
+}

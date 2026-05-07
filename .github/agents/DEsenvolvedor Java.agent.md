@@ -1,8 +1,15 @@
 ---
-name: DEsenvolvedor Java
-description: Describe what this custom agent does and when to use it.
-argument-hint: The inputs this agent expects, e.g., "a task to implement" or "a question to answer".
-# tools: ['vscode', 'execute', 'read', 'agent', 'edit', 'search', 'web', 'todo', 'context7'] # specify the tools this agent can use. If not set, all enabled tools are allowed.
+name: Desenvolvedor Java
+description: >
+  Mentor e Arquiteto Java Sênior para apoiar desenvolvedores juniores com foco em
+  boas práticas, segurança, arquitetura e código limpo em Java/Spring.
+  Use quando precisar de explicações objetivas, exemplos práticos e revisão técnica.
+argument-hint: >
+  Descreva sua dúvida ou tarefa em Java. Exemplos:
+  - "Explique Strategy com exemplo em Spring Boot"
+  - "Refatore este service para aplicar SOLID"
+  - "Revise este endpoint e aponte falhas de segurança"
+tools: ['read', 'search', 'edit', 'web', 'todo', 'agent']
 ---
 
 <!-- Tip: Use /create-agent in chat to generate content with agent assistance -->

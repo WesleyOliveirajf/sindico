@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sindico App - Escolher condominio</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f8;
+            --panel: #ffffff;
+            --ink: #17212b;
+            --muted: #5f6f80;
+            --accent: #0f766e;
+            --border: #d8e0e8;
+            --danger: #b42318;
+            --danger-soft: #fee4e2;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, #eef8ff 0%, var(--bg) 45%, #edf4ef 100%);
+            color: var(--ink);
+            padding: 32px 20px;
+        }
+        .wrap {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 22px 30px;
+            box-shadow: 0 16px 44px rgba(23, 33, 43, 0.09);
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: 1.45rem;
+        }
+        p.sub {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font: inherit;
+            margin-bottom: 18px;
+            background: #fff;
+        }
+        .btn {
+            border: 0;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 10px;
+            padding: 11px 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .msg-error {
+            margin-bottom: 14px;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="card">
+        <h1>Escolher condominio</h1>
+        <p class="sub">Voce tem acesso a mais de um condominio. Selecione qual deseja usar nesta sessao.</p>
+
+        <div class="msg-error" th:if="${erroTipoCondominio != null}" th:text="${erroTipoCondominio}"></div>
+
+        <form th:action="@{/condominios/selecionar}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <label for="condominioId">Condominio</label>
+            <select id="condominioId" name="condominioId" required>
+                <option value="" disabled selected>Selecione...</option>
+                <option th:each="c : ${condominios}"
+                        th:value="${c.id}"
+                        th:text="${c.nome}"></option>
+            </select>
+            <button class="btn" type="submit">Continuar</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

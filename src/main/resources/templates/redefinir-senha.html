@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sindico App - Redefinir senha</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f8; --panel: #ffffff; --ink: #17212b; --muted: #5f6f80;
+            --accent: #0f766e; --border: #d8e0e8; --danger: #b42318; --danger-soft: #fee4e2;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh;
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top left, #eef8ff 0%, var(--bg) 45%, #edf4ef 100%);
+            color: var(--ink); display: flex; align-items: center; justify-content: center; padding: 24px;
+        }
+        .card {
+            width: 100%; max-width: 420px; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 18px;
+            padding: 28px 26px 32px; box-shadow: 0 16px 44px rgba(23,33,43,.09);
+        }
+        h1 { margin: 0 0 6px; font-size: 1.4rem; }
+        .muted { margin: 0 0 20px; color: var(--muted); font-size: 0.92rem; }
+        label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 0.88rem; }
+        input {
+            width: 100%; border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 12px; font: inherit; margin-bottom: 14px;
+        }
+        input:focus { outline: none; border-color: var(--accent); }
+        .btn {
+            width: 100%; border: 0; background: var(--accent); color: #fff;
+            border-radius: 10px; padding: 12px 16px; font-weight: 700; font-size: 1rem; cursor: pointer;
+        }
+        .btn:hover { background: #0d6159; }
+        .msg { margin-bottom: 14px; border-radius: 10px; padding: 10px 12px; font-size: 0.92rem; }
+        .msg-error { background: var(--danger-soft); color: var(--danger); }
+        .hint { font-size: 0.78rem; color: var(--muted); margin: -8px 0 12px; }
+        .link-row { text-align: center; margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
+        .link-row a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Redefinir senha</h1>
+    <p class="muted">Escolha uma nova senha segura para sua conta.</p>
+
+    <div class="msg msg-error" th:if="${erro != null}" th:text="${erro}"></div>
+
+    <!-- Token invalido/expirado: sem formulario -->
+    <div th:if="${token == null and erro != null}">
+        <div class="link-row" style="margin-top:0">
+            <a th:href="@{/esqueci-senha}">Solicitar novo link</a>
+        </div>
+    </div>
+
+    <!-- Token valido: exibe formulario -->
+    <form th:if="${token != null}" th:action="@{/redefinir-senha}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="token" th:value="${token}">
+
+        <label for="novaSenha">Nova senha</label>
+        <input id="novaSenha" name="novaSenha" type="password" autocomplete="new-password" required minlength="8" autofocus>
+        <p class="hint">Minimo 8 caracteres com letras e numeros.</p>
+
+        <label for="confirmarSenha">Confirmar nova senha</label>
+        <input id="confirmarSenha" name="confirmarSenha" type="password" autocomplete="new-password" required>
+
+        <button class="btn" type="submit">Redefinir senha</button>
+    </form>
+
+    <div class="link-row">
+        <a th:href="@{/login}">Voltar ao login</a>
+    </div>
+</div>
+</body>
+</html>

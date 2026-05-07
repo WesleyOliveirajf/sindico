@@ -16,12 +16,15 @@ spring:
     locations: classpath:db/migration
 
 app:
+  condominio:
+    # Alinhado a migration V5 (condominio padrao do MVP)
+    default-id: "00000000-0000-0000-0000-000000000001"
+  # Origens permitidas CORS no /api/**; separadas por virgula.
+  # Dev: Vite dev server. Prod: Vercel ou dominio customizado.
+  cors:
+    allowed-origins: "http://localhost:5173,http://127.0.0.1:5173"
   storage:
     upload-dir: uploads
-  security:
-    default-user:
-      username: ${APP_ADMIN_USERNAME:admin}
-      password: ${APP_ADMIN_PASSWORD:admin123}
 
 ---
 spring:
@@ -39,6 +42,12 @@ spring:
     connection-timeout: 20000
     idle-timeout: 300000
 
+app:
+  flyway:
+    # Dev: se Flyway falhar em "validation" apos editar migracao ja aplicada no H2 arquivo, suba com
+    # APP_FLYWAY_REPAIR=true uma vez (ou apague ./data/sindico*.db). Nunca em prod.
+    repair-before-migrate: ${APP_FLYWAY_REPAIR:false}
+
 ---
 spring:
   config:
@@ -52,6 +61,7 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   flyway:
+    # Baseline: apenas para banco ja existente antes do Flyway (nao use em instalacao limpa).
     baseline-on-migrate: true
     baseline-version: 3
   hikari:
@@ -81,3 +91,7 @@ spring:
       max-lifetime: 1200000
       data-source-properties:
         sslMode: verify-full
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:}

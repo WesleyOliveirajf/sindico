@@ -253,7 +253,16 @@
              Cadastre manutencoes e reunioes para acompanhar os compromissos do condominio.
           </p>
         <div class="hero-actions">
-            <a class="link-btn" th:href="@{/anotacoes}">Abrir anotacoes e lembrancas</a>
+            <a class="link-btn" th:href="@{/condominio}">Editar condominio</a>
+            <a class="link-btn" th:href="@{/anotacoes}">Anotacoes e lembrancas</a>
+             <a class="link-btn" th:href="@{/moradores}">Moradores e unidades</a>
+             <a class="link-btn" th:href="@{/prestadores}">Prestadores de servico</a>
+             <a class="link-btn" th:if="${podeTrocarCondominio}" th:href="@{/condominios/selecionar}">Trocar condominio</a>
+             <a class="link-btn" th:href="@{/perfil}">Meu perfil</a>
+             <form th:action="@{/logout}" method="post" style="display: inline;">
+                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                 <button type="submit" class="link-btn" style="cursor: pointer; font: inherit;">Sair</button>
+             </form>
         </div>
 
         <div class="stats">

@@ -1,18 +1,20 @@
 package br.com.sindico.app.compromisso;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import br.com.sindico.app.security.TenantAccessor;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CompromissoService {
 
     private final CompromissoRepository compromissoRepository;
+    private final TenantAccessor tenantAccessor;
 
-    public CompromissoService(CompromissoRepository compromissoRepository) {
+    public CompromissoService(CompromissoRepository compromissoRepository, TenantAccessor tenantAccessor) {
         this.compromissoRepository = compromissoRepository;
+        this.tenantAccessor = tenantAccessor;
     }
 
     @Transactional
@@ -27,28 +29,33 @@ public class CompromissoService {
         compromisso.setFimEm(form.getFimEm());
         compromisso.setLocal(form.getLocal());
         compromisso.setStatus(CompromissoStatus.AGENDADO);
+        compromisso.setCondominioId(tenantAccessor.condominioAtual());
 
         return compromissoRepository.save(compromisso);
     }
 
     @Transactional(readOnly = true)
     public List<Compromisso> proximos() {
-        return compromissoRepository.findProximos(LocalDateTime.now());
+        return compromissoRepository.findTop10ByCondominioIdAndInicioEmGreaterThanEqualOrderByInicioEmAsc(
+                tenantAccessor.condominioAtual(), LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
     public long totalManutencoesAgendadas() {
-        return compromissoRepository.countByTipo(CompromissoTipo.MANUTENCAO);
+        return compromissoRepository.countByCondominioIdAndTipo(
+                tenantAccessor.condominioAtual(), CompromissoTipo.MANUTENCAO);
     }
 
     @Transactional(readOnly = true)
     public long totalReunioesAgendadas() {
-        return compromissoRepository.countByTipo(CompromissoTipo.REUNIAO);
+        return compromissoRepository.countByCondominioIdAndTipo(
+                tenantAccessor.condominioAtual(), CompromissoTipo.REUNIAO);
     }
 
     @Transactional(readOnly = true)
     public long totalPendencias() {
-        return compromissoRepository.countByStatusNot(CompromissoStatus.CONCLUIDO);
+        return compromissoRepository.countByCondominioIdAndStatusNot(
+                tenantAccessor.condominioAtual(), CompromissoStatus.CONCLUIDO);
     }
 
     private void validarDatas(LocalDateTime inicioEm, LocalDateTime fimEm) {
