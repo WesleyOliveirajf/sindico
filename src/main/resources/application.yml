@@ -2,7 +2,7 @@ spring:
   application:
     name: sindico-app
   profiles:
-    default: dev
+    default: supabase
   thymeleaf:
     cache: false
   jpa:
@@ -30,45 +30,40 @@ app:
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: supabase
+  thymeleaf:
+    cache: false
   datasource:
-    url: jdbc:h2:file:./data/sindico;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  hikari:
-    maximum-pool-size: 5
-    minimum-idle: 1
-    connection-timeout: 20000
-    idle-timeout: 300000
-
-app:
-  flyway:
-    # Dev: se Flyway falhar em "validation" apos editar migracao ja aplicada no H2 arquivo, suba com
-    # APP_FLYWAY_REPAIR=true uma vez (ou apague ./data/sindico*.db). Nunca em prod.
-    repair-before-migrate: ${APP_FLYWAY_REPAIR:false}
-
----
-spring:
-  config:
-    activate:
-      on-profile: vps
-  datasource:
-    # Conecta ao PostgreSQL da VPS via SSH tunnel (localhost:5433 -> VPS:5433)
-    # Antes de rodar: ./tunnel-vps.sh
-    url: jdbc:postgresql://localhost:5433/sindico
-    username: ${DB_USERNAME:sindico_user}
+    # Supabase: em Database > Connection string use "URI" da conexão direta (porta 5432).
+    # Ex.: jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres?sslmode=require
+    # Evite o pooler em transação (6543) para Flyway/Hibernate — use direct ou session pooler.
+    url: ${DB_URL}
+    username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   flyway:
-    # Baseline: apenas para banco ja existente antes do Flyway (nao use em instalacao limpa).
+    enabled: true
+    locations: classpath:db/migration
+    # O schema do Supabase foi criado via MCP apply_migration (fora do Flyway da app).
+    # Faz baseline em V10 para a app iniciar nesse banco e aplicar futuras V11+.
     baseline-on-migrate: true
-    baseline-version: 3
+    baseline-version: 10
   hikari:
-    maximum-pool-size: 5
-    minimum-idle: 1
+    maximum-pool-size: 10
+    minimum-idle: 2
     connection-timeout: 20000
     idle-timeout: 300000
+    max-lifetime: 1200000
+
+app:
+  condominio:
+    default-id: "00000000-0000-0000-0000-000000000001"
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
+  storage:
+    upload-dir: uploads
+  flyway:
+    repair-before-migrate: ${APP_FLYWAY_REPAIR:false}
 
 ---
 spring:
