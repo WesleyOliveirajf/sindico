@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseJson } from './api'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { apiFetch, parseJson } from './api'
 
 const PAPEIS = ['PROPRIETARIO', 'INQUILINO', 'DEPENDENTE', 'ZELADOR', 'OUTRO']
 
@@ -25,8 +23,8 @@ function MoradoresPage() {
     setError('')
     try {
       const [uRes, mRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/unidades`),
-        fetch(`${API_BASE_URL}/api/moradores`),
+        apiFetch('/api/unidades'),
+        apiFetch('/api/moradores'),
       ])
       if (!uRes.ok || !mRes.ok) throw new Error('Falha ao carregar dados.')
       const [u, m] = await Promise.all([parseJson(uRes), parseJson(mRes)])
@@ -76,9 +74,8 @@ function MoradoresPage() {
     setSuccess('')
     setSubmittingUnidade(true)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/unidades`, {
+      const res = await apiFetch('/api/unidades', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formUnidade),
       })
       if (!res.ok) {
@@ -101,9 +98,8 @@ function MoradoresPage() {
     setSuccess('')
     setSubmittingMorador(true)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/moradores`, {
+      const res = await apiFetch('/api/moradores', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formMorador, unidadeId: formMorador.unidadeId || null }),
       })
       if (!res.ok) {
@@ -126,9 +122,8 @@ function MoradoresPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/moradores/${id}`, {
+      const res = await apiFetch(`/api/moradores/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, unidadeId: data.unidadeId || null }),
       })
       if (!res.ok) throw new Error('Erro ao atualizar morador.')
@@ -144,7 +139,7 @@ function MoradoresPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/moradores/${id}/inativar`, { method: 'POST' })
+      const res = await apiFetch(`/api/moradores/${id}/inativar`, { method: 'POST' })
       if (!res.ok) throw new Error('Erro ao inativar morador.')
       setSuccess('Morador inativado com sucesso.')
       await load()

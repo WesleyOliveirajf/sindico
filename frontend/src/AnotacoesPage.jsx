@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseJson } from './api'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { apiFetch, parseJson } from './api'
 
 const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
 
@@ -20,7 +18,7 @@ function AnotacoesPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/anotacoes`)
+      const res = await apiFetch('/api/anotacoes')
       if (!res.ok) throw new Error('Falha ao carregar anotacoes.')
       setItems(await parseJson(res))
     } catch (err) {
@@ -62,9 +60,8 @@ function AnotacoesPage() {
     setSuccess('')
     setSubmitting(true)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/anotacoes`, {
+      const res = await apiFetch('/api/anotacoes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
       if (!res.ok) {
@@ -87,9 +84,8 @@ function AnotacoesPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/anotacoes/${id}`, {
+      const res = await apiFetch(`/api/anotacoes/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Erro ao atualizar anotacao.')
@@ -106,7 +102,7 @@ function AnotacoesPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/anotacoes/${id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/anotacoes/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Erro ao excluir anotacao.')
       setSuccess('Anotacao excluida com sucesso.')
       await load()

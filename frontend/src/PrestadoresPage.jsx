@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseJson } from './api'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { apiFetch, parseJson } from './api'
 
 const INITIAL_FORM = { nome: '', telefone: '', historicoServicos: '' }
 
@@ -18,7 +16,7 @@ function PrestadoresPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prestadores`)
+      const res = await apiFetch('/api/prestadores')
       if (!res.ok) throw new Error('Falha ao carregar prestadores.')
       setItems(await parseJson(res))
     } catch (err) {
@@ -54,9 +52,8 @@ function PrestadoresPage() {
     setSuccess('')
     setSubmitting(true)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prestadores`, {
+      const res = await apiFetch('/api/prestadores', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
       if (!res.ok) {
@@ -79,9 +76,8 @@ function PrestadoresPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prestadores/${id}`, {
+      const res = await apiFetch(`/api/prestadores/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error('Erro ao atualizar prestador.')
@@ -97,7 +93,7 @@ function PrestadoresPage() {
     setError('')
     setSuccess('')
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prestadores/${id}/inativar`, { method: 'POST' })
+      const res = await apiFetch(`/api/prestadores/${id}/inativar`, { method: 'POST' })
       if (!res.ok) throw new Error('Erro ao inativar prestador.')
       setSuccess('Prestador inativado com sucesso.')
       await loadPrestadores()

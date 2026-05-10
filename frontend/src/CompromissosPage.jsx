@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { parseJson } from './api'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { apiFetch, parseJson } from './api'
 
 const INITIAL_FORM = {
   titulo: '',
@@ -29,7 +27,7 @@ function CompromissosPage() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch(`${API_BASE_URL}/api/compromissos`)
+      const response = await apiFetch('/api/compromissos')
       if (!response.ok) throw new Error('Falha ao carregar compromissos.')
       const data = await parseJson(response)
       setItems(data)
@@ -58,9 +56,8 @@ function CompromissosPage() {
 
     setSubmitting(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/api/compromissos`, {
+      const response = await apiFetch('/api/compromissos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
       if (!response.ok) {

@@ -1,0 +1,105 @@
+package br.com.sindico.app.auth;
+
+import br.com.sindico.app.security.TenantSession;
+import br.com.sindico.app.security.UsuarioTenantPrincipal;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthApiController {
+
+    private final AuthenticationManager authenticationManager;
+
+    public AuthApiController(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
+    public record LoginRequest(String email, String senha) {}
+
+    /**
+     * Autentica via credenciais JSON, cria sessao e retorna dados do usuario.
+     * Usado pelo frontend SPA (Vercel) em chamadas cross-origin com credentials: 'include'.
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> login(
+            @RequestBody LoginRequest body,
+            HttpServletRequest request) {
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(body.email(), body.senha()));
+
+            // Registra o contexto de seguranca na sessao (mesmo mecanismo do Spring Security form login)
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(auth);
+            SecurityContextHolder.setContext(context);
+
+            HttpSession session = request.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+
+            // Define o condominio ativo na sessao (mesmo que SindicoLoginSuccessHandler)
+            if (auth.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
+                UUID condominioId = principal.getCondominioPadraoId();
+                session.setAttribute(TenantSession.CONDOMINIO_ID, condominioId);
+                return ResponseEntity.ok(Map.of(
+                        "email", principal.getEmail(),
+                        "condominioId", condominioId.toString()
+                ));
+            }
+
+            return ResponseEntity.ok(Map.of("email", auth.getName()));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "Credenciais invalidas", "status", 401));
+        }
+    }
+
+    /**
+     * Retorna dados do usuario autenticado ou 401 se nao houver sessao ativa.
+     * Usado pelo frontend para verificar estado de autenticacao ao carregar a pagina.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> me(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "Nao autenticado", "status", 401));
+        }
+
+        if (authentication.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
+            return ResponseEntity.ok(Map.of(
+                    "email", principal.getEmail(),
+                    "condominioId", principal.getCondominioPadraoId().toString()
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of("email", authentication.getName()));
+    }
+
+    /**
+     * Encerra a sessao do usuario.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok(Map.of("message", "Sessao encerrada"));
+    }
+}
