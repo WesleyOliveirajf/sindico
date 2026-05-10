@@ -4,21 +4,28 @@ import { apiFetch, parseJson } from './api'
 const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
 
 const INITIAL_FORM = { titulo: '', categoria: '', descricao: '', referencia: '', importancia: 'NORMAL' }
+const INITIAL_FILTERS = { texto: '', dataInicio: '', dataFim: '' }
 
 function AnotacoesPage() {
   const [form, setForm] = useState(INITIAL_FORM)
   const [editing, setEditing] = useState({})
   const [items, setItems] = useState([])
+  const [filters, setFilters] = useState(INITIAL_FILTERS)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  async function load() {
+  async function load(activeFilters = filters) {
     setLoading(true)
     setError('')
     try {
-      const res = await apiFetch('/api/anotacoes')
+      const params = new URLSearchParams()
+      if (activeFilters.texto.trim()) params.set('texto', activeFilters.texto.trim())
+      if (activeFilters.dataInicio) params.set('dataInicio', activeFilters.dataInicio)
+      if (activeFilters.dataFim) params.set('dataFim', activeFilters.dataFim)
+      const qs = params.toString()
+      const res = await apiFetch(`/api/anotacoes${qs ? `?${qs}` : ''}`)
       if (!res.ok) throw new Error('Falha ao carregar anotacoes.')
       setItems(await parseJson(res))
     } catch (err) {
@@ -32,6 +39,20 @@ function AnotacoesPage() {
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  function onFilterChange(e) {
+    setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function onApplyFilters(e) {
+    e.preventDefault()
+    await load()
+  }
+
+  async function onClearFilters() {
+    setFilters(INITIAL_FILTERS)
+    await load(INITIAL_FILTERS)
   }
 
   function onEditChange(id, e) {
@@ -125,6 +146,34 @@ function AnotacoesPage() {
       {success ? <p className="message success">{success}</p> : null}
 
       <section className="panel" style={{ marginTop: 20 }}>
+        <h2>Filtros de busca</h2>
+        <form onSubmit={onApplyFilters} className="form-grid">
+          <label className="full">
+            Buscar por titulo, categoria, descricao ou referencia
+            <input
+              name="texto"
+              value={filters.texto}
+              onChange={onFilterChange}
+              placeholder="Ex: reuniao, vazamento, orcamento"
+              maxLength={200}
+            />
+          </label>
+          <label>
+            Data inicial
+            <input type="date" name="dataInicio" value={filters.dataInicio} onChange={onFilterChange} />
+          </label>
+          <label>
+            Data final
+            <input type="date" name="dataFim" value={filters.dataFim} onChange={onFilterChange} />
+          </label>
+          <div className="item-actions full">
+            <button type="submit" className="submit">Aplicar filtros</button>
+            <button type="button" className="submit cancel" onClick={onClearFilters}>Limpar filtros</button>
+          </div>
+        </form>
+      </section>
+
+      <section className="panel" style={{ marginTop: 20 }}>
         <h2>Nova anotacao</h2>
         <form onSubmit={onSubmit} className="form-grid">
           <label>Titulo *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
@@ -145,7 +194,7 @@ function AnotacoesPage() {
 
       <section className="board" style={{ marginTop: 20 }}>
         {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? <p className="muted">Nenhuma anotacao registrada.</p> : null}
+        {!loading && items.length === 0 ? <p className="muted">Nenhuma anotacao encontrada para os filtros selecionados.</p> : null}
         {items.map((a) => (
           <article key={a.id} className="item">
             {editing[a.id] ? (

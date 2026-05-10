@@ -2,6 +2,7 @@ package br.com.sindico.app.anotacao;
 
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,8 +33,11 @@ public class AnotacaoApiController {
     }
 
     @GetMapping
-    public List<AnotacaoResponse> listar() {
-        return anotacaoService.listarDoCondominioAtual().stream()
+    public List<AnotacaoResponse> listar(
+            @RequestParam(required = false) String texto,
+            @RequestParam(required = false) LocalDate dataInicio,
+            @RequestParam(required = false) LocalDate dataFim) {
+        return anotacaoService.listarComFiltros(texto, dataInicio, dataFim).stream()
                 .map(AnotacaoResponse::from)
                 .toList();
     }

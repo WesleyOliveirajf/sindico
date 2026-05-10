@@ -3,6 +3,8 @@ package br.com.sindico.app.anotacao;
 import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.TenantAccessor;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,30 @@ public class AnotacaoService {
     @Transactional(readOnly = true)
     public List<Anotacao> listarDoCondominioAtual() {
         return anotacaoRepository.findByCondominioIdOrderByCreatedAtDesc(tenantAccessor.condominioAtual());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Anotacao> listarComFiltros(String texto, LocalDate dataInicio, LocalDate dataFim) {
+        if (dataInicio != null && dataFim != null && dataFim.isBefore(dataInicio)) {
+            throw new IllegalArgumentException("A data final deve ser maior ou igual a data inicial.");
+        }
+
+        String textoNormalizado = null;
+        if (texto != null) {
+            String limpo = texto.trim();
+            if (!limpo.isEmpty()) {
+                textoNormalizado = limpo;
+            }
+        }
+
+        LocalDateTime inicio = dataInicio == null ? null : dataInicio.atStartOfDay();
+        LocalDateTime fim = dataFim == null ? null : dataFim.atTime(23, 59, 59);
+
+        return anotacaoRepository.buscarComFiltros(
+                tenantAccessor.condominioAtual(),
+                textoNormalizado,
+                inicio,
+                fim);
     }
 
     @Transactional(readOnly = true)
