@@ -32,6 +32,9 @@ app:
     allowed-origins: "http://localhost:5173,http://127.0.0.1:5173"
   storage:
     upload-dir: uploads
+  jwt:
+    secret: ${APP_JWT_SECRET:dev-only-change-this-secret-dev-only-change-this-secret}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:720}
 
 ---
 spring:
@@ -71,6 +74,9 @@ app:
     upload-dir: uploads
   flyway:
     repair-before-migrate: ${APP_FLYWAY_REPAIR:false}
+  jwt:
+    secret: ${APP_JWT_SECRET:dev-only-change-this-secret-dev-only-change-this-secret}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:720}
 
 ---
 spring:
@@ -97,3 +103,6 @@ spring:
 app:
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:}
+  jwt:
+    secret: ${APP_JWT_SECRET:dev-only-change-this-secret-dev-only-change-this-secret}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:720}

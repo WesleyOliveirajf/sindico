@@ -1,7 +1,20 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const TOKEN_KEY = 'authToken'
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
 
 /**
- * Wrapper em torno de fetch que sempre inclui credenciais (cookie de sessao)
+ * Wrapper em torno de fetch que envia Bearer token (quando existir)
  * e o base URL configurado. Todas as chamadas de API devem usar esta funcao.
  *
  * @param {string} path - Caminho relativo ao /api (ex: '/api/compromissos')
@@ -9,11 +22,12 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
  * @returns {Promise<Response>}
  */
 export function apiFetch(path, options = {}) {
+  const token = getToken()
   return fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   })
@@ -31,7 +45,7 @@ export async function parseJson(response) {
   const contentType = response.headers.get('content-type') || ''
   if (!contentType.includes('application/json')) {
     throw new Error(
-      `Resposta inesperada do servidor (${response.status}). Verifique se o backend esta rodando e se a sessao esta ativa.`
+      `Resposta inesperada do servidor (${response.status}). Verifique se o backend esta rodando e se o login foi realizado.`
     )
   }
   return response.json()
@@ -70,6 +84,9 @@ export async function login(email, senha) {
   if (!res.ok) {
     throw new Error(data?.error || 'Credenciais invalidas')
   }
+  if (data?.token) {
+    setToken(data.token)
+  }
   return data
 }
 
@@ -99,4 +116,5 @@ export async function logout() {
   } catch {
     // Ignora erros de rede no logout
   }
+  clearToken()
 }

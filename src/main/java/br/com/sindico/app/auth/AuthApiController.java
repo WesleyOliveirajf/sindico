@@ -2,20 +2,14 @@ package br.com.sindico.app.auth;
 
 import br.com.sindico.app.cadastro.CadastroForm;
 import br.com.sindico.app.cadastro.CadastroService;
-import br.com.sindico.app.security.TenantSession;
+import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.util.Map;
-import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,10 +22,15 @@ public class AuthApiController {
 
     private final AuthenticationManager authenticationManager;
     private final CadastroService cadastroService;
+    private final JwtService jwtService;
 
-    public AuthApiController(AuthenticationManager authenticationManager, CadastroService cadastroService) {
+    public AuthApiController(
+            AuthenticationManager authenticationManager,
+            CadastroService cadastroService,
+            JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.cadastroService = cadastroService;
+        this.jwtService = jwtService;
     }
 
     public record LoginRequest(String email, String senha) {}
@@ -42,28 +41,17 @@ public class AuthApiController {
      * Usado pelo frontend SPA (Vercel) em chamadas cross-origin com credentials: 'include'.
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest body,
-            HttpServletRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest body) {
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(body.email(), body.senha()));
 
-            // Registra o contexto de seguranca na sessao (mesmo mecanismo do Spring Security form login)
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(auth);
-            SecurityContextHolder.setContext(context);
-
-            HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-
-            // Define o condominio ativo na sessao (mesmo que SindicoLoginSuccessHandler)
             if (auth.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
-                UUID condominioId = principal.getCondominioPadraoId();
-                session.setAttribute(TenantSession.CONDOMINIO_ID, condominioId);
+                String token = jwtService.generateToken(principal);
                 return ResponseEntity.ok(Map.of(
                         "email", principal.getEmail(),
-                        "condominioId", condominioId.toString()
+                        "condominioId", principal.getCondominioPadraoId().toString(),
+                        "token", token
                 ));
             }
 
@@ -122,12 +110,7 @@ public class AuthApiController {
      * Encerra a sessao do usuario.
      */
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        SecurityContextHolder.clearContext();
+    public ResponseEntity<?> logout() {
         return ResponseEntity.ok(Map.of("message", "Sessao encerrada"));
     }
 }
