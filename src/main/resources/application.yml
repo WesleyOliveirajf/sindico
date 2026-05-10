@@ -32,6 +32,7 @@ app:
     allowed-origins: "http://localhost:5173,http://127.0.0.1:5173"
   storage:
     upload-dir: uploads
+    max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:10485760}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-change-this-secret-dev-only-change-this-secret}
     expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:720}
@@ -72,6 +73,7 @@ app:
     allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
   storage:
     upload-dir: uploads
+    max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:10485760}
   flyway:
     repair-before-migrate: ${APP_FLYWAY_REPAIR:false}
   jwt:
@@ -103,6 +105,9 @@ spring:
 app:
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:}
+  storage:
+    upload-dir: uploads
+    max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:10485760}
   jwt:
     secret: ${APP_JWT_SECRET:dev-only-change-this-secret-dev-only-change-this-secret}
     expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:720}

@@ -4,11 +4,15 @@ import CompromissosPage from './CompromissosPage'
 import PrestadoresPage from './PrestadoresPage'
 import AnotacoesPage from './AnotacoesPage'
 import MoradoresPage from './MoradoresPage'
+import ManutencoesPage from './ManutencoesPage'
+import ReunioesPage from './ReunioesPage'
 import LoginPage from './LoginPage'
 import { getMe, logout } from './api'
 
 const PAGES = {
   compromissos: 'Compromissos',
+  manutencoes: 'Manutencoes',
+  reunioes: 'Reunioes',
   anotacoes: 'Anotacoes',
   moradores: 'Moradores',
   prestadores: 'Prestadores',
@@ -76,6 +80,8 @@ function App() {
       </nav>
 
       {page === 'compromissos' && <CompromissosPage />}
+      {page === 'manutencoes' && <ManutencoesPage />}
+      {page === 'reunioes' && <ReunioesPage />}
       {page === 'anotacoes' && <AnotacoesPage />}
       {page === 'moradores' && <MoradoresPage />}
       {page === 'prestadores' && <PrestadoresPage />}
