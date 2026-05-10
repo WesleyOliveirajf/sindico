@@ -74,6 +74,23 @@ export async function login(email, senha) {
 }
 
 /**
+ * Cadastra um novo sindico com seu condominio.
+ *
+ * @param {{nome: string, email: string, nomeCondominio: string, senha: string, confirmarSenha: string}} payload
+ */
+export async function register(payload) {
+  const res = await apiFetch('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data?.error || 'Nao foi possivel concluir o cadastro')
+  }
+  return data
+}
+
+/**
  * Encerra a sessao do usuario.
  */
 export async function logout() {

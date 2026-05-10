@@ -1,5 +1,7 @@
 package br.com.sindico.app.auth;
 
+import br.com.sindico.app.cadastro.CadastroForm;
+import br.com.sindico.app.cadastro.CadastroService;
 import br.com.sindico.app.security.TenantSession;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,12 +27,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthApiController {
 
     private final AuthenticationManager authenticationManager;
+    private final CadastroService cadastroService;
 
-    public AuthApiController(AuthenticationManager authenticationManager) {
+    public AuthApiController(AuthenticationManager authenticationManager, CadastroService cadastroService) {
         this.authenticationManager = authenticationManager;
+        this.cadastroService = cadastroService;
     }
 
     public record LoginRequest(String email, String senha) {}
+    public record RegisterRequest(String nome, String email, String nomeCondominio, String senha, String confirmarSenha) {}
 
     /**
      * Autentica via credenciais JSON, cria sessao e retorna dados do usuario.
@@ -66,6 +71,29 @@ public class AuthApiController {
         } catch (AuthenticationException e) {
             return ResponseEntity.status(401)
                     .body(Map.of("error", "Credenciais invalidas", "status", 401));
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest body) {
+        try {
+            CadastroForm form = new CadastroForm();
+            form.setNome(body.nome());
+            form.setEmail(body.email());
+            form.setNomeCondominio(body.nomeCondominio());
+            form.setSenha(body.senha());
+            form.setConfirmarSenha(body.confirmarSenha());
+
+            cadastroService.cadastrar(form);
+
+            return ResponseEntity.status(201).body(Map.of(
+                    "message", "Conta criada com sucesso"
+            ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", ex.getMessage(),
+                    "status", 400
+            ));
         }
     }
 

@@ -36,7 +36,9 @@ public class CadastroService {
      */
     @Transactional
     public void cadastrar(CadastroForm form) {
-        String emailNorm = form.getEmail().trim().toLowerCase(Locale.ROOT);
+        String nome = textoObrigatorio(form.getNome(), "Informe seu nome");
+        String emailNorm = textoObrigatorio(form.getEmail(), "Informe o e-mail").toLowerCase(Locale.ROOT);
+        String nomeCondominio = textoObrigatorio(form.getNomeCondominio(), "Informe o nome do condominio");
 
         if (usuarioRepository.existsByEmailNormalizado(emailNorm)) {
             throw new IllegalArgumentException("Ja existe uma conta com este e-mail.");
@@ -46,7 +48,7 @@ public class CadastroService {
 
         // 1. Cria usuario
         Usuario usuario = new Usuario();
-        usuario.setNome(form.getNome().trim());
+        usuario.setNome(nome);
         usuario.setEmail(emailNorm);
         usuario.setSenhaHash(passwordEncoder.encode(form.getSenha()));
         usuario.setStatus("ativo");
@@ -54,7 +56,7 @@ public class CadastroService {
 
         // 2. Cria condominio
         Condominio condominio = new Condominio();
-        condominio.setNome(form.getNomeCondominio().trim());
+        condominio.setNome(nomeCondominio);
         condominio = condominioRepository.save(condominio);
 
         // 3. Vincula usuario ao condominio como SINDICO
@@ -63,6 +65,17 @@ public class CadastroService {
         vinculo.setCondominio(condominio);
         vinculo.setPerfil("SINDICO");
         usuarioCondominioRepository.save(vinculo);
+    }
+
+    private static String textoObrigatorio(String valor, String mensagem) {
+        if (valor == null) {
+            throw new IllegalArgumentException(mensagem);
+        }
+        String limpo = valor.trim();
+        if (limpo.isEmpty()) {
+            throw new IllegalArgumentException(mensagem);
+        }
+        return limpo;
     }
 
     private static void validarSenha(String senha, String confirmar) {

@@ -53,7 +53,7 @@ public class SecurityConfig {
                                 "/login", "/cadastro",
                                 "/esqueci-senha", "/redefinir-senha",
                                 "/css/**", "/js/**", "/error",
-                                "/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
+                                "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/auth/register").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
