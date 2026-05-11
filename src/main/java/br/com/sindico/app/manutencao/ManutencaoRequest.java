@@ -25,6 +25,8 @@ public record ManutencaoRequest(
         String local,
 
         UUID ativoId,
+
+        @NotNull(message = "Selecione o prestador que realizou o servico")
         UUID fornecedorId,
 
         @Size(max = 150, message = "Responsavel interno deve ter no maximo 150 caracteres")
