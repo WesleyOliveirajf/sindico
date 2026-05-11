@@ -52,3 +52,4 @@ mvnw.cmd
 
 # Plugins/skills instalados localmente (rastreados por skills-lock.json)
 /caveman/
+.vercel

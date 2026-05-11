@@ -31,10 +31,21 @@ function App() {
   }, [page])
 
   useEffect(() => {
-    getMe().then((data) => {
-      setUser(data)
-      setAuthChecked(true)
-    })
+    let active = true
+
+    getMe()
+      .then((data) => {
+        if (!active) return
+        setUser(data)
+      })
+      .finally(() => {
+        if (!active) return
+        setAuthChecked(true)
+      })
+
+    return () => {
+      active = false
+    }
   }, [])
 
   async function handleLogout() {

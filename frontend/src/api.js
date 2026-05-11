@@ -1,5 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'authToken'
+const AUTH_CHECK_TIMEOUT_MS = 5000
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -58,12 +59,16 @@ export async function parseJson(response) {
  * @returns {Promise<{email: string, condominioId: string} | null>}
  */
 export async function getMe() {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), AUTH_CHECK_TIMEOUT_MS)
   try {
-    const res = await apiFetch('/api/auth/me')
+    const res = await apiFetch('/api/auth/me', { signal: controller.signal })
     if (!res.ok) return null
-    return res.json()
+    return await parseJson(res)
   } catch {
     return null
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -80,7 +85,7 @@ export async function login(email, senha) {
     method: 'POST',
     body: JSON.stringify({ email, senha }),
   })
-  const data = await res.json()
+  const data = await parseJson(res)
   if (!res.ok) {
     throw new Error(data?.error || 'Credenciais invalidas')
   }
@@ -100,7 +105,7 @@ export async function register(payload) {
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  const data = await res.json()
+  const data = await parseJson(res)
   if (!res.ok) {
     throw new Error(data?.error || 'Nao foi possivel concluir o cadastro')
   }
