@@ -18,6 +18,30 @@ const PAGES = {
   prestadores: 'Prestadores',
 }
 
+function normalizeText(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
+function renderHighlightedLabel(label, query) {
+  if (!query) return label
+
+  const normalizedLabel = normalizeText(label)
+  const start = normalizedLabel.indexOf(query)
+  if (start === -1) return label
+
+  const end = start + query.length
+  return (
+    <>
+      {label.slice(0, start)}
+      <mark className="nav-highlight">{label.slice(start, end)}</mark>
+      {label.slice(end)}
+    </>
+  )
+}
+
 function App() {
   const [page, setPage] = useState(() => {
     return sessionStorage.getItem('appPage') || 'compromissos'
@@ -25,6 +49,12 @@ function App() {
   // null = ainda verificando; false = nao autenticado; objeto = usuario logado
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [tabFilter, setTabFilter] = useState('')
+
+  const normalizedFilter = normalizeText(tabFilter.trim())
+  const visiblePages = Object.entries(PAGES).filter(([, label]) => {
+    return normalizeText(label).includes(normalizedFilter)
+  })
 
   useEffect(() => {
     sessionStorage.setItem('appPage', page)
@@ -74,16 +104,26 @@ function App() {
     <main className="page">
       <nav className="nav">
         <span className="nav-brand">Sindico App</span>
+        <div className="nav-search">
+          <input
+            type="search"
+            value={tabFilter}
+            onChange={(e) => setTabFilter(e.target.value)}
+            placeholder="Filtrar abas..."
+            aria-label="Filtrar abas"
+          />
+        </div>
         <div className="nav-links">
-          {Object.entries(PAGES).map(([key, label]) => (
+          {visiblePages.map(([key, label]) => (
             <button
               key={key}
               className={`nav-link ${page === key ? 'nav-link--active' : ''}`}
               onClick={() => setPage(key)}
             >
-              {label}
+              {renderHighlightedLabel(label, normalizedFilter)}
             </button>
           ))}
+          {visiblePages.length === 0 && <span className="nav-empty">Nenhuma aba encontrada</span>}
         </div>
         <button className="nav-link" onClick={handleLogout} title={user.email}>
           Sair
