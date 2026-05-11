@@ -70,7 +70,9 @@ app:
   condominio:
     default-id: "00000000-0000-0000-0000-000000000001"
   cors:
-    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
+    # Inclui domínios de produção como fallback para quando APP_CORS_ORIGINS não está definido no Railway.
+    # Em produção, defina APP_CORS_ORIGINS explicitamente com os domínios corretos.
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,https://www.wesleyoliveira.tech,https://wesleyoliveira.tech,https://sindico-seven.vercel.app,https://sindico-wesley-oliveiras-projects-4feaf766.vercel.app}
   storage:
     upload-dir: uploads
     max-file-size-bytes: ${APP_MAX_FILE_SIZE_BYTES:10485760}

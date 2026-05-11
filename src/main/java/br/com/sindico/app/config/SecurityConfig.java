@@ -24,15 +24,24 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}") String allowedOrigins) {
+            @Value("${app.cors.allowed-origins:}") String allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.Arrays.stream(allowedOrigins.split(","))
+        java.util.List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .toList());
+                .toList();
+        if (origins.isEmpty()) {
+            // Sem origens configuradas: permite qualquer origem.
+            // Seguro porque a API usa Bearer token (sem cookies cross-site).
+            configuration.setAllowedOriginPatterns(java.util.List.of("*"));
+            configuration.setAllowCredentials(false);
+        } else {
+            configuration.setAllowedOrigins(origins);
+            // allowCredentials=true exige origens explícitas (incompatível com padrão "*").
+            configuration.setAllowCredentials(true);
+        }
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
-        configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
