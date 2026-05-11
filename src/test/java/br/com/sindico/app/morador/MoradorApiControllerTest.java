@@ -1,6 +1,7 @@
 package br.com.sindico.app.morador;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = MoradorApiController.class)
 @Import(SecurityConfig.class)
-class MoradorApiControllerTest {
+class MoradorApiControllerTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

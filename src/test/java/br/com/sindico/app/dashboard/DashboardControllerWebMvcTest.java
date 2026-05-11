@@ -4,6 +4,7 @@ import br.com.sindico.app.anotacao.AnotacaoService;
 import br.com.sindico.app.compromisso.Compromisso;
 import br.com.sindico.app.compromisso.CompromissoService;
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = DashboardController.class)
 @Import(SecurityConfig.class)
-class DashboardControllerWebMvcTest {
+class DashboardControllerWebMvcTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

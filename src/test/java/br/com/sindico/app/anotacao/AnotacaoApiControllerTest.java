@@ -1,6 +1,7 @@
 package br.com.sindico.app.anotacao;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AnotacaoApiController.class)
 @Import(SecurityConfig.class)
-class AnotacaoApiControllerTest {
+class AnotacaoApiControllerTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,7 +46,7 @@ class AnotacaoApiControllerTest {
     @WithMockUser
     void getListaAnotacoes() throws Exception {
         Anotacao a = anotacao(UUID.randomUUID(), "Reuniao anual");
-        when(anotacaoService.listarDoCondominioAtual()).thenReturn(List.of(a));
+        when(anotacaoService.listarComFiltros(any(), any(), any())).thenReturn(List.of(a));
 
         mockMvc.perform(get("/api/anotacoes"))
                 .andExpect(status().isOk())

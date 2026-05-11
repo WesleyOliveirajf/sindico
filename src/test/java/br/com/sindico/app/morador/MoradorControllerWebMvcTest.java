@@ -1,6 +1,7 @@
 package br.com.sindico.app.morador;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = MoradorController.class)
 @Import(SecurityConfig.class)
-class MoradorControllerWebMvcTest {
+class MoradorControllerWebMvcTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

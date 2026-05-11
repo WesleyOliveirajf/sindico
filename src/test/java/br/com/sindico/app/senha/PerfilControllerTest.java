@@ -2,6 +2,7 @@ package br.com.sindico.app.senha;
 
 import br.com.sindico.app.config.SecurityConfig;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import br.com.sindico.app.usuario.Usuario;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = PerfilController.class)
 @Import(SecurityConfig.class)
-class PerfilControllerTest {
+class PerfilControllerTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

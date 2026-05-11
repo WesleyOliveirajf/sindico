@@ -1,6 +1,7 @@
 package br.com.sindico.app.anotacao;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AnotacaoController.class)
 @Import(SecurityConfig.class)
-class AnotacaoControllerWebMvcTest {
+class AnotacaoControllerWebMvcTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

@@ -1,6 +1,7 @@
 package br.com.sindico.app.prestador;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = PrestadorServicoController.class)
 @Import(SecurityConfig.class)
-class PrestadorServicoControllerWebMvcTest {
+class PrestadorServicoControllerWebMvcTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;

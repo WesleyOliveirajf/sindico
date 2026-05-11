@@ -1,6 +1,7 @@
 package br.com.sindico.app.condominio;
 
 import br.com.sindico.app.config.SecurityConfig;
+import br.com.sindico.app.support.WebMvcSecurityTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = CondominioController.class)
 @Import(SecurityConfig.class)
-class CondominioControllerWebMvcTest {
+class CondominioControllerWebMvcTest extends WebMvcSecurityTestBase {
 
     @Autowired
     private MockMvc mockMvc;
