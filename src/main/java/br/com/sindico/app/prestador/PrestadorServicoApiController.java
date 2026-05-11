@@ -25,16 +25,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class PrestadorServicoApiController {
 
     private final PrestadorServicoService prestadorServicoService;
+    private final PrestadorHistoricoCodec historicoCodec;
 
-    public PrestadorServicoApiController(PrestadorServicoService prestadorServicoService) {
+    public PrestadorServicoApiController(
+            PrestadorServicoService prestadorServicoService,
+            PrestadorHistoricoCodec historicoCodec) {
         this.prestadorServicoService = prestadorServicoService;
+        this.historicoCodec = historicoCodec;
     }
 
     @GetMapping
     public List<PrestadorServicoResponse> listarAtivos() {
         return prestadorServicoService.listarDoCondominioAtual()
                 .stream()
-                .map(PrestadorServicoResponse::from)
+                .map(p -> PrestadorServicoResponse.from(p, historicoCodec.decode(p.getHistoricoServicos())))
                 .toList();
     }
 
@@ -43,10 +47,12 @@ public class PrestadorServicoApiController {
         NovoPrestadorForm form = new NovoPrestadorForm();
         form.setNome(request.nome());
         form.setTelefone(request.telefone());
-        form.setHistoricoServicos(request.historicoServicos());
+        form.setHistoricoServicos(historicoCodec.encode(toHistoricoItens(request.historicoItens()), request.historicoServicos()));
 
         PrestadorServico prestador = prestadorServicoService.criar(form);
-        PrestadorServicoResponse response = PrestadorServicoResponse.from(prestador);
+        PrestadorServicoResponse response = PrestadorServicoResponse.from(
+                prestador,
+                historicoCodec.decode(prestador.getHistoricoServicos()));
 
         return ResponseEntity
                 .created(URI.create("/api/prestadores/" + response.id()))
@@ -61,10 +67,12 @@ public class PrestadorServicoApiController {
             AtualizarPrestadorForm form = new AtualizarPrestadorForm();
             form.setNome(request.nome());
             form.setTelefone(request.telefone());
-            form.setHistoricoServicos(request.historicoServicos());
+            form.setHistoricoServicos(historicoCodec.encode(toHistoricoItens(request.historicoItens()), request.historicoServicos()));
 
             PrestadorServico prestador = prestadorServicoService.atualizar(prestadorId, form);
-            return ResponseEntity.ok(PrestadorServicoResponse.from(prestador));
+            return ResponseEntity.ok(PrestadorServicoResponse.from(
+                    prestador,
+                    historicoCodec.decode(prestador.getHistoricoServicos())));
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.notFound().build();
         }
@@ -106,5 +114,21 @@ public class PrestadorServicoApiController {
                 "field", fieldError.getField(),
                 "message", fieldError.getDefaultMessage() == null ? "Valor invalido" : fieldError.getDefaultMessage()
         );
+    }
+
+    private List<PrestadorHistoricoItem> toHistoricoItens(List<PrestadorServicoRequest.HistoricoItemRequest> itens) {
+        if (itens == null || itens.isEmpty()) {
+            throw new IllegalArgumentException("Adicione pelo menos um servico com valor no historico.");
+        }
+        List<PrestadorHistoricoItem> historico = itens.stream()
+                .map(item -> new PrestadorHistoricoItem(item.servico() == null ? "" : item.servico().trim(), item.valor()))
+                .filter(item -> !item.servico().isBlank() && item.valor() != null)
+                .toList();
+
+        if (historico.isEmpty()) {
+            throw new IllegalArgumentException("Adicione pelo menos um servico com valor no historico.");
+        }
+
+        return historico;
     }
 }

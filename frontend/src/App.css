@@ -242,6 +242,44 @@ textarea {
   line-height: 1.45;
 }
 
+.history-title {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr auto;
+  gap: 8px;
+}
+
+.history-table {
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fbfcfd;
+  padding: 8px 10px;
+}
+
+.history-line {
+  margin: 0;
+  padding: 6px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid #e6ecf2;
+}
+
+.history-line:last-child {
+  border-bottom: 0;
+}
+
 .prestador-item label {
   margin-bottom: 8px;
 }
@@ -268,6 +306,10 @@ textarea {
 
   .layout,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-row {
     grid-template-columns: 1fr;
   }
 }
