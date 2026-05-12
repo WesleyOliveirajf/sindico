@@ -6,6 +6,7 @@ import AnotacoesPage from "./AnotacoesPage";
 import MoradoresPage from "./MoradoresPage";
 import ManutencoesPage from "./ManutencoesPage";
 import ReunioesPage from "./ReunioesPage";
+import GastosPage from "./GastosPage";
 import LoginPage from "./LoginPage";
 import { getMe, logout } from "./api";
 
@@ -16,6 +17,7 @@ const PAGES = {
   anotacoes: "Anotacoes",
   moradores: "Moradores",
   prestadores: "Prestadores",
+  gastos: "Gastos",
 };
 
 function App() {
@@ -97,6 +99,7 @@ function App() {
       {page === "anotacoes" && <AnotacoesPage />}
       {page === "moradores" && <MoradoresPage />}
       {page === "prestadores" && <PrestadoresPage />}
+      {page === "gastos" && <GastosPage />}
     </main>
   );
 }
