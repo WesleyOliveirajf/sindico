@@ -68,9 +68,10 @@ class ManutencaoApiControllerTest extends WebMvcSecurityTestBase {
     @Test
     @WithMockUser
     void postCriaManutencao() throws Exception {
+        UUID fornecedorId = UUID.randomUUID();
         ManutencaoRequest req = new ManutencaoRequest(
                 "Pintura fachada", null, ManutencaoTipo.CORRETIVA,
-                null, null, null, null, null,
+                null, null, null, fornecedorId, null,
                 null, null, null, null, ManutencaoStatus.ABERTA, null);
         Manutencao m = manutencao(UUID.randomUUID(), "Pintura fachada");
         m.setTipo(ManutencaoTipo.CORRETIVA);
@@ -127,9 +128,10 @@ class ManutencaoApiControllerTest extends WebMvcSecurityTestBase {
     @WithMockUser
     void putAtualizaManutencao() throws Exception {
         UUID id = UUID.randomUUID();
+        UUID fornecedorId = UUID.randomUUID();
         ManutencaoRequest req = new ManutencaoRequest(
                 "Reparo elevador", null, ManutencaoTipo.CORRETIVA,
-                null, null, null, null, null,
+                null, null, null, fornecedorId, null,
                 null, null, null, null, ManutencaoStatus.EM_ANDAMENTO, null);
         Manutencao m = manutencao(id, "Reparo elevador");
         m.setStatus(ManutencaoStatus.EM_ANDAMENTO);
@@ -148,9 +150,10 @@ class ManutencaoApiControllerTest extends WebMvcSecurityTestBase {
     @WithMockUser
     void putNaoEncontradoRetorna404() throws Exception {
         UUID id = UUID.randomUUID();
+        UUID fornecedorId = UUID.randomUUID();
         ManutencaoRequest req = new ManutencaoRequest(
                 "X", null, ManutencaoTipo.PREVENTIVA,
-                null, null, null, null, null,
+                null, null, null, fornecedorId, null,
                 null, null, null, null, ManutencaoStatus.ABERTA, null);
         doThrow(new EntityNotFoundException("Manutencao nao encontrada."))
                 .when(manutencaoService).atualizar(eq(id), any());
