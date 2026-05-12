@@ -48,9 +48,13 @@ public class AnotacaoService {
         LocalDateTime inicio = dataInicio == null ? null : dataInicio.atStartOfDay();
         LocalDateTime fim = dataFim == null ? null : dataFim.atTime(23, 59, 59);
 
+        // Passa "" em vez de null para evitar PSQLException no Hibernate 6 + PostgreSQL
+        // (o JPQL usa := '' como sentinela de "sem filtro de texto").
+        String textoParaQuery = textoNormalizado != null ? textoNormalizado : "";
+
         return anotacaoRepository.buscarComFiltros(
                 tenantAccessor.condominioAtual(),
-                textoNormalizado,
+                textoParaQuery,
                 inicio,
                 fim);
     }

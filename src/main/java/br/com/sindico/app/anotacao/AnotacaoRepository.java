@@ -11,11 +11,15 @@ public interface AnotacaoRepository extends JpaRepository<Anotacao, UUID> {
 
     List<Anotacao> findByCondominioIdOrderByCreatedAtDesc(UUID condominioId);
 
+    // Nota: :texto nunca e null — o service passa "" quando nao ha filtro.
+    // Isso evita o PSQLException "could not determine data type of parameter"
+    // que ocorre no Hibernate 6 + PostgreSQL quando um parametro String e null
+    // numa clausula IS NULL.
     @Query("""
             SELECT a
             FROM Anotacao a
             WHERE a.condominioId = :condominioId
-              AND (:texto IS NULL OR (
+              AND (:texto = '' OR (
                     LOWER(a.titulo) LIKE LOWER(CONCAT('%', :texto, '%'))
                  OR LOWER(COALESCE(a.categoria, '')) LIKE LOWER(CONCAT('%', :texto, '%'))
                  OR LOWER(COALESCE(a.descricao, '')) LIKE LOWER(CONCAT('%', :texto, '%'))

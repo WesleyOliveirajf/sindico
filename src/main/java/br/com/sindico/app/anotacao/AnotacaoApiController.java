@@ -80,6 +80,12 @@ public class AnotacaoApiController {
         return Map.of("message", "Dados invalidos", "errors", errors);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> tratarEstadoInvalido(IllegalStateException ex) {
+        return Map.of("message", ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> tratarRegraNegocio(IllegalArgumentException ex) {

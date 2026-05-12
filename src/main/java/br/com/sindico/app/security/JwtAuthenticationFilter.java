@@ -40,7 +40,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String username = jwtService.extractUsername(token);
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        UserDetails userDetails;
+        try {
+            userDetails = userDetailsService.loadUserByUsername(username);
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+            // Usuario removido ou sem vinculo ativo apos emissao do token.
+            // Deixa passar sem autenticacao; Spring Security retornara 401.
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 userDetails,
