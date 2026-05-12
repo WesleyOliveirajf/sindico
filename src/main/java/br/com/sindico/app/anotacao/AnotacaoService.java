@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,13 @@ public class AnotacaoService {
         return anotacaoRepository.findByCondominioIdOrderByCreatedAtDesc(tenantAccessor.condominioAtual());
     }
 
+    /**
+     * Lista anotacoes do condominio atual aplicando filtros opcionais.
+     *
+     * Usa JPA Specifications (Criteria API) em vez de JPQL com parametros nulos
+     * para evitar o PSQLException "could not determine data type of parameter"
+     * que ocorre no Hibernate 6 + PostgreSQL.
+     */
     @Transactional(readOnly = true)
     public List<Anotacao> listarComFiltros(String texto, LocalDate dataInicio, LocalDate dataFim) {
         if (dataInicio != null && dataFim != null && dataFim.isBefore(dataInicio)) {
@@ -48,15 +57,30 @@ public class AnotacaoService {
         LocalDateTime inicio = dataInicio == null ? null : dataInicio.atStartOfDay();
         LocalDateTime fim = dataFim == null ? null : dataFim.atTime(23, 59, 59);
 
-        // Passa "" em vez de null para evitar PSQLException no Hibernate 6 + PostgreSQL
-        // (o JPQL usa := '' como sentinela de "sem filtro de texto").
-        String textoParaQuery = textoNormalizado != null ? textoNormalizado : "";
+        UUID condominioId = tenantAccessor.condominioAtual();
 
-        return anotacaoRepository.buscarComFiltros(
-                tenantAccessor.condominioAtual(),
-                textoParaQuery,
-                inicio,
-                fim);
+        // Sem nenhum filtro: usa query simples derivada (mais eficiente, sem Criteria overhead)
+        if (textoNormalizado == null && inicio == null && fim == null) {
+            return anotacaoRepository.findByCondominioIdOrderByCreatedAtDesc(condominioId);
+        }
+
+        // Constroi specification dinamicamente apenas com os predicados necessarios.
+        // Nenhum parametro nulo e passado para o banco — elimina o problema de inferencia
+        // de tipo no PostgreSQL com Hibernate 6.
+        Specification<Anotacao> spec = Specification
+                .where(AnotacaoSpecifications.doCondominio(condominioId));
+
+        if (textoNormalizado != null) {
+            spec = spec.and(AnotacaoSpecifications.comTexto(textoNormalizado));
+        }
+        if (inicio != null) {
+            spec = spec.and(AnotacaoSpecifications.aPartirDe(inicio));
+        }
+        if (fim != null) {
+            spec = spec.and(AnotacaoSpecifications.ate(fim));
+        }
+
+        return anotacaoRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
     @Transactional(readOnly = true)
