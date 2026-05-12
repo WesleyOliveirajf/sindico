@@ -56,7 +56,7 @@ class AnotacaoApiControllerTest extends WebMvcSecurityTestBase {
     @Test
     @WithMockUser
     void postCriaAnotacao() throws Exception {
-        AnotacaoRequest req = new AnotacaoRequest("Novo teto", null, null, null, AnotacaoImportancia.IMPORTANTE);
+        AnotacaoRequest req = new AnotacaoRequest("Novo teto", null, null, null, null, AnotacaoImportancia.IMPORTANTE);
         Anotacao a = anotacao(UUID.randomUUID(), "Novo teto");
         when(anotacaoService.criar(any())).thenReturn(a);
 
@@ -85,7 +85,7 @@ class AnotacaoApiControllerTest extends WebMvcSecurityTestBase {
     @WithMockUser
     void putAtualizaAnotacao() throws Exception {
         UUID id = UUID.randomUUID();
-        AnotacaoRequest req = new AnotacaoRequest("Titulo atualizado", null, null, null, AnotacaoImportancia.CRITICO);
+        AnotacaoRequest req = new AnotacaoRequest("Titulo atualizado", null, null, null, null, AnotacaoImportancia.CRITICO);
         Anotacao a = anotacao(id, "Titulo atualizado");
         when(anotacaoService.atualizar(eq(id), any())).thenReturn(a);
 
@@ -101,7 +101,7 @@ class AnotacaoApiControllerTest extends WebMvcSecurityTestBase {
     @WithMockUser
     void putNaoEncontradoRetorna404() throws Exception {
         UUID id = UUID.randomUUID();
-        AnotacaoRequest req = new AnotacaoRequest("X", null, null, null, AnotacaoImportancia.NORMAL);
+        AnotacaoRequest req = new AnotacaoRequest("X", null, null, null, null, AnotacaoImportancia.NORMAL);
         doThrow(new EntityNotFoundException("Anotacao nao encontrada."))
                 .when(anotacaoService).atualizar(eq(id), any());
 

@@ -3,8 +3,19 @@ import { apiFetch, parseJson } from './api'
 
 const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
 
-const INITIAL_FORM = { titulo: '', categoria: '', descricao: '', referencia: '', importancia: 'NORMAL' }
+const INITIAL_FORM = { titulo: '', categoria: '', descricao: '', referencia: '', importancia: 'NORMAL', dataReferencia: '' }
 const INITIAL_FILTERS = { texto: '', dataInicio: '', dataFim: '' }
+
+/** Valor para input[type=date] a partir do JSON da API. */
+function formatDateIso(value) {
+  if (value == null) return ''
+  if (typeof value === 'string') return value.length >= 10 ? value.slice(0, 10) : value
+  if (Array.isArray(value) && value.length >= 3) {
+    const [y, m, d] = value
+    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  }
+  return ''
+}
 
 function AnotacoesPage() {
   const [form, setForm] = useState(INITIAL_FORM)
@@ -26,9 +37,20 @@ function AnotacoesPage() {
       if (activeFilters.dataFim) params.set('dataFim', activeFilters.dataFim)
       const qs = params.toString()
       const res = await apiFetch(`/api/anotacoes${qs ? `?${qs}` : ''}`)
-      if (!res.ok) throw new Error('Falha ao carregar anotacoes.')
+      if (!res.ok) {
+        let msg = 'Falha ao carregar anotacoes.'
+        try {
+          const data = await res.json()
+          if (data?.message) msg = data.message
+          else if (typeof data?.error === 'string') msg = data.error
+        } catch {
+          // Ignora JSON invalido ou corpo HTML
+        }
+        throw new Error(msg)
+      }
       setItems(await parseJson(res))
     } catch (err) {
+      setSuccess('')
       setError(err.message)
     } finally {
       setLoading(false)
@@ -71,6 +93,7 @@ function AnotacoesPage() {
         descricao: a.descricao || '',
         referencia: a.referencia || '',
         importancia: a.importancia,
+        dataReferencia: formatDateIso(a.dataReferencia),
       },
     }))
   }
@@ -81,9 +104,17 @@ function AnotacoesPage() {
     setSuccess('')
     setSubmitting(true)
     try {
+      const payload = {
+        titulo: form.titulo,
+        categoria: form.categoria || null,
+        descricao: form.descricao || null,
+        referencia: form.referencia || null,
+        importancia: form.importancia,
+        dataReferencia: form.dataReferencia || null,
+      }
       const res = await apiFetch('/api/anotacoes', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
@@ -107,7 +138,14 @@ function AnotacoesPage() {
     try {
       const res = await apiFetch(`/api/anotacoes/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          titulo: data.titulo,
+          categoria: data.categoria || null,
+          descricao: data.descricao || null,
+          referencia: data.referencia || null,
+          importancia: data.importancia,
+          dataReferencia: data.dataReferencia || null,
+        }),
       })
       if (!res.ok) throw new Error('Erro ao atualizar anotacao.')
       setSuccess('Anotacao atualizada com sucesso.')
@@ -179,6 +217,10 @@ function AnotacoesPage() {
           <label>Titulo *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
           <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} placeholder="Ex: Manutencao, Financeiro..." /></label>
           <label>
+            Data da ocorrencia (opcional)
+            <input type="date" name="dataReferencia" value={form.dataReferencia} onChange={onChange} />
+          </label>
+          <label>
             Importancia
             <select name="importancia" value={form.importancia} onChange={onChange}>
               {IMPORTANCIAS.map((i) => <option key={i} value={i}>{i}</option>)}
@@ -208,6 +250,10 @@ function AnotacoesPage() {
                   </select>
                 </label>
                 <label>Referencia<input name="referencia" value={editing[a.id].referencia} onChange={(e) => onEditChange(a.id, e)} /></label>
+                <label>
+                  Data da ocorrencia (opcional)
+                  <input type="date" name="dataReferencia" value={editing[a.id].dataReferencia ?? ''} onChange={(e) => onEditChange(a.id, e)} />
+                </label>
                 <label className="full">Descricao<textarea name="descricao" value={editing[a.id].descricao} onChange={(e) => onEditChange(a.id, e)} rows={3} /></label>
                 <div className="item-actions">
                   <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(a.id)}>Salvar</button>
@@ -221,6 +267,11 @@ function AnotacoesPage() {
                   <span className={importanciaClass(a.importancia)}>{a.importancia}</span>
                 </div>
                 {a.categoria ? <p className="muted" style={{ marginTop: 4 }}>Categoria: {a.categoria}</p> : null}
+                {formatDateIso(a.dataReferencia) ? (
+                  <p className="muted" style={{ marginTop: 4 }}>
+                    Data da ocorrencia: {new Date(`${formatDateIso(a.dataReferencia)}T12:00:00`).toLocaleDateString('pt-BR')}
+                  </p>
+                ) : null}
                 {a.descricao ? <p style={{ marginTop: 6 }}>{a.descricao}</p> : null}
                 {a.referencia ? <p className="muted" style={{ marginTop: 4 }}>Ref: {a.referencia}</p> : null}
                 <div className="item-actions">

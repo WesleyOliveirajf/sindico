@@ -118,17 +118,12 @@ public class PrestadorServicoApiController {
 
     private List<PrestadorHistoricoItem> toHistoricoItens(List<PrestadorServicoRequest.HistoricoItemRequest> itens) {
         if (itens == null || itens.isEmpty()) {
-            throw new IllegalArgumentException("Adicione pelo menos um servico com valor no historico.");
+            return List.of();
         }
         List<PrestadorHistoricoItem> historico = itens.stream()
                 .map(item -> new PrestadorHistoricoItem(item.servico() == null ? "" : item.servico().trim(), item.valor()))
                 .filter(item -> !item.servico().isBlank() && item.valor() != null)
                 .toList();
-
-        if (historico.isEmpty()) {
-            throw new IllegalArgumentException("Adicione pelo menos um servico com valor no historico.");
-        }
-
         return historico;
     }
 }

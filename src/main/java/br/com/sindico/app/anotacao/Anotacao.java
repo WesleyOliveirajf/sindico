@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -37,6 +38,9 @@ public class Anotacao {
 
     @Column(length = 200)
     private String referencia;
+
+    @Column(name = "data_referencia")
+    private LocalDate dataReferencia;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -95,6 +99,14 @@ public class Anotacao {
 
     public void setReferencia(String referencia) {
         this.referencia = referencia;
+    }
+
+    public LocalDate getDataReferencia() {
+        return dataReferencia;
+    }
+
+    public void setDataReferencia(LocalDate dataReferencia) {
+        this.dataReferencia = dataReferencia;
     }
 
     public AnotacaoImportancia getImportancia() {

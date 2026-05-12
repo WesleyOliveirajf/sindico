@@ -99,6 +99,7 @@ public class AnotacaoApiController {
         form.setCategoria(req.categoria());
         form.setDescricao(req.descricao());
         form.setReferencia(req.referencia());
+        form.setDataReferencia(req.dataReferencia());
         form.setImportancia(req.importancia());
         return form;
     }

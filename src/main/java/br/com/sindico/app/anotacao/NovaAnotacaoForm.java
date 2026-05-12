@@ -3,6 +3,8 @@ package br.com.sindico.app.anotacao;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public class NovaAnotacaoForm {
 
@@ -18,6 +20,9 @@ public class NovaAnotacaoForm {
 
     @Size(max = 200, message = "Referencia deve ter no maximo 200 caracteres")
     private String referencia;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate dataReferencia;
 
     @NotNull(message = "Selecione a importancia")
     private AnotacaoImportancia importancia = AnotacaoImportancia.NORMAL;
@@ -52,6 +57,14 @@ public class NovaAnotacaoForm {
 
     public void setReferencia(String referencia) {
         this.referencia = referencia;
+    }
+
+    public LocalDate getDataReferencia() {
+        return dataReferencia;
+    }
+
+    public void setDataReferencia(LocalDate dataReferencia) {
+        this.dataReferencia = dataReferencia;
     }
 
     public AnotacaoImportancia getImportancia() {

@@ -296,6 +296,11 @@
                 </div>
 
                 <div>
+                    <label for="dataReferencia">Data da ocorrencia (opcional)</label>
+                    <input id="dataReferencia" type="date" th:field="*{dataReferencia}">
+                </div>
+
+                <div>
                     <label for="importancia">Importancia</label>
                     <select id="importancia" th:field="*{importancia}" required>
                         <option th:each="imp : ${T(br.com.sindico.app.anotacao.AnotacaoImportancia).values()}"
@@ -335,6 +340,9 @@
             </div>
             <p class="text" th:if="${anotacao.descricao != null && !anotacao.descricao.isEmpty()}"
                th:text="${anotacao.descricao}">Descricao da anotacao.</p>
+            <p class="date" th:if="${anotacao.dataReferencia != null}"
+               th:text="${'Data da ocorrencia: ' + #temporals.format(anotacao.dataReferencia, 'dd/MM/yyyy')}">
+                Data</p>
             <p class="date" th:if="${anotacao.referencia != null && !anotacao.referencia.isEmpty()}"
                th:text="${'Referencia: ' + anotacao.referencia}">Referencia</p>
             <p class="date" th:text="${'Registrado em ' + #temporals.format(anotacao.createdAt, 'dd/MM/yyyy HH:mm')}">Data</p>

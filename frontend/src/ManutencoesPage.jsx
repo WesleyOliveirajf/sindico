@@ -63,6 +63,12 @@ function ManutencoesPage() {
     return prestadores.find((p) => p.id === prestadorId) || null
   }
 
+  function getWhatsAppLink(phone) {
+    const digits = (phone || '').replace(/\D/g, '')
+    if (!digits) return null
+    return `https://wa.me/${digits}`
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
@@ -149,7 +155,14 @@ function ManutencoesPage() {
                   {m.dataExecucao ? <p className="muted">Execucao: {m.dataExecucao}</p> : null}
                   {m.local ? <p className="muted">Local: {m.local}</p> : null}
                   {m.fornecedorId ? <p className="muted">Prestador: {prestador?.nome || 'Prestador nao encontrado'}</p> : null}
-                  {prestador?.telefone ? <p className="muted">Telefone do prestador: {prestador.telefone}</p> : null}
+                  {prestador?.telefone ? (
+                    <p className="muted">
+                      Telefone do prestador:{' '}
+                      <a href={getWhatsAppLink(prestador.telefone)} target="_blank" rel="noreferrer">
+                        {prestador.telefone}
+                      </a>
+                    </p>
+                  ) : null}
                   {m.responsavelInterno ? <p className="muted">Responsavel: {m.responsavelInterno}</p> : null}
                   {m.descricao ? <p style={{ marginTop: 6 }}>{m.descricao}</p> : null}
                   {m.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {m.observacoes}</p> : null}

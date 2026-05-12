@@ -1,39 +1,14 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, parseJson } from './api'
 
-const INITIAL_HISTORY_ITEM = { servico: '', valor: '' }
-const INITIAL_FORM = { nome: '', telefone: '', historicoServicos: '', historicoItens: [{ ...INITIAL_HISTORY_ITEM }] }
-
-function mapHistoricoItens(itens) {
-  if (!Array.isArray(itens)) return []
-  return itens
-    .map((item) => ({
-      servico: item?.servico || '',
-      valor: item?.valor != null ? String(item.valor) : '',
-    }))
-    .filter((item) => item.servico || item.valor)
-}
+const INITIAL_FORM = { nome: '', telefone: '', areaAtuacao: '' }
 
 function normalizePayload(data) {
-  const historicoItens = mapHistoricoItens(data.historicoItens)
-    .map((item) => ({ servico: item.servico.trim(), valor: Number(item.valor) }))
-    .filter((item) => item.servico && Number.isFinite(item.valor) && item.valor > 0)
-
   return {
     nome: data.nome,
     telefone: data.telefone,
-    historicoServicos: data.historicoServicos,
-    historicoItens,
+    historicoServicos: data.areaAtuacao,
   }
-}
-
-function hasValidHistoryItems(data) {
-  return normalizePayload(data).historicoItens.length > 0
-}
-
-function formatCurrency(value) {
-  if (value == null || Number.isNaN(Number(value))) return '-'
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value))
 }
 
 function PrestadoresPage() {
@@ -65,54 +40,6 @@ function PrestadoresPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function onHistoryChange(setter, idOrNull, index, field, value) {
-    setter((prev) => {
-      const source = idOrNull ? (prev[idOrNull] || {}) : prev
-      const historicoItens = [...(source.historicoItens || [{ ...INITIAL_HISTORY_ITEM }])]
-      historicoItens[index] = { ...(historicoItens[index] || INITIAL_HISTORY_ITEM), [field]: value }
-
-      if (idOrNull) {
-        return {
-          ...prev,
-          [idOrNull]: {
-            ...source,
-            historicoItens,
-          },
-        }
-      }
-
-      return { ...prev, historicoItens }
-    })
-  }
-
-  function addHistoryItem(setter, idOrNull) {
-    setter((prev) => {
-      const source = idOrNull ? (prev[idOrNull] || {}) : prev
-      const historicoItens = [...(source.historicoItens || [{ ...INITIAL_HISTORY_ITEM }]), { ...INITIAL_HISTORY_ITEM }]
-
-      if (idOrNull) {
-        return { ...prev, [idOrNull]: { ...source, historicoItens } }
-      }
-
-      return { ...prev, historicoItens }
-    })
-  }
-
-  function removeHistoryItem(setter, idOrNull, index) {
-    setter((prev) => {
-      const source = idOrNull ? (prev[idOrNull] || {}) : prev
-      const current = source.historicoItens || [{ ...INITIAL_HISTORY_ITEM }]
-      const historicoItens = current.filter((_, idx) => idx !== index)
-      const finalItems = historicoItens.length > 0 ? historicoItens : [{ ...INITIAL_HISTORY_ITEM }]
-
-      if (idOrNull) {
-        return { ...prev, [idOrNull]: { ...source, historicoItens: finalItems } }
-      }
-
-      return { ...prev, historicoItens: finalItems }
-    })
-  }
-
   function onEditChange(id, e) {
     setEditing((prev) => ({
       ...prev,
@@ -126,8 +53,7 @@ function PrestadoresPage() {
       [p.id]: {
         nome: p.nome,
         telefone: p.telefone,
-        historicoServicos: p.historicoServicos || '',
-        historicoItens: mapHistoricoItens(p.historicoItens),
+        areaAtuacao: p.historicoServicos || '',
       },
     }))
   }
@@ -136,10 +62,6 @@ function PrestadoresPage() {
     e.preventDefault()
     setError('')
     setSuccess('')
-    if (!hasValidHistoryItems(form)) {
-      setError('Adicione ao menos um servico com valor no historico.')
-      return
-    }
     setSubmitting(true)
     try {
       const res = await apiFetch('/api/prestadores', {
@@ -151,7 +73,7 @@ function PrestadoresPage() {
         throw new Error(data?.message || 'Erro ao cadastrar prestador.')
       }
       setSuccess('Prestador cadastrado com sucesso.')
-      setForm({ ...INITIAL_FORM, historicoItens: [{ ...INITIAL_HISTORY_ITEM }] })
+      setForm(INITIAL_FORM)
       await loadPrestadores()
     } catch (err) {
       setError(err.message)
@@ -165,10 +87,6 @@ function PrestadoresPage() {
     if (!data?.nome?.trim() || !data?.telefone?.trim()) return
     setError('')
     setSuccess('')
-    if (!hasValidHistoryItems(data)) {
-      setError('Adicione ao menos um servico com valor no historico antes de salvar.')
-      return
-    }
     try {
       const res = await apiFetch(`/api/prestadores/${id}`, {
         method: 'PUT',
@@ -176,7 +94,11 @@ function PrestadoresPage() {
       })
       if (!res.ok) throw new Error('Erro ao atualizar prestador.')
       setSuccess('Prestador atualizado com sucesso.')
-      setEditing((prev) => { const c = { ...prev }; delete c[id]; return c })
+      setEditing((prev) => {
+        const copy = { ...prev }
+        delete copy[id]
+        return copy
+      })
       await loadPrestadores()
     } catch (err) {
       setError(err.message)
@@ -201,7 +123,7 @@ function PrestadoresPage() {
       <section className="hero">
         <p className="eyebrow">Servicos terceirizados</p>
         <h1>Prestadores de servico</h1>
-        <p className="subtitle">Cadastre contatos e mantenha historico de servicos realizados no condominio.</p>
+        <p className="subtitle">Cadastre nome, telefone e area de atuacao dos profissionais.</p>
       </section>
 
       {error ? <p className="message error">{error}</p> : null}
@@ -212,37 +134,7 @@ function PrestadoresPage() {
         <form onSubmit={onSubmit} className="form-grid">
           <label>Nome *<input name="nome" value={form.nome} onChange={onChange} required maxLength={150} /></label>
           <label>Telefone *<input name="telefone" value={form.telefone} onChange={onChange} required maxLength={30} placeholder="(11) 99999-0000" /></label>
-          <div className="full">
-            <p className="history-title">Historico de servicos e valores</p>
-            <div className="history-list">
-              {form.historicoItens.map((item, index) => (
-                <div className="history-row" key={`new-history-${index}`}>
-                  <input
-                    name={`servico-${index}`}
-                    value={item.servico}
-                    onChange={(e) => onHistoryChange(setForm, null, index, 'servico', e.target.value)}
-                    maxLength={200}
-                    placeholder="Servico realizado"
-                  />
-                  <input
-                    name={`valor-${index}`}
-                    value={item.valor}
-                    onChange={(e) => onHistoryChange(setForm, null, index, 'valor', e.target.value)}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Valor"
-                  />
-                  <button type="button" className="submit cancel" onClick={() => removeHistoryItem(setForm, null, index)}>
-                    Remover
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button type="button" className="submit cancel" onClick={() => addHistoryItem(setForm, null)}>
-              Adicionar servico
-            </button>
-          </div>
+          <label className="full">Area de atuacao<textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidraulica, eletrica predial, manutencao de bombas." /></label>
           <button type="submit" disabled={submitting} className="submit full">
             {submitting ? 'Salvando...' : 'Cadastrar prestador'}
           </button>
@@ -258,35 +150,7 @@ function PrestadoresPage() {
               <>
                 <label>Nome<input name="nome" value={editing[p.id].nome} onChange={(e) => onEditChange(p.id, e)} /></label>
                 <label>Telefone<input name="telefone" value={editing[p.id].telefone} onChange={(e) => onEditChange(p.id, e)} /></label>
-                <div>
-                  <p className="history-title">Historico de servicos e valores</p>
-                  <div className="history-list">
-                    {(editing[p.id].historicoItens || [{ ...INITIAL_HISTORY_ITEM }]).map((item, index) => (
-                      <div className="history-row" key={`${p.id}-history-${index}`}>
-                        <input
-                          value={item.servico}
-                          onChange={(e) => onHistoryChange(setEditing, p.id, index, 'servico', e.target.value)}
-                          maxLength={200}
-                          placeholder="Servico realizado"
-                        />
-                        <input
-                          value={item.valor}
-                          onChange={(e) => onHistoryChange(setEditing, p.id, index, 'valor', e.target.value)}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Valor"
-                        />
-                        <button type="button" className="submit cancel" onClick={() => removeHistoryItem(setEditing, p.id, index)}>
-                          Remover
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button type="button" className="submit cancel" onClick={() => addHistoryItem(setEditing, p.id)}>
-                    Adicionar servico
-                  </button>
-                </div>
+                <label>Area de atuacao<textarea name="areaAtuacao" value={editing[p.id].areaAtuacao} onChange={(e) => onEditChange(p.id, e)} rows={3} maxLength={4000} /></label>
                 <div className="item-actions">
                   <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(p.id)}>Salvar</button>
                   <button className="submit cancel" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[p.id]; return c })}>Cancelar</button>
@@ -296,20 +160,7 @@ function PrestadoresPage() {
               <>
                 <h3>{p.nome}</h3>
                 <p className="phone">{p.telefone}</p>
-                {Array.isArray(p.historicoItens) && p.historicoItens.length > 0 ? (
-                  <div className="history-table">
-                    {p.historicoItens.map((item, index) => (
-                      <p key={`${p.id}-view-${index}`} className="history-line">
-                        <span>{item.servico}</span>
-                        <strong>{formatCurrency(item.valor)}</strong>
-                      </p>
-                    ))}
-                  </div>
-                ) : p.historicoServicos ? (
-                  <p className="history">{p.historicoServicos}</p>
-                ) : (
-                  <p className="muted">Sem historico registrado.</p>
-                )}
+                {p.historicoServicos ? <p className="history">Area de atuacao: {p.historicoServicos}</p> : <p className="muted">Area de atuacao nao informada.</p>}
                 <div className="item-actions">
                   <button className="submit" onClick={() => startEdit(p)}>Editar</button>
                   <button className="submit danger" onClick={() => onInactivate(p.id)}>Inativar</button>

@@ -71,6 +71,7 @@ public class AnotacaoService {
         a.setCategoria(blankToNull(form.getCategoria()));
         a.setDescricao(blankToNull(form.getDescricao()));
         a.setReferencia(blankToNull(form.getReferencia()));
+        a.setDataReferencia(form.getDataReferencia());
         a.setImportancia(form.getImportancia());
         return anotacaoRepository.save(a);
     }
@@ -84,6 +85,7 @@ public class AnotacaoService {
         a.setCategoria(blankToNull(req.categoria()));
         a.setDescricao(blankToNull(req.descricao()));
         a.setReferencia(blankToNull(req.referencia()));
+        a.setDataReferencia(req.dataReferencia());
         a.setImportancia(req.importancia());
         return anotacaoRepository.save(a);
     }
