@@ -95,6 +95,10 @@ h1 {
   grid-template-columns: 1fr 1fr;
 }
 
+.auth-form {
+  grid-template-columns: 1fr;
+}
+
 .form-grid .full,
 .form-grid .message {
   grid-column: 1 / -1;
@@ -105,6 +109,74 @@ label {
   gap: 6px;
   font-size: 0.92rem;
   color: var(--muted);
+}
+
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-head a {
+  color: var(--accent);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.auth-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.mode-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.mode-button--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mode-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auth-footer {
+  margin: 18px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.link-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 input,

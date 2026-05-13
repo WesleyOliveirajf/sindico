@@ -50,15 +50,25 @@ function LoginPage({ onLogin }) {
       <section className="layout" style={{ justifyContent: 'center' }}>
         <article className="panel" style={{ maxWidth: '420px', width: '100%' }}>
           <h2>{mode === 'login' ? 'Login' : 'Cadastro'}</h2>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <button type="button" className="submit" onClick={() => setMode('login')} disabled={loading || mode === 'login'}>
+          <div className="auth-mode-toggle" aria-label="Alternar entre login e cadastro">
+            <button
+              type="button"
+              className={`mode-button ${mode === 'login' ? 'mode-button--active' : ''}`}
+              onClick={() => setMode('login')}
+              disabled={loading}
+            >
               Entrar
             </button>
-            <button type="button" className="submit" onClick={() => setMode('register')} disabled={loading || mode === 'register'}>
+            <button
+              type="button"
+              className={`mode-button ${mode === 'register' ? 'mode-button--active' : ''}`}
+              onClick={() => setMode('register')}
+              disabled={loading}
+            >
               Cadastrar
             </button>
           </div>
-          <form onSubmit={onSubmit} className="form-grid">
+          <form onSubmit={onSubmit} className="form-grid auth-form">
             {mode === 'register' ? (
               <>
                 <label>
@@ -83,7 +93,10 @@ function LoginPage({ onLogin }) {
               />
             </label>
             <label>
-              Senha
+              <span className="field-head">
+                <span>Senha</span>
+                {mode === 'login' ? <a href="/esqueci-senha">Esqueci minha senha</a> : null}
+              </span>
               <input
                 type="password"
                 value={senha}
@@ -110,6 +123,17 @@ function LoginPage({ onLogin }) {
               {loading ? 'Processando...' : mode === 'login' ? 'Entrar' : 'Cadastrar e entrar'}
             </button>
           </form>
+          <p className="auth-footer">
+            {mode === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              disabled={loading}
+            >
+              {mode === 'login' ? 'Criar conta gratuita' : 'Entrar'}
+            </button>
+          </p>
         </article>
       </section>
     </main>
