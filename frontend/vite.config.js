@@ -13,4 +13,14 @@ export default defineConfig({
       },
     },
   },
+  // `npm run preview` nao herda server.proxy; sem isto /api/* vira 404 no preview.
+  preview: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })
