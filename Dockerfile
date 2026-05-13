@@ -1,18 +1,12 @@
-# Stage 1: build
-FROM eclipse-temurin:25-jdk AS builder
+# Stage 1: build — usa imagem oficial com Maven + JDK 25 pre-instalados
+FROM maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /app
-ENV MAVEN_VERSION=3.9.9
-RUN apt-get update && apt-get install -y curl --no-install-recommends \
-    && curl -fsSL https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
-       | tar xz -C /opt \
-    && ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/local/bin/mvn \
-    && rm -rf /var/lib/apt/lists/*
 COPY pom.xml .
 RUN mvn dependency:go-offline -q
 COPY src ./src
 RUN mvn package -DskipTests -q
 
-# Stage 2: runtime
+# Stage 2: runtime — apenas JRE (imagem menor)
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=builder /app/target/sindico-app-*.jar app.jar
