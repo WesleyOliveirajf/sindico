@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const INITIAL_FORM = {
   titulo: '',
@@ -27,7 +28,7 @@ function ReunioesPage() {
     setError('')
     try {
       const res = await apiFetch('/api/reunioes')
-      if (!res.ok) throw new Error('Falha ao carregar reunioes.')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar reunioes.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -36,7 +37,12 @@ function ReunioesPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -66,8 +72,7 @@ function ReunioesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao registrar reuniao.')
+        throw new Error(await parseError(res, 'Erro ao registrar reuniao.'))
       }
       setSuccess('Reuniao registrada com sucesso.')
       setForm(INITIAL_FORM)
@@ -87,8 +92,7 @@ function ReunioesPage() {
         <p className="subtitle">Registre pauta, decisoes, participantes e pendencias das reunioes do condominio.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
         <h2>Nova reuniao</h2>
@@ -108,8 +112,9 @@ function ReunioesPage() {
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? <p className="muted">Nenhuma reuniao registrada.</p> : null}
+        {loading ? <LoadingState message="Carregando reunioes..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma reuniao registrada." /> : null}
         {items.map((r) => (
           <article key={r.id} className="item">
             <h3 style={{ margin: 0 }}>{r.titulo}</h3>

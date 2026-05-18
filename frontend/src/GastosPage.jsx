@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import ConfirmDialog from './components/ConfirmDialog'
 
 const TIPOS = [
   { value: 'AGUA',          label: 'Agua' },
@@ -72,6 +74,7 @@ function GastosPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
   // filtros
   const [filtroMes, setFiltroMes] = useState(currentMonth)
@@ -83,7 +86,7 @@ function GastosPage() {
     setError('')
     try {
       const res = await apiFetch(buildQuery(mes, ano, tipo))
-      if (!res.ok) throw new Error('Falha ao carregar gastos.')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar gastos.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -93,8 +96,11 @@ function GastosPage() {
   }
 
   useEffect(() => {
-    load(filtroMes, filtroAno, filtroTipo)
-  }, [])
+    const timer = setTimeout(() => {
+      void load(filtroMes, filtroAno, filtroTipo)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function onFiltrar(e) {
     e.preventDefault()
@@ -129,8 +135,7 @@ function GastosPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao registrar gasto.')
+        throw new Error(await parseError(res, 'Erro ao registrar gasto.'))
       }
       setSuccess('Gasto registrado com sucesso.')
       setForm(INITIAL_FORM)
@@ -143,11 +148,11 @@ function GastosPage() {
   }
 
   async function onDeletar(id) {
-    if (!window.confirm('Deseja remover este gasto?')) return
     setError('')
     try {
       const res = await apiFetch(`/api/gastos/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erro ao remover gasto.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao remover gasto.'))
+      setPendingDeleteId(null)
       await load(filtroMes, filtroAno, filtroTipo)
     } catch (err) {
       setError(err.message)
@@ -167,8 +172,7 @@ function GastosPage() {
         <p className="subtitle">Registre e acompanhe todos os gastos fixos e variaveis do condominio.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       {/* Formulario de cadastro */}
       <section className="panel" style={{ marginTop: 20 }}>
@@ -304,10 +308,9 @@ function GastosPage() {
 
       {/* Listagem */}
       <section className="board" style={{ marginTop: 12 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? (
-          <p className="muted">Nenhum gasto encontrado para os filtros selecionados.</p>
-        ) : null}
+        {loading ? <LoadingState message="Carregando gastos..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={() => load(filtroMes, filtroAno, filtroTipo)} /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhum gasto encontrado para os filtros selecionados." /> : null}
         {items.map((g) => (
           <article key={g.id} className="item">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -322,7 +325,7 @@ function GastosPage() {
                 {g.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {g.observacoes}</p> : null}
               </div>
               <button
-                onClick={() => onDeletar(g.id)}
+                onClick={() => setPendingDeleteId(g.id)}
                 style={{
                   background: 'none',
                   border: '1px solid #cc3333',
@@ -340,6 +343,15 @@ function GastosPage() {
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={pendingDeleteId != null}
+        title="Remover gasto"
+        message="Deseja remover este gasto? Esta acao nao pode ser desfeita."
+        confirmLabel="Remover"
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => onDeletar(pendingDeleteId)}
+      />
     </>
   )
 }

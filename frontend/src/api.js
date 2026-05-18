@@ -1,17 +1,27 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'authToken'
 const AUTH_CHECK_TIMEOUT_MS = 5000
+export const AUTH_EXPIRED_EVENT = 'auth:expired'
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE || 'jwt' // jwt | cookie | hybrid
 
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
 function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token)
+  sessionStorage.setItem(TOKEN_KEY, token)
 }
 
 function clearToken() {
-  localStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
+}
+
+function shouldSendAuthHeader() {
+  return AUTH_MODE === 'jwt' || AUTH_MODE === 'hybrid'
+}
+
+function shouldSendCredentials() {
+  return AUTH_MODE === 'cookie' || AUTH_MODE === 'hybrid'
 }
 
 /**
@@ -24,13 +34,27 @@ function clearToken() {
  */
 export function apiFetch(path, options = {}) {
   const token = getToken()
+  const useAuthHeader = shouldSendAuthHeader()
+  const useCredentials = shouldSendCredentials()
+  const headers = {
+    ...(useAuthHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  }
+
+  if (options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json'
+  }
+
   return fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
+    ...(useCredentials ? { credentials: 'include' } : {}),
+    headers,
+  }).then((response) => {
+    if (response.status === 401 && path !== '/api/auth/login') {
+      clearToken()
+      window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))
+    }
+    return response
   })
 }
 
@@ -50,6 +74,15 @@ export async function parseJson(response) {
     )
   }
   return response.json()
+}
+
+export async function parseError(response, fallbackMessage) {
+  try {
+    const data = await parseJson(response)
+    return data?.message || data?.error || fallbackMessage
+  } catch {
+    return fallbackMessage
+  }
 }
 
 /**
@@ -123,55 +156,3 @@ export async function logout() {
   }
   clearToken()
 }
-
-const BASE_URL = import.meta.env.VITE_API_URL || '';
-
-export const api = {
-  get: async (url) => {
-    const response = await fetch(`${BASE_URL}${url}`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  },
-  post: async (url, data) => {
-    const response = await fetch(`${BASE_URL}${url}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  },
-  put: async (url, data) => {
-    const response = await fetch(`${BASE_URL}${url}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  },
-  patch: async (url, data = {}) => {
-    const response = await fetch(`${BASE_URL}${url}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  },
-  delete: async (url) => {
-    const response = await fetch(`${BASE_URL}${url}`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.status === 204 ? null : response.json();
-  },
-};

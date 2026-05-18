@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import ConfirmDialog from './components/ConfirmDialog'
+import Button from './components/ui/Button'
+import Card from './components/ui/Card'
+import Input, { Select, Textarea } from './components/ui/Input'
 
 const TIPO_LABELS = { MANUTENCAO: 'Manutencao', REUNIAO: 'Reuniao', OUTROS: 'Outros' }
 
@@ -20,13 +25,14 @@ function CompromissosPage() {
   const [form, setForm] = useState(INITIAL_FORM)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
   async function load() {
     setLoading(true)
     setError('')
     try {
       const res = await apiFetch('/api/compromissos')
-      if (!res.ok) throw new Error('Falha ao carregar compromissos.')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar compromissos.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -35,7 +41,12 @@ function CompromissosPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -52,8 +63,7 @@ function CompromissosPage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao salvar compromisso.')
+        throw new Error(await parseError(res, 'Erro ao salvar compromisso.'))
       }
       setSuccess('Compromisso criado com sucesso.')
       setForm(INITIAL_FORM)
@@ -72,7 +82,7 @@ function CompromissosPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/compromissos/${id}/concluir`, { method: 'PATCH' })
-      if (!res.ok) throw new Error('Erro ao concluir compromisso.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao concluir compromisso.'))
       setSuccess('Compromisso marcado como concluido.')
       await load()
     } catch (err) {
@@ -81,13 +91,13 @@ function CompromissosPage() {
   }
 
   async function onDelete(id) {
-    if (!confirm('Deseja excluir este compromisso?')) return
     setError('')
     setSuccess('')
     try {
       const res = await apiFetch(`/api/compromissos/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erro ao excluir compromisso.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir compromisso.'))
       setSuccess('Compromisso excluido.')
+      setPendingDeleteId(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -121,8 +131,7 @@ function CompromissosPage() {
         <p className="subtitle">Gerencie compromissos, tarefas e prazos do condominio em um so lugar.</p>
       </section>
 
-      {error ? <p className="message error" style={{ marginTop: 16 }}>{error}</p> : null}
-      {success ? <p className="message success" style={{ marginTop: 16 }}>{success}</p> : null}
+      <SuccessState message={success} />
 
       <div style={{ marginTop: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div className="auth-mode-toggle" style={{ maxWidth: 320, marginBottom: 0 }}>
@@ -139,22 +148,18 @@ function CompromissosPage() {
             Concluidos{concluidos.length > 0 ? ` (${concluidos.length})` : ''}
           </button>
         </div>
-        <button
-          className="submit"
-          onClick={() => setShowForm((v) => !v)}
-          style={{ marginLeft: 'auto' }}
-        >
+        <Button onClick={() => setShowForm((v) => !v)} style={{ marginLeft: 'auto' }}>
           {showForm ? 'Cancelar' : '+ Novo Compromisso'}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <section className="panel" style={{ marginTop: 16 }}>
+        <Card style={{ marginTop: 16 }}>
           <h2>Novo Compromisso</h2>
           <form onSubmit={onSubmit} className="form-grid">
             <label className="full">
               Titulo *
-              <input
+              <Input
                 name="titulo"
                 value={form.titulo}
                 onChange={onChange}
@@ -165,19 +170,19 @@ function CompromissosPage() {
             </label>
             <label>
               Data de inicio *
-              <input type="date" name="inicioEm" value={form.inicioEm} onChange={onChange} required />
+              <Input type="date" name="inicioEm" value={form.inicioEm} onChange={onChange} required />
             </label>
             <label>
               Tipo
-              <select name="tipo" value={form.tipo} onChange={onChange}>
+              <Select name="tipo" value={form.tipo} onChange={onChange}>
                 <option value="OUTROS">Outros</option>
                 <option value="MANUTENCAO">Manutencao</option>
                 <option value="REUNIAO">Reuniao</option>
-              </select>
+              </Select>
             </label>
             <label className="full">
               Local
-              <input
+              <Input
                 name="local"
                 value={form.local}
                 onChange={onChange}
@@ -187,7 +192,7 @@ function CompromissosPage() {
             </label>
             <label className="full">
               Descricao
-              <textarea
+              <Textarea
                 name="descricao"
                 value={form.descricao}
                 onChange={onChange}
@@ -195,21 +200,24 @@ function CompromissosPage() {
                 placeholder="Detalhes do compromisso..."
               />
             </label>
-            <button type="submit" disabled={submitting} className="submit full">
+            <Button type="submit" disabled={submitting} className="full">
               {submitting ? 'Salvando...' : 'Criar compromisso'}
-            </button>
+            </Button>
           </form>
-        </section>
+        </Card>
       )}
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && lista.length === 0 ? (
-          <p className="muted">
-            {filtro === 'abertos'
-              ? 'Nenhum compromisso em aberto. Clique em "+ Novo Compromisso" para adicionar.'
-              : 'Nenhum compromisso concluido ainda.'}
-          </p>
+        {loading ? <LoadingState message="Carregando compromissos..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
+        {!loading && !error && lista.length === 0 ? (
+          <EmptyState
+            message={
+              filtro === 'abertos'
+                ? 'Nenhum compromisso em aberto. Clique em "+ Novo Compromisso" para adicionar.'
+                : 'Nenhum compromisso concluido ainda.'
+            }
+          />
         ) : null}
         {lista.map((c) => {
           const concluido = isConcluido(c)
@@ -270,12 +278,21 @@ function CompromissosPage() {
               </div>
 
               <div className="item-actions">
-                <button className="submit danger" onClick={() => onDelete(c.id)}>Excluir</button>
-              </div>
-            </article>
-          )
+                  <Button variant="danger" onClick={() => setPendingDeleteId(c.id)}>Excluir</Button>
+                </div>
+              </article>
+            )
         })}
       </section>
+
+      <ConfirmDialog
+        open={pendingDeleteId != null}
+        title="Excluir compromisso"
+        message="Deseja excluir este compromisso? Esta acao nao pode ser desfeita."
+        confirmLabel="Excluir"
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => onDelete(pendingDeleteId)}
+      />
     </>
   )
 }

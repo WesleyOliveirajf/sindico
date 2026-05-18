@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const INITIAL_FORM = { nome: '', telefone: '', areaAtuacao: '' }
 
@@ -25,7 +26,7 @@ function PrestadoresPage() {
     setError('')
     try {
       const res = await apiFetch('/api/prestadores')
-      if (!res.ok) throw new Error('Falha ao carregar prestadores.')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar prestadores.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -34,7 +35,12 @@ function PrestadoresPage() {
     }
   }
 
-  useEffect(() => { loadPrestadores() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadPrestadores()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -69,8 +75,7 @@ function PrestadoresPage() {
         body: JSON.stringify(normalizePayload(form)),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao cadastrar prestador.')
+        throw new Error(await parseError(res, 'Erro ao cadastrar prestador.'))
       }
       setSuccess('Prestador cadastrado com sucesso.')
       setForm(INITIAL_FORM)
@@ -92,7 +97,7 @@ function PrestadoresPage() {
         method: 'PUT',
         body: JSON.stringify(normalizePayload(data)),
       })
-      if (!res.ok) throw new Error('Erro ao atualizar prestador.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar prestador.'))
       setSuccess('Prestador atualizado com sucesso.')
       setEditing((prev) => {
         const copy = { ...prev }
@@ -110,7 +115,7 @@ function PrestadoresPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/prestadores/${id}/inativar`, { method: 'POST' })
-      if (!res.ok) throw new Error('Erro ao inativar prestador.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao inativar prestador.'))
       setSuccess('Prestador inativado com sucesso.')
       await loadPrestadores()
     } catch (err) {
@@ -126,8 +131,7 @@ function PrestadoresPage() {
         <p className="subtitle">Cadastre nome, telefone e area de atuacao dos profissionais.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
         <h2>Novo prestador</h2>
@@ -142,8 +146,9 @@ function PrestadoresPage() {
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? <p className="muted">Nenhum prestador cadastrado.</p> : null}
+        {loading ? <LoadingState message="Carregando prestadores..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={loadPrestadores} /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhum prestador cadastrado." /> : null}
         {items.map((p) => (
           <article key={p.id} className="item prestador-item">
             {editing[p.id] ? (

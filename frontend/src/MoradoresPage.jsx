@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const PAPEIS = ['PROPRIETARIO', 'INQUILINO', 'DEPENDENTE', 'ZELADOR', 'OUTRO']
 
@@ -26,7 +27,8 @@ function MoradoresPage() {
         apiFetch('/api/unidades'),
         apiFetch('/api/moradores'),
       ])
-      if (!uRes.ok || !mRes.ok) throw new Error('Falha ao carregar dados.')
+      if (!uRes.ok) throw new Error(await parseError(uRes, 'Falha ao carregar unidades.'))
+      if (!mRes.ok) throw new Error(await parseError(mRes, 'Falha ao carregar moradores.'))
       const [u, m] = await Promise.all([parseJson(uRes), parseJson(mRes)])
       setUnidades(u)
       setMoradores(m)
@@ -37,7 +39,12 @@ function MoradoresPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   function onUnidadeChange(e) {
     setFormUnidade((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -79,8 +86,7 @@ function MoradoresPage() {
         body: JSON.stringify(formUnidade),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao cadastrar unidade.')
+        throw new Error(await parseError(res, 'Erro ao cadastrar unidade.'))
       }
       setSuccess('Unidade cadastrada com sucesso.')
       setFormUnidade(INITIAL_UNIDADE)
@@ -103,8 +109,7 @@ function MoradoresPage() {
         body: JSON.stringify({ ...formMorador, unidadeId: formMorador.unidadeId || null }),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao cadastrar morador.')
+        throw new Error(await parseError(res, 'Erro ao cadastrar morador.'))
       }
       setSuccess('Morador cadastrado com sucesso.')
       setFormMorador(INITIAL_MORADOR)
@@ -126,7 +131,7 @@ function MoradoresPage() {
         method: 'PUT',
         body: JSON.stringify({ ...data, unidadeId: data.unidadeId || null }),
       })
-      if (!res.ok) throw new Error('Erro ao atualizar morador.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar morador.'))
       setSuccess('Morador atualizado com sucesso.')
       setEditingMorador((prev) => { const c = { ...prev }; delete c[id]; return c })
       await load()
@@ -140,7 +145,7 @@ function MoradoresPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/moradores/${id}/inativar`, { method: 'POST' })
-      if (!res.ok) throw new Error('Erro ao inativar morador.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao inativar morador.'))
       setSuccess('Morador inativado com sucesso.')
       await load()
     } catch (err) {
@@ -156,8 +161,7 @@ function MoradoresPage() {
         <p className="subtitle">Gerencie as unidades e os moradores do condominio.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
         <section className="panel">
@@ -201,8 +205,9 @@ function MoradoresPage() {
 
       <section className="board" style={{ marginTop: 24 }}>
         <h2 style={{ marginBottom: 12 }}>Moradores ativos</h2>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && moradores.length === 0 ? <p className="muted">Nenhum morador cadastrado.</p> : null}
+        {loading ? <LoadingState message="Carregando moradores..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
+        {!loading && !error && moradores.length === 0 ? <EmptyState message="Nenhum morador cadastrado." /> : null}
         {moradores.map((m) => (
           <article key={m.id} className="item">
             {editingMorador[m.id] ? (

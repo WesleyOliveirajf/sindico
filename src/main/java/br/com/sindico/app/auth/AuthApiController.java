@@ -6,6 +6,7 @@ import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -91,7 +92,9 @@ public class AuthApiController {
      */
     @GetMapping("/me")
     public ResponseEntity<?> me(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(401)
                     .body(Map.of("error", "Nao autenticado", "status", 401));
         }

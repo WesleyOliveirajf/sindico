@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const INITIAL_FORM = {
   titulo: '',
@@ -31,7 +32,7 @@ function ManutencoesPage() {
     setError('')
     try {
       const res = await apiFetch('/api/manutencoes')
-      if (!res.ok) throw new Error('Falha ao carregar manutencoes.')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar manutencoes.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -40,7 +41,12 @@ function ManutencoesPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     async function loadPrestadores() {
@@ -88,8 +94,7 @@ function ManutencoesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao registrar manutencao.')
+        throw new Error(await parseError(res, 'Erro ao registrar manutencao.'))
       }
       setSuccess('Manutencao registrada com sucesso.')
       setForm(INITIAL_FORM)
@@ -109,8 +114,7 @@ function ManutencoesPage() {
         <p className="subtitle">Registre manutencoes preventivas e corretivas com custos, status e responsavel.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
         <h2>Nova manutencao</h2>
@@ -141,8 +145,9 @@ function ManutencoesPage() {
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? <p className="muted">Nenhuma manutencao registrada.</p> : null}
+        {loading ? <LoadingState message="Carregando manutencoes..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma manutencao registrada." /> : null}
         {items.map((m) => (
           <article key={m.id} className="item">
             {(() => {

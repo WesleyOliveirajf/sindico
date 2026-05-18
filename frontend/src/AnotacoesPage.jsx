@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseJson } from './api'
+import { apiFetch, parseError, parseJson } from './api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import ConfirmDialog from './components/ConfirmDialog'
 
 const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
 
@@ -26,6 +28,7 @@ function AnotacoesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
 
   async function load(activeFilters = filters) {
     setLoading(true)
@@ -38,15 +41,7 @@ function AnotacoesPage() {
       const qs = params.toString()
       const res = await apiFetch(`/api/anotacoes${qs ? `?${qs}` : ''}`)
       if (!res.ok) {
-        let msg = 'Falha ao carregar anotacoes.'
-        try {
-          const data = await res.json()
-          if (data?.message) msg = data.message
-          else if (typeof data?.error === 'string') msg = data.error
-        } catch {
-          // Ignora JSON invalido ou corpo HTML
-        }
-        throw new Error(msg)
+        throw new Error(await parseError(res, 'Falha ao carregar anotacoes.'))
       }
       setItems(await parseJson(res))
     } catch (err) {
@@ -57,7 +52,12 @@ function AnotacoesPage() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void load()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function onChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -117,8 +117,7 @@ function AnotacoesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.message || 'Erro ao registrar anotacao.')
+        throw new Error(await parseError(res, 'Erro ao registrar anotacao.'))
       }
       setSuccess('Anotacao registrada com sucesso.')
       setForm(INITIAL_FORM)
@@ -147,7 +146,7 @@ function AnotacoesPage() {
           dataReferencia: data.dataReferencia || null,
         }),
       })
-      if (!res.ok) throw new Error('Erro ao atualizar anotacao.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar anotacao.'))
       setSuccess('Anotacao atualizada com sucesso.')
       setEditing((prev) => { const c = { ...prev }; delete c[id]; return c })
       await load()
@@ -157,13 +156,13 @@ function AnotacoesPage() {
   }
 
   async function onDelete(id) {
-    if (!confirm('Deseja excluir esta anotacao? Esta acao nao pode ser desfeita.')) return
     setError('')
     setSuccess('')
     try {
       const res = await apiFetch(`/api/anotacoes/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erro ao excluir anotacao.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir anotacao.'))
       setSuccess('Anotacao excluida com sucesso.')
+      setPendingDeleteId(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -180,8 +179,7 @@ function AnotacoesPage() {
         <p className="subtitle">Registre informacoes, observacoes e ocorrencias relevantes do condominio.</p>
       </section>
 
-      {error ? <p className="message error">{error}</p> : null}
-      {success ? <p className="message success">{success}</p> : null}
+      <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
         <h2>Filtros de busca</h2>
@@ -235,8 +233,9 @@ function AnotacoesPage() {
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <p className="muted">Carregando...</p> : null}
-        {!loading && items.length === 0 ? <p className="muted">Nenhuma anotacao encontrada para os filtros selecionados.</p> : null}
+        {loading ? <LoadingState message="Carregando anotacoes..." /> : null}
+        {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma anotacao encontrada para os filtros selecionados." /> : null}
         {items.map((a) => (
           <article key={a.id} className="item">
             {editing[a.id] ? (
@@ -276,13 +275,22 @@ function AnotacoesPage() {
                 {a.referencia ? <p className="muted" style={{ marginTop: 4 }}>Ref: {a.referencia}</p> : null}
                 <div className="item-actions">
                   <button className="submit" onClick={() => startEdit(a)}>Editar</button>
-                  <button className="submit danger" onClick={() => onDelete(a.id)}>Excluir</button>
+                  <button className="submit danger" onClick={() => setPendingDeleteId(a.id)}>Excluir</button>
                 </div>
               </>
             )}
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={pendingDeleteId != null}
+        title="Excluir anotacao"
+        message="Deseja excluir esta anotacao? Esta acao nao pode ser desfeita."
+        confirmLabel="Excluir"
+        onCancel={() => setPendingDeleteId(null)}
+        onConfirm={() => onDelete(pendingDeleteId)}
+      />
     </>
   )
 }

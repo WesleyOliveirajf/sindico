@@ -3,9 +3,11 @@ package br.com.sindico.app.config;
 import br.com.sindico.app.security.SindicoLoginSuccessHandler;
 import br.com.sindico.app.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -22,17 +24,46 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
+    private static final String DEV_JWT_DEFAULT = "dev-only-change-this-secret-dev-only-change-this-secret";
+
+    private final Environment environment;
+
+    public SecurityConfig(Environment environment) {
+        this.environment = environment;
+    }
+
+    private boolean isStrictProfileActive() {
+        return Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(profile -> "prod".equals(profile) || "supabase".equals(profile));
+    }
+
+    private void validateSecurityRequirements(String allowedOrigins) {
+        if (!isStrictProfileActive()) {
+            return;
+        }
+
+        String jwtSecret = environment.getProperty("app.jwt.secret", "");
+        if (jwtSecret.isBlank() || DEV_JWT_DEFAULT.equals(jwtSecret)) {
+            throw new IllegalStateException("APP_JWT_SECRET obrigatorio e seguro em supabase/prod.");
+        }
+
+        if (allowedOrigins == null || allowedOrigins.isBlank()) {
+            throw new IllegalStateException("APP_CORS_ORIGINS obrigatorio em supabase/prod.");
+        }
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${app.cors.allowed-origins:}") String allowedOrigins) {
+        validateSecurityRequirements(allowedOrigins);
+
         CorsConfiguration configuration = new CorsConfiguration();
         java.util.List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
         if (origins.isEmpty()) {
-            // Sem origens configuradas: permite qualquer origem.
-            // Seguro porque a API usa Bearer token (sem cookies cross-site).
+            // Fallback apenas para ambiente local.
             configuration.setAllowedOriginPatterns(java.util.List.of("*"));
             configuration.setAllowCredentials(false);
         } else {
