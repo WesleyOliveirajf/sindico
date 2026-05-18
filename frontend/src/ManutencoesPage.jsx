@@ -18,6 +18,43 @@ const INITIAL_FORM = {
   observacoes: '',
 }
 
+const CURRENCY_FIELDS = new Set(['custoPrevisto', 'custoRealizado'])
+
+function parseCurrencyValue(value) {
+  if (value == null || value === '') return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+
+  const sanitized = String(value).trim().replace(/[^\d,.-]/g, '')
+  if (!/\d/.test(sanitized)) return null
+
+  const lastComma = sanitized.lastIndexOf(',')
+  const lastDot = sanitized.lastIndexOf('.')
+  let normalized = sanitized
+
+  if (lastComma > -1 && lastDot > -1) {
+    normalized = lastComma > lastDot
+      ? sanitized.replace(/\./g, '').replace(',', '.')
+      : sanitized.replace(/,/g, '')
+  } else if (lastComma > -1) {
+    normalized = sanitized.replace(/\./g, '').replace(',', '.')
+  } else if (lastDot > -1) {
+    const dotCount = (sanitized.match(/\./g) || []).length
+    const decimalDigits = sanitized.length - lastDot - 1
+    normalized = dotCount === 1 && decimalDigits <= 2
+      ? sanitized.replace(/,/g, '')
+      : sanitized.replace(/\./g, '')
+  }
+
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+function formatCurrency(value) {
+  const parsed = parseCurrencyValue(value)
+  if (parsed == null) return ''
+  return parsed.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
 function ManutencoesPage() {
   const [form, setForm] = useState(INITIAL_FORM)
   const [items, setItems] = useState([])
@@ -65,6 +102,20 @@ function ManutencoesPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  function formatCurrencyField(fieldName) {
+    setForm((prev) => ({ ...prev, [fieldName]: formatCurrency(prev[fieldName]) }))
+  }
+
+  function onCurrencyBlur(e) {
+    formatCurrencyField(e.target.name)
+  }
+
+  function onCurrencyKeyDown(e) {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    formatCurrencyField(e.target.name)
+  }
+
   function getPrestadorById(prestadorId) {
     return prestadores.find((p) => p.id === prestadorId) || null
   }
@@ -85,8 +136,8 @@ function ManutencoesPage() {
         ...form,
         dataOcorrencia: form.dataOcorrencia || null,
         dataExecucao: form.dataExecucao || null,
-        custoPrevisto: form.custoPrevisto ? Number(form.custoPrevisto) : null,
-        custoRealizado: form.custoRealizado ? Number(form.custoRealizado) : null,
+        custoPrevisto: parseCurrencyValue(form.custoPrevisto),
+        custoRealizado: parseCurrencyValue(form.custoRealizado),
         fornecedorId: form.fornecedorId || null,
       }
       const res = await apiFetch('/api/manutencoes', {
@@ -136,8 +187,32 @@ function ManutencoesPage() {
           <label>Status<select name="status" value={form.status} onChange={onChange}><option value="ABERTA">Aberta</option><option value="AGENDADA">Agendada</option><option value="EM_ANDAMENTO">Em andamento</option><option value="CONCLUIDA">Concluida</option><option value="CANCELADA">Cancelada</option></select></label>
           <label>Data da ocorrencia<input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
           <label>Data da execucao<input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
-          <label>Custo previsto<input type="number" step="0.01" name="custoPrevisto" value={form.custoPrevisto} onChange={onChange} /></label>
-          <label>Custo realizado<input type="number" step="0.01" name="custoRealizado" value={form.custoRealizado} onChange={onChange} /></label>
+          <label>
+            Custo previsto
+            <input
+              type="text"
+              inputMode="decimal"
+              name="custoPrevisto"
+              value={form.custoPrevisto}
+              onChange={onChange}
+              onBlur={onCurrencyBlur}
+              onKeyDown={onCurrencyKeyDown}
+              placeholder="R$ 0,00"
+            />
+          </label>
+          <label>
+            Custo realizado
+            <input
+              type="text"
+              inputMode="decimal"
+              name="custoRealizado"
+              value={form.custoRealizado}
+              onChange={onChange}
+              onBlur={onCurrencyBlur}
+              onKeyDown={onCurrencyKeyDown}
+              placeholder="R$ 0,00"
+            />
+          </label>
           <label className="full">Descricao<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} /></label>
           <label className="full">Observacoes<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
           <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar manutencao'}</button>
@@ -169,6 +244,14 @@ function ManutencoesPage() {
                     </p>
                   ) : null}
                   {m.responsavelInterno ? <p className="muted">Responsavel: {m.responsavelInterno}</p> : null}
+                  {CURRENCY_FIELDS.some((field) => m[field] != null) ? (
+                    <p className="muted">
+                      Custos:{' '}
+                      {m.custoPrevisto != null ? `Previsto ${formatCurrency(m.custoPrevisto)}` : 'Previsto -'}
+                      {' · '}
+                      {m.custoRealizado != null ? `Realizado ${formatCurrency(m.custoRealizado)}` : 'Realizado -'}
+                    </p>
+                  ) : null}
                   {m.descricao ? <p style={{ marginTop: 6 }}>{m.descricao}</p> : null}
                   {m.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {m.observacoes}</p> : null}
                 </>
