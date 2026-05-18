@@ -123,3 +123,55 @@ export async function logout() {
   }
   clearToken()
 }
+
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
+export const api = {
+  get: async (url) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  post: async (url, data) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  put: async (url, data) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  patch: async (url, data = {}) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  },
+  delete: async (url) => {
+    const response = await fetch(`${BASE_URL}${url}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  },
+};

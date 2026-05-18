@@ -1,8 +1,10 @@
 package br.com.sindico.app.compromisso;
 
 import br.com.sindico.app.security.TenantAccessor;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,27 +19,13 @@ public class CompromissoService {
         this.tenantAccessor = tenantAccessor;
     }
 
-    @Transactional
-    public Compromisso criar(NovoCompromissoForm form) {
-        validarDatas(form.getInicioEm(), form.getFimEm());
-
-        Compromisso compromisso = new Compromisso();
-        compromisso.setTitulo(form.getTitulo());
-        compromisso.setDescricao(form.getDescricao());
-        compromisso.setTipo(form.getTipo());
-        compromisso.setInicioEm(form.getInicioEm());
-        compromisso.setFimEm(form.getFimEm());
-        compromisso.setLocal(form.getLocal());
-        compromisso.setStatus(CompromissoStatus.AGENDADO);
-        compromisso.setCondominioId(tenantAccessor.condominioAtual());
-
-        return compromissoRepository.save(compromisso);
-    }
+    // ── Dashboard ──────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<Compromisso> proximos() {
-        return compromissoRepository.findTop10ByCondominioIdAndInicioEmGreaterThanEqualOrderByInicioEmAsc(
-                tenantAccessor.condominioAtual(), LocalDateTime.now());
+        return compromissoRepository
+                .findTop10ByCondominioIdAndInicioEmGreaterThanEqualOrderByInicioEmAsc(
+                        tenantAccessor.condominioAtual(), LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -58,12 +46,46 @@ public class CompromissoService {
                 tenantAccessor.condominioAtual(), CompromissoStatus.CONCLUIDO);
     }
 
-    private void validarDatas(LocalDateTime inicioEm, LocalDateTime fimEm) {
-        if (inicioEm == null || fimEm == null) {
-            throw new IllegalArgumentException("Datas obrigatorias");
-        }
-        if (!fimEm.isAfter(inicioEm)) {
-            throw new IllegalArgumentException("Data final deve ser maior que a data inicial");
-        }
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<Compromisso> listar() {
+        return compromissoRepository
+                .findByCondominioIdOrderByInicioEmDesc(tenantAccessor.condominioAtual());
+    }
+
+    @Transactional
+    public Compromisso criar(NovoCompromissoForm form) {
+        var c = new Compromisso();
+        c.setTitulo(form.getTitulo());
+        c.setDescricao(form.getDescricao());
+        c.setTipo(form.getTipo() != null ? form.getTipo() : CompromissoTipo.OUTROS);
+        c.setInicioEm(form.getInicioEm());
+        c.setFimEm(form.getFimEm()); // pode ser null
+        c.setLocal(form.getLocal());
+        c.setStatus(CompromissoStatus.AGENDADO);
+        c.setCondominioId(tenantAccessor.condominioAtual());
+        return compromissoRepository.save(c);
+    }
+
+    /**
+     * Marca o compromisso como CONCLUIDO e preenche fimEm com o momento atual.
+     */
+    @Transactional
+    public Compromisso concluir(UUID id) {
+        Compromisso c = compromissoRepository.findById(id)
+                .filter(x -> x.getCondominioId().equals(tenantAccessor.condominioAtual()))
+                .orElseThrow(() -> new EntityNotFoundException("Compromisso nao encontrado."));
+        c.setStatus(CompromissoStatus.CONCLUIDO);
+        c.setFimEm(LocalDateTime.now());
+        return compromissoRepository.save(c);
+    }
+
+    @Transactional
+    public void deletar(UUID id) {
+        Compromisso c = compromissoRepository.findById(id)
+                .filter(x -> x.getCondominioId().equals(tenantAccessor.condominioAtual()))
+                .orElseThrow(() -> new EntityNotFoundException("Compromisso nao encontrado."));
+        compromissoRepository.delete(c);
     }
 }

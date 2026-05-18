@@ -23,7 +23,7 @@ public class NovoCompromissoForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime inicioEm;
 
-    @NotNull(message = "Informe data e hora de fim")
+    // fimEm opcional — preenchido automaticamente quando o compromisso for concluído
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime fimEm;
 

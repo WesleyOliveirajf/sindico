@@ -36,7 +36,7 @@ public class Compromisso {
     @Column(name = "inicio_em", nullable = false)
     private LocalDateTime inicioEm;
 
-    @Column(name = "fim_em", nullable = false)
+    @Column(name = "fim_em")
     private LocalDateTime fimEm;
 
     @Column(length = 150)
