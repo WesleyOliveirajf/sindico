@@ -54,3 +54,6 @@ mvnw.cmd
 /caveman/
 .vercel
 .env*.local
+
+# MCP config (contém tokens sensíveis)
+.ai/mcp/mcp.json
