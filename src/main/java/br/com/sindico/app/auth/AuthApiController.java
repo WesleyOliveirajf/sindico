@@ -141,11 +141,16 @@ public class AuthApiController {
                 .filter(nome -> nome != null && !nome.isBlank())
                 .orElse("Condominio");
 
+        List<String> roles = principal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("email", principal.getEmail());
         payload.put("nome", nomeSindico);
         payload.put("condominioId", principal.getCondominioPadraoId().toString());
         payload.put("nomeCondominio", nomeCondominio);
+        payload.put("roles", roles);
         return payload;
     }
 }
