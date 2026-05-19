@@ -100,8 +100,8 @@ public class SecurityConfig {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
-                .addFilterBefore(apiBearerEnforcementFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(apiBearerEnforcementFilter, JwtAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login", "/cadastro",
