@@ -156,3 +156,59 @@ export async function logout() {
   }
   clearToken()
 }
+
+// ---------------------------------------------------------------------------
+// Admin
+// ---------------------------------------------------------------------------
+
+/**
+ * Retorna metricas gerais da aplicacao (requer ROLE_ADMIN).
+ */
+export async function getAdminStats() {
+  const res = await apiFetch('/api/admin/stats')
+  if (!res.ok) throw new Error('Nao foi possivel carregar as estatisticas')
+  return parseJson(res)
+}
+
+/**
+ * Lista todos os usuarios cadastrados (requer ROLE_ADMIN).
+ * @returns {Promise<Array>}
+ */
+export async function getAdminUsuarios() {
+  const res = await apiFetch('/api/admin/usuarios')
+  if (!res.ok) throw new Error('Nao foi possivel carregar os usuarios')
+  return parseJson(res)
+}
+
+/**
+ * Aprova um usuario pendente (requer ROLE_ADMIN).
+ * @param {string} id
+ */
+export async function aprovarUsuario(id) {
+  const res = await apiFetch(`/api/admin/usuarios/${id}/aprovar`, { method: 'POST' })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel aprovar o usuario')
+  return data
+}
+
+/**
+ * Rejeita / desativa um usuario (requer ROLE_ADMIN).
+ * @param {string} id
+ */
+export async function rejeitarUsuario(id) {
+  const res = await apiFetch(`/api/admin/usuarios/${id}/rejeitar`, { method: 'POST' })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel rejeitar o usuario')
+  return data
+}
+
+/**
+ * Reativa um usuario inativo (requer ROLE_ADMIN).
+ * @param {string} id
+ */
+export async function reativarUsuario(id) {
+  const res = await apiFetch(`/api/admin/usuarios/${id}/reativar`, { method: 'POST' })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel reativar o usuario')
+  return data
+}

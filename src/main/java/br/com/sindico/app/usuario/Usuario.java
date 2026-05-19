@@ -34,6 +34,9 @@ public class Usuario {
     @Column(name = "senha_hash", length = 255)
     private String senhaHash;
 
+    @Column(name = "ultimo_acesso")
+    private LocalDateTime ultimoAcesso;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -84,6 +87,14 @@ public class Usuario {
 
     public void setSenhaHash(String senhaHash) {
         this.senhaHash = senhaHash;
+    }
+
+    public LocalDateTime getUltimoAcesso() {
+        return ultimoAcesso;
+    }
+
+    public void setUltimoAcesso(LocalDateTime ultimoAcesso) {
+        this.ultimoAcesso = ultimoAcesso;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -6,14 +6,18 @@ import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import br.com.sindico.app.usuario.UsuarioRepository;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -107,6 +111,11 @@ public class AuthApiController {
         }
 
         if (authentication.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
+            // Atualiza ultimo acesso do usuario
+            usuarioRepository.findById(principal.getUsuarioId()).ifPresent(u -> {
+                u.setUltimoAcesso(LocalDateTime.now());
+                usuarioRepository.save(u);
+            });
             return ResponseEntity.ok(buildAuthPayload(principal));
         }
 

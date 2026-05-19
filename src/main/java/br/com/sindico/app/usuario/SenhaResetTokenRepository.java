@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface SenhaResetTokenRepository extends JpaRepository<SenhaResetToken, UUID> {
 
-    Optional<SenhaResetToken> findByToken(String token);
+    Optional<SenhaResetToken> findByToken(String tokenHash);
 
     /** Invalida tokens anteriores do mesmo usuario (nao usado + ainda valido) antes de gerar novo. */
     @Modifying

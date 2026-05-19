@@ -9,6 +9,7 @@ import ManutencoesPage from "./ManutencoesPage";
 import ReunioesPage from "./ReunioesPage";
 import GastosPage from "./GastosPage";
 import LoginPage from "./LoginPage";
+import AdminPage from "./AdminPage";
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
 
 const PAGES = {
@@ -125,6 +126,17 @@ function App() {
               {label}
             </NavLink>
           ))}
+          {user?.roles?.includes("ROLE_ADMIN") && (
+            <NavLink
+              to="/admin"
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `sidebar-link sidebar-link--admin ${isActive ? "sidebar-link--active" : ""}`
+              }
+            >
+              Admin
+            </NavLink>
+          )}
         </nav>
         <button className="sidebar-logout" onClick={handleLogout} title={user.email}>
           Sair
@@ -164,6 +176,7 @@ function App() {
             <Route path="/moradores" element={<MoradoresPage />} />
             <Route path="/prestadores" element={<PrestadoresPage />} />
             <Route path="/gastos" element={<GastosPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/compromissos" replace />} />
           </Routes>
         </section>

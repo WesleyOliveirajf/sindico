@@ -5,6 +5,9 @@ import br.com.sindico.app.usuario.SenhaResetToken;
 import br.com.sindico.app.usuario.SenhaResetTokenRepository;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -53,7 +56,7 @@ public class SenhaResetService {
             String rawToken = gerarToken();
             SenhaResetToken resetToken = new SenhaResetToken();
             resetToken.setUsuario(usuario);
-            resetToken.setToken(rawToken);
+            resetToken.setToken(hashToken(rawToken));
             resetToken.setExpiraEm(LocalDateTime.now().plusMinutes(EXPIRY_MINUTES));
             tokenRepository.save(resetToken);
 
@@ -67,7 +70,7 @@ public class SenhaResetService {
      */
     @Transactional(readOnly = true)
     public Usuario validarToken(String token) {
-        SenhaResetToken resetToken = tokenRepository.findByToken(token)
+        SenhaResetToken resetToken = tokenRepository.findByToken(hashToken(token))
                 .orElseThrow(() -> new IllegalArgumentException("Link invalido ou expirado."));
 
         if (!resetToken.isValido()) {
@@ -81,7 +84,7 @@ public class SenhaResetService {
      */
     @Transactional
     public void redefinirSenha(String token, String novaSenha, String confirmarSenha) {
-        SenhaResetToken resetToken = tokenRepository.findByToken(token)
+        SenhaResetToken resetToken = tokenRepository.findByToken(hashToken(token))
                 .orElseThrow(() -> new IllegalArgumentException("Link invalido ou expirado."));
 
         if (!resetToken.isValido()) {
@@ -116,5 +119,22 @@ public class SenhaResetService {
         byte[] bytes = new byte[TOKEN_BYTES];
         new SecureRandom().nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static String hashToken(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return "";
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 nao disponivel", e);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package br.com.sindico.app.config;
 
 import br.com.sindico.app.security.SindicoLoginSuccessHandler;
+import br.com.sindico.app.security.ApiBearerEnforcementFilter;
 import br.com.sindico.app.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
@@ -37,7 +38,7 @@ public class SecurityConfig {
                 .anyMatch(profile -> "prod".equals(profile) || "supabase".equals(profile));
     }
 
-    private void validateSecurityRequirements(String allowedOrigins) {
+    private void validateSecurityRequirements(String allowedOrigins, String publicBaseUrl) {
         if (!isStrictProfileActive()) {
             return;
         }
@@ -50,12 +51,17 @@ public class SecurityConfig {
         if (allowedOrigins == null || allowedOrigins.isBlank()) {
             throw new IllegalStateException("APP_CORS_ORIGINS obrigatorio em supabase/prod.");
         }
+
+        if (publicBaseUrl == null || publicBaseUrl.isBlank()) {
+            throw new IllegalStateException("APP_PUBLIC_BASE_URL obrigatorio em supabase/prod.");
+        }
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins:}") String allowedOrigins) {
-        validateSecurityRequirements(allowedOrigins);
+            @Value("${app.cors.allowed-origins:}") String allowedOrigins,
+            @Value("${app.public-base-url:}") String publicBaseUrl) {
+        validateSecurityRequirements(allowedOrigins, publicBaseUrl);
 
         CorsConfiguration configuration = new CorsConfiguration();
         java.util.List<String> origins = java.util.Arrays.stream(allowedOrigins.split(","))
@@ -88,18 +94,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SindicoLoginSuccessHandler loginSuccessHandler,
+            ApiBearerEnforcementFilter apiBearerEnforcementFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .addFilterBefore(apiBearerEnforcementFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login", "/cadastro",
                                 "/esqueci-senha", "/redefinir-senha",
                                 "/css/**", "/js/**", "/error",
-                                "/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/auth/register").permitAll()
+                                "/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

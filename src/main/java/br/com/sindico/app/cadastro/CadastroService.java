@@ -51,7 +51,8 @@ public class CadastroService {
         usuario.setNome(nome);
         usuario.setEmail(emailNorm);
         usuario.setSenhaHash(passwordEncoder.encode(form.getSenha()));
-        usuario.setStatus("ativo");
+        // Novos cadastros ficam pendentes ate aprovacao pelo admin
+        usuario.setStatus("pendente");
         usuario = usuarioRepository.save(usuario);
 
         // 2. Cria condominio

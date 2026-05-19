@@ -19,7 +19,7 @@ public class NoOpEmailService implements EmailService {
     @Override
     public void enviarResetSenha(String destinatario, String nomeUsuario, String linkReset) {
         log.warn(
-                "[EMAIL NO-OP] Reset de senha para {} <{}>. Link (valido 1h): {}",
-                nomeUsuario, destinatario, linkReset);
+                "[EMAIL NO-OP] Reset de senha solicitado para {} <{}>. Link suprimido por seguranca.",
+                nomeUsuario, destinatario);
     }
 }
