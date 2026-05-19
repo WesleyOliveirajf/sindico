@@ -26,6 +26,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [toolbarGlow, setToolbarGlow] = useState({ x: "50%", y: "50%", visible: false });
   const allPages = Object.entries(PAGES);
 
   useEffect(() => {
@@ -63,6 +64,17 @@ function App() {
 
   function closeMenu() {
     setMenuOpen(false);
+  }
+
+  function handleToolbarMouseMove(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = `${event.clientX - rect.left}px`;
+    const y = `${event.clientY - rect.top}px`;
+    setToolbarGlow({ x, y, visible: true });
+  }
+
+  function handleToolbarMouseLeave() {
+    setToolbarGlow((prev) => ({ ...prev, visible: false }));
   }
 
   if (!authChecked) {
@@ -108,7 +120,16 @@ function App() {
       {menuOpen ? <button className="sidebar-backdrop" onClick={closeMenu} aria-label="Fechar menu" /> : null}
 
       <main className="content-wrap">
-        <header className="content-header">
+        <header
+          className="content-header"
+          onMouseMove={handleToolbarMouseMove}
+          onMouseLeave={handleToolbarMouseLeave}
+          style={{
+            "--toolbar-glow-x": toolbarGlow.x,
+            "--toolbar-glow-y": toolbarGlow.y,
+            "--toolbar-glow-opacity": toolbarGlow.visible ? 1 : 0,
+          }}
+        >
           <button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">
             Menu
           </button>
