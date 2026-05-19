@@ -212,3 +212,97 @@ export async function reativarUsuario(id) {
   if (!res.ok) throw new Error(data?.message || 'Nao foi possivel reativar o usuario')
   return data
 }
+
+// ---------------------------------------------------------------------------
+// IA / Assistente
+// ---------------------------------------------------------------------------
+
+/**
+ * Obtem a configuracao de IA do condominio atual.
+ */
+export async function getIAConfig() {
+  const res = await apiFetch('/api/ia/config')
+  if (!res.ok) throw new Error('Nao foi possivel carregar a configuracao de IA')
+  return parseJson(res)
+}
+
+/**
+ * Salva ou atualiza a configuracao de IA.
+ * @param {{ provider: string, apiKey?: string, model?: string, baseUrl?: string, ativo: boolean }} payload
+ */
+export async function saveIAConfig(payload) {
+  const res = await apiFetch('/api/ia/config', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Erro ao salvar configuracao de IA')
+  return data
+}
+
+/**
+ * Testa a conexao com o LLM configurado.
+ */
+export async function testIAConfig() {
+  const res = await apiFetch('/api/ia/config/testar', { method: 'POST' })
+  return parseJson(res)
+}
+
+/**
+ * Envia uma mensagem ao assistente de IA.
+ * @param {string} mensagem
+ * @returns {Promise<{ resposta: string }>}
+ */
+export async function iaChat(mensagem) {
+  const res = await apiFetch('/api/ia/chat', {
+    method: 'POST',
+    body: JSON.stringify({ mensagem }),
+  })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Erro ao comunicar com o assistente')
+  return data
+}
+
+/**
+ * Gera ata formal de uma reuniao via IA.
+ * @param {string} reuniaoId
+ * @returns {Promise<{ ata: string }>}
+ */
+export async function iaGerarAta(reuniaoId) {
+  const res = await apiFetch(`/api/ia/reuniao/${reuniaoId}/ata`, { method: 'POST' })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Erro ao gerar ata com IA')
+  return data
+}
+
+/**
+ * Solicita analise financeira dos gastos via IA.
+ * @param {{ mes?: number, ano?: number }} filtros
+ * @returns {Promise<{ analise: string }>}
+ */
+export async function iaAnalisarGastos(filtros = {}) {
+  const params = new URLSearchParams()
+  if (filtros.mes) params.set('mes', filtros.mes)
+  if (filtros.ano) params.set('ano', filtros.ano)
+  const qs = params.toString()
+  const path = qs ? `/api/ia/gastos/analise?${qs}` : '/api/ia/gastos/analise'
+  const res = await apiFetch(path)
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Erro ao analisar gastos com IA')
+  return data
+}
+
+/**
+ * Triagem inteligente de manutencao via IA.
+ * @param {string} descricao
+ * @returns {Promise<{ tipo: string, categoria: string, urgencia: string, tituloSugerido: string, observacoes: string }>}
+ */
+export async function iaTriarManutencao(descricao) {
+  const res = await apiFetch('/api/ia/manutencao/triar', {
+    method: 'POST',
+    body: JSON.stringify({ descricao }),
+  })
+  const data = await parseJson(res)
+  if (!res.ok) throw new Error(data?.message || 'Erro na triagem de manutencao')
+  return data
+}

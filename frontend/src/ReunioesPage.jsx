@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
+import { apiFetch, parseError, parseJson, iaGerarAta } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const INITIAL_FORM = {
@@ -22,6 +22,8 @@ function ReunioesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [ataLoading, setAtaLoading] = useState(null)
+  const [atas, setAtas] = useState({})
 
   async function load() {
     setLoading(true)
@@ -124,6 +126,34 @@ function ReunioesPage() {
             {r.decisoes ? <p style={{ marginTop: 6 }}><strong>Decisoes:</strong> {r.decisoes}</p> : null}
             {r.pendenciasGeradas ? <p style={{ marginTop: 6 }}><strong>Pendencias:</strong> {r.pendenciasGeradas}</p> : null}
             {r.participantes?.length ? <p className="muted">Participantes: {r.participantes.map((p) => p.nome).join(', ')}</p> : null}
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                className="submit"
+                style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}
+                disabled={ataLoading === r.id}
+                onClick={async () => {
+                  setAtaLoading(r.id)
+                  try {
+                    const data = await iaGerarAta(r.id)
+                    setAtas((prev) => ({ ...prev, [r.id]: data.ata }))
+                  } catch (err) {
+                    setAtas((prev) => ({ ...prev, [r.id]: `Erro: ${err.message}` }))
+                  } finally {
+                    setAtaLoading(null)
+                  }
+                }}
+              >
+                {ataLoading === r.id ? 'Gerando ata...' : 'Gerar Ata com IA'}
+              </button>
+            </div>
+
+            {atas[r.id] && (
+              <div className="ia-result-box" style={{ marginTop: 10 }}>
+                <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '0.88rem' }}>Ata gerada:</p>
+                <pre className="ia-result-text">{atas[r.id]}</pre>
+              </div>
+            )}
           </article>
         ))}
       </section>

@@ -8,6 +8,8 @@ import MoradoresPage from "./MoradoresPage";
 import ManutencoesPage from "./ManutencoesPage";
 import ReunioesPage from "./ReunioesPage";
 import GastosPage from "./GastosPage";
+import AssistenteIAPage from "./AssistenteIAPage";
+import ConfigIAPage from "./ConfigIAPage";
 import LoginPage from "./LoginPage";
 import AdminPage from "./AdminPage";
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
@@ -20,6 +22,11 @@ const PAGES = {
   moradores: "Moradores",
   prestadores: "Prestadores",
   gastos: "Gastos",
+};
+
+const IA_PAGES = {
+  assistente: "Assistente IA",
+  "config-ia": "Config. IA",
 };
 
 function App() {
@@ -126,6 +133,22 @@ function App() {
               {label}
             </NavLink>
           ))}
+
+          <div className="sidebar-divider" />
+          <span className="sidebar-section-label">IA</span>
+          {Object.entries(IA_PAGES).map(([key, label]) => (
+            <NavLink
+              key={key}
+              to={`/${key}`}
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `sidebar-link sidebar-link--ia ${isActive ? "sidebar-link--active" : ""}`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+
           {user?.roles?.includes("ROLE_ADMIN") && (
             <NavLink
               to="/admin"
@@ -176,6 +199,8 @@ function App() {
             <Route path="/moradores" element={<MoradoresPage />} />
             <Route path="/prestadores" element={<PrestadoresPage />} />
             <Route path="/gastos" element={<GastosPage />} />
+            <Route path="/assistente" element={<AssistenteIAPage />} />
+            <Route path="/config-ia" element={<ConfigIAPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/compromissos" replace />} />
           </Routes>

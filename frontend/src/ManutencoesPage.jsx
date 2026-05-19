@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
+import { apiFetch, parseError, parseJson, iaTriarManutencao } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
 const INITIAL_FORM = {
@@ -63,6 +63,10 @@ function ManutencoesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // IA triagem
+  const [triando, setTriando] = useState(false)
+  const [triagemMsg, setTriagemMsg] = useState('')
 
   async function load() {
     setLoading(true)
@@ -213,7 +217,40 @@ function ManutencoesPage() {
               placeholder="R$ 0,00"
             />
           </label>
-          <label className="full">Descricao<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} /></label>
+          <label className="full">Descricao<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} placeholder="Descreva o problema ou servico necessario..." /></label>
+
+          <div className="full" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="submit"
+              style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}
+              disabled={triando || !form.descricao.trim()}
+              onClick={async () => {
+                setTriando(true)
+                setTriagemMsg('')
+                try {
+                  const data = await iaTriarManutencao(form.descricao)
+                  setForm((prev) => ({
+                    ...prev,
+                    tipo: data.tipo || prev.tipo,
+                    categoria: data.categoria || prev.categoria,
+                    titulo: data.tituloSugerido || prev.titulo,
+                    observacoes: data.observacoes || prev.observacoes,
+                  }))
+                  const urgLabel = data.urgencia ? ` · Urgencia: ${data.urgencia}` : ''
+                  setTriagemMsg(`Triagem concluida: ${data.tipo} · ${data.categoria}${urgLabel}`)
+                } catch (err) {
+                  setTriagemMsg(`Erro: ${err.message}`)
+                } finally {
+                  setTriando(false)
+                }
+              }}
+            >
+              {triando ? 'Triando...' : 'Triar com IA'}
+            </button>
+            {triagemMsg && <span className="muted" style={{ fontSize: '0.82rem' }}>{triagemMsg}</span>}
+          </div>
+
           <label className="full">Observacoes<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
           <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar manutencao'}</button>
         </form>

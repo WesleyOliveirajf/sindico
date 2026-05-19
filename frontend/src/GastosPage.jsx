@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
+import { apiFetch, parseError, parseJson, iaAnalisarGastos } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
 
@@ -75,6 +75,10 @@ function GastosPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [pendingDeleteId, setPendingDeleteId] = useState(null)
+
+  // IA
+  const [analiseIA, setAnaliseIA] = useState('')
+  const [analiseLoading, setAnaliseLoading] = useState(false)
 
   // filtros
   const [filtroMes, setFiltroMes] = useState(currentMonth)
@@ -293,6 +297,40 @@ function GastosPage() {
             </button>
           </div>
         </form>
+      </section>
+
+      {/* Analise IA */}
+      <section className="panel" style={{ marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0, flex: 1 }}>Analise com IA</h2>
+          <button
+            className="submit"
+            style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}
+            disabled={analiseLoading}
+            onClick={async () => {
+              setAnaliseLoading(true)
+              setAnaliseIA('')
+              try {
+                const filtros = {}
+                if (filtroMes) filtros.mes = Number(filtroMes)
+                if (filtroAno) filtros.ano = Number(filtroAno)
+                const data = await iaAnalisarGastos(filtros)
+                setAnaliseIA(data.analise)
+              } catch (err) {
+                setAnaliseIA(`Erro: ${err.message}`)
+              } finally {
+                setAnaliseLoading(false)
+              }
+            }}
+          >
+            {analiseLoading ? 'Analisando...' : 'Analisar gastos com IA'}
+          </button>
+        </div>
+        {analiseIA && (
+          <div className="ia-result-box" style={{ marginTop: 12 }}>
+            <pre className="ia-result-text">{analiseIA}</pre>
+          </div>
+        )}
       </section>
 
       {/* Resumo */}
