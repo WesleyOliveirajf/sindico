@@ -27,7 +27,16 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolbarGlow, setToolbarGlow] = useState({ x: "50%", y: "50%", visible: false });
+  const [now, setNow] = useState(() => new Date());
   const allPages = Object.entries(PAGES);
+
+  const sindicoNome = user?.nome || user?.email || "Sindico";
+  const condominioNome =
+    user?.nomeCondominio || user?.condominioNome || user?.condominio?.nome || "Condominio";
+  const dataHoraTexto = now.toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  });
 
   useEffect(() => {
     let active = true;
@@ -55,6 +64,11 @@ function App() {
 
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+  }, []);
+
+  useEffect(() => {
+    const timerId = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timerId);
   }, []);
 
   async function handleLogout() {
@@ -133,7 +147,11 @@ function App() {
           <button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">
             Menu
           </button>
-          <span className="content-user" title={user.email}>{user.nome || user.email}</span>
+          <div className="content-user" title={`${condominioNome} · ${sindicoNome}`}>
+            <span className="content-user-line content-user-line--primary">{condominioNome}</span>
+            <span className="content-user-line">Sindico: {sindicoNome}</span>
+            <span className="content-user-line">Data e hora: {dataHoraTexto}</span>
+          </div>
         </header>
 
         <section className="page">

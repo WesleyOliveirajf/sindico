@@ -2,8 +2,11 @@ package br.com.sindico.app.auth;
 
 import br.com.sindico.app.cadastro.CadastroForm;
 import br.com.sindico.app.cadastro.CadastroService;
+import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
+import br.com.sindico.app.usuario.UsuarioRepository;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -24,14 +27,20 @@ public class AuthApiController {
     private final AuthenticationManager authenticationManager;
     private final CadastroService cadastroService;
     private final JwtService jwtService;
+    private final UsuarioRepository usuarioRepository;
+    private final CondominioRepository condominioRepository;
 
     public AuthApiController(
             AuthenticationManager authenticationManager,
             CadastroService cadastroService,
-            JwtService jwtService) {
+            JwtService jwtService,
+            UsuarioRepository usuarioRepository,
+            CondominioRepository condominioRepository) {
         this.authenticationManager = authenticationManager;
         this.cadastroService = cadastroService;
         this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
+        this.condominioRepository = condominioRepository;
     }
 
     public record LoginRequest(String email, String senha) {}
@@ -49,11 +58,9 @@ public class AuthApiController {
 
             if (auth.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
                 String token = jwtService.generateToken(principal);
-                return ResponseEntity.ok(Map.of(
-                        "email", principal.getEmail(),
-                        "condominioId", principal.getCondominioPadraoId().toString(),
-                        "token", token
-                ));
+                Map<String, Object> payload = buildAuthPayload(principal);
+                payload.put("token", token);
+                return ResponseEntity.ok(payload);
             }
 
             return ResponseEntity.ok(Map.of("email", auth.getName()));
@@ -100,10 +107,7 @@ public class AuthApiController {
         }
 
         if (authentication.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
-            return ResponseEntity.ok(Map.of(
-                    "email", principal.getEmail(),
-                    "condominioId", principal.getCondominioPadraoId().toString()
-            ));
+            return ResponseEntity.ok(buildAuthPayload(principal));
         }
 
         return ResponseEntity.ok(Map.of("email", authentication.getName()));
@@ -115,5 +119,24 @@ public class AuthApiController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         return ResponseEntity.ok(Map.of("message", "Sessao encerrada"));
+    }
+
+    private Map<String, Object> buildAuthPayload(UsuarioTenantPrincipal principal) {
+        String nomeSindico = usuarioRepository.findById(principal.getUsuarioId())
+                .map(u -> u.getNome())
+                .filter(nome -> nome != null && !nome.isBlank())
+                .orElse(principal.getEmail());
+
+        String nomeCondominio = condominioRepository.findById(principal.getCondominioPadraoId())
+                .map(c -> c.getNome())
+                .filter(nome -> nome != null && !nome.isBlank())
+                .orElse("Condominio");
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("email", principal.getEmail());
+        payload.put("nome", nomeSindico);
+        payload.put("condominioId", principal.getCondominioPadraoId().toString());
+        payload.put("nomeCondominio", nomeCondominio);
+        return payload;
     }
 }

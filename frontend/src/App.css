@@ -81,7 +81,7 @@
   --toolbar-glow-opacity: 0;
   position: relative;
   overflow: hidden;
-  height: 74px;
+  min-height: 74px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -119,11 +119,25 @@
 
 .content-user {
   color: var(--muted);
-  font-weight: 700;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.content-user-line {
+  font-size: 0.82rem;
+  line-height: 1.2;
   max-width: 52ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.content-user-line--primary {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #274f4a;
 }
 
 .sidebar-backdrop {
@@ -628,6 +642,17 @@ textarea {
   .layout,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .content-header {
+    align-items: flex-start;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .content-user {
+    justify-items: start;
+    text-align: left;
   }
 
   .history-row {
