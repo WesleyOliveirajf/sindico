@@ -58,31 +58,57 @@ public class AdminInitializerService implements CommandLineRunner {
 
         String emailNorm = adminEmail.trim().toLowerCase(Locale.ROOT);
 
+        Usuario admin;
+
         if (usuarioRepository.existsByEmailNormalizado(emailNorm)) {
-            log.info("[Admin] Admin master ja registrado: {}", emailNorm);
-            return;
+            // Conta ja existe — verificar se ja tem vinculo ADMIN
+            admin = usuarioRepository.findByEmailNormalizado(emailNorm).orElse(null);
+            if (admin == null) {
+                log.warn("[Admin] Inconsistencia: email existe mas usuario nao encontrado.");
+                return;
+            }
+
+            boolean jaEAdmin = usuarioCondominioRepository
+                    .findByUsuario_IdOrderByCondominio_NomeAsc(admin.getId())
+                    .stream()
+                    .anyMatch(v -> "ADMIN".equals(v.getPerfil()));
+
+            if (jaEAdmin) {
+                log.info("[Admin] Admin master ja configurado: {}", emailNorm);
+                return;
+            }
+
+            log.info("[Admin] Conta existente encontrada sem ROLE_ADMIN. Elevando: {}", emailNorm);
+        } else {
+            // Criar nova conta admin
+            admin = new Usuario();
+            admin.setNome("Administrador");
+            admin.setEmail(emailNorm);
+            admin.setSenhaHash(passwordEncoder.encode(adminPassword));
+            admin = usuarioRepository.save(admin);
+            log.info("[Admin] Nova conta admin criada: {}", emailNorm);
         }
 
-        // Cria condominio reservado para o admin
-        Condominio sistemaCondominio = new Condominio();
-        sistemaCondominio.setNome("Sistema Admin");
-        sistemaCondominio = condominioRepository.save(sistemaCondominio);
-
-        // Cria usuario admin
-        Usuario admin = new Usuario();
-        admin.setNome("Administrador");
-        admin.setEmail(emailNorm);
-        admin.setSenhaHash(passwordEncoder.encode(adminPassword));
+        // Garantir status ativo
         admin.setStatus("ativo");
         admin = usuarioRepository.save(admin);
 
-        // Vincula ao condominio sistema com perfil ADMIN
+        // Criar (ou reusar) condominio reservado para o admin
+        Condominio sistemaCondominio = condominioRepository
+                .findByNome("Sistema Admin")
+                .orElseGet(() -> {
+                    Condominio c = new Condominio();
+                    c.setNome("Sistema Admin");
+                    return condominioRepository.save(c);
+                });
+
+        // Adicionar vinculo ADMIN
         UsuarioCondominio vinculo = new UsuarioCondominio();
         vinculo.setUsuario(admin);
         vinculo.setCondominio(sistemaCondominio);
         vinculo.setPerfil("ADMIN");
         usuarioCondominioRepository.save(vinculo);
 
-        log.info("[Admin] Admin master criado com sucesso: {}", emailNorm);
+        log.info("[Admin] Admin master configurado com sucesso: {}", emailNorm);
     }
 }
