@@ -55,7 +55,7 @@ function ConfigIAPage({ embedded = false }) {
       const data = await saveIAConfig(payload)
       setConfigurado(data.configurado)
       setApiKey('')
-      setSuccess('Configuracao salva com sucesso.')
+      setSuccess('Configuração salva com sucesso.')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -85,11 +85,11 @@ function ConfigIAPage({ embedded = false }) {
       <>
         {!embedded && (
           <section className="hero">
-            <p className="eyebrow">Inteligencia Artificial</p>
-            <h1>Configuracao de IA</h1>
+            <p className="eyebrow">Inteligência Artificial</p>
+            <h1>Configuração de IA</h1>
           </section>
         )}
-        <LoadingState message="Carregando configuracao..." />
+        <LoadingState message="Carregando configuração..." />
       </>
     )
   }
@@ -98,10 +98,10 @@ function ConfigIAPage({ embedded = false }) {
     <>
       {!embedded && (
         <section className="hero">
-          <p className="eyebrow">Inteligencia Artificial</p>
-          <h1>Configuracao de IA</h1>
+          <p className="eyebrow">Inteligência Artificial</p>
+          <h1>Configuração de IA</h1>
           <p className="subtitle">
-            Configure seu provedor de IA para habilitar o assistente, geracao de atas, analise de gastos e triagem de manutencoes.
+            Configure seu provedor de IA para habilitar o assistente, geração de atas, análise de gastos e triagem de manutenções.
           </p>
         </section>
       )}
@@ -132,12 +132,12 @@ function ConfigIAPage({ embedded = false }) {
               maxLength={100}
             />
             <span className="muted" style={{ fontSize: '0.78rem' }}>
-              Deixe vazio para usar o modelo padrao do provedor.
+              Deixe vazio para usar o modelo padrão do provedor.
             </span>
           </label>
 
           <label className="full">
-            Chave de API {configurado ? '(ja configurada — preencha apenas para alterar)' : '*'}
+            Chave de API {configurado ? '(já configurada — preencha apenas para alterar)' : '*'}
             <input
               type="password"
               value={apiKey}
@@ -170,7 +170,7 @@ function ConfigIAPage({ embedded = false }) {
 
           <div className="full" style={{ display: 'flex', gap: 10 }}>
             <button type="submit" disabled={saving} className="submit">
-              {saving ? 'Salvando...' : 'Salvar configuracao'}
+              {saving ? 'Salvando...' : 'Salvar configuração'}
             </button>
             <button
               type="button"
@@ -179,7 +179,7 @@ function ConfigIAPage({ embedded = false }) {
               style={{ background: '#475569' }}
               onClick={handleTest}
             >
-              {testing ? 'Testando...' : 'Testar conexao'}
+              {testing ? 'Testando...' : 'Testar conexão'}
             </button>
           </div>
         </form>
@@ -191,12 +191,12 @@ function ConfigIAPage({ embedded = false }) {
           >
             {testResult.status === 'ok' ? (
               <>
-                <strong>Conexao OK!</strong> Provider: {testResult.provider} · Modelo: {testResult.model}
+                <strong>Conexão OK!</strong> Provider: {testResult.provider} · Modelo: {testResult.model}
                 {testResult.resposta ? ` · Resposta: "${testResult.resposta}"` : ''}
               </>
             ) : (
               <>
-                <strong>Falha na conexao.</strong> {testResult.message}
+                <strong>Falha na conexão.</strong> {testResult.message}
               </>
             )}
           </div>
@@ -207,17 +207,17 @@ function ConfigIAPage({ embedded = false }) {
         <h2>Como funciona</h2>
         <div style={{ color: 'var(--muted)', lineHeight: 1.65, fontSize: '0.92rem' }}>
           <p style={{ margin: '0 0 10px' }}>
-            Ao configurar e ativar a IA, voce habilita as seguintes funcionalidades:
+            Ao configurar e ativar a IA, você habilita as seguintes funcionalidades:
           </p>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            <li><strong>Assistente de Chat</strong> — pergunte sobre gestao de condominios, legislacao e melhores praticas.</li>
-            <li><strong>Gerar Ata</strong> — gere atas formais a partir dos dados de qualquer reuniao registrada.</li>
-            <li><strong>Analise de Gastos</strong> — receba analise financeira, alertas e sugestoes de economia.</li>
-            <li><strong>Triagem de Manutencao</strong> — descreva um problema e a IA sugere tipo, categoria e urgencia.</li>
+            <li><strong>Assistente de Chat</strong> — pergunte sobre gestão de condomínios, legislação e melhores práticas.</li>
+            <li><strong>Gerar Ata</strong> — gere atas formais a partir dos dados de qualquer reunião registrada.</li>
+            <li><strong>Análise de Gastos</strong> — receba análise financeira, alertas e sugestões de economia.</li>
+            <li><strong>Triagem de Manutenção</strong> — descreva um problema e a IA sugere tipo, categoria e urgência.</li>
           </ul>
           <p style={{ margin: '10px 0 0' }}>
-            A chave de API e armazenada de forma criptografada (AES-GCM) no banco de dados.
-            Cada condominio tem sua propria configuracao independente.
+            A chave de API é armazenada de forma criptografada (AES-GCM) no banco de dados.
+            Cada condomínio tem sua própria configuração independente.
           </p>
         </div>
       </section>

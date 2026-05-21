@@ -70,7 +70,7 @@ export async function parseJson(response) {
   const contentType = response.headers.get('content-type') || ''
   if (!contentType.includes('application/json')) {
     throw new Error(
-      `Resposta inesperada do servidor (${response.status}). Verifique se o backend esta rodando e se o login foi realizado.`
+      `Resposta inesperada do servidor (${response.status}). Verifique se o backend está rodando e se o login foi realizado.`
     )
   }
   return response.json()
@@ -86,8 +86,8 @@ export async function parseError(response, fallbackMessage) {
 }
 
 /**
- * Verifica se o usuario esta autenticado.
- * Retorna os dados do usuario ou null se nao autenticado.
+ * Verifica se o usuário está autenticado.
+ * Retorna os dados do usuário ou null se não autenticado.
  *
  * @returns {Promise<{email: string, condominioId: string} | null>}
  */
@@ -106,8 +106,8 @@ export async function getMe() {
 }
 
 /**
- * Autentica o usuario com email e senha.
- * Em caso de sucesso retorna os dados do usuario; em caso de falha lanca um erro.
+ * Autentica o usuário com email e senha.
+ * Em caso de sucesso retorna os dados do usuário; em caso de falha lança um erro.
  *
  * @param {string} email
  * @param {string} senha
@@ -120,7 +120,7 @@ export async function login(email, senha) {
   })
   const data = await parseJson(res)
   if (!res.ok) {
-    throw new Error(data?.error || 'Credenciais invalidas')
+    throw new Error(data?.error || 'Credenciais inválidas')
   }
   if (data?.token) {
     setToken(data.token)
@@ -129,7 +129,7 @@ export async function login(email, senha) {
 }
 
 /**
- * Cadastra um novo sindico com seu condominio.
+ * Cadastra um novo síndico com seu condomínio.
  *
  * @param {{nome: string, email: string, nomeCondominio: string, senha: string, confirmarSenha: string}} payload
  */
@@ -140,13 +140,13 @@ export async function register(payload) {
   })
   const data = await parseJson(res)
   if (!res.ok) {
-    throw new Error(data?.error || 'Nao foi possivel concluir o cadastro')
+    throw new Error(data?.error || 'Não foi possível concluir o cadastro')
   }
   return data
 }
 
 /**
- * Encerra a sessao do usuario.
+ * Encerra a sessão do usuário.
  */
 export async function logout() {
   try {
@@ -162,54 +162,54 @@ export async function logout() {
 // ---------------------------------------------------------------------------
 
 /**
- * Retorna metricas gerais da aplicacao (requer ROLE_ADMIN).
+ * Retorna métricas gerais da aplicação (requer ROLE_ADMIN).
  */
 export async function getAdminStats() {
   const res = await apiFetch('/api/admin/stats')
-  if (!res.ok) throw new Error('Nao foi possivel carregar as estatisticas')
+  if (!res.ok) throw new Error('Não foi possível carregar as estatísticas')
   return parseJson(res)
 }
 
 /**
- * Lista todos os usuarios cadastrados (requer ROLE_ADMIN).
+ * Lista todos os usuários cadastrados (requer ROLE_ADMIN).
  * @returns {Promise<Array>}
  */
 export async function getAdminUsuarios() {
   const res = await apiFetch('/api/admin/usuarios')
-  if (!res.ok) throw new Error('Nao foi possivel carregar os usuarios')
+  if (!res.ok) throw new Error('Não foi possível carregar os usuários')
   return parseJson(res)
 }
 
 /**
- * Aprova um usuario pendente (requer ROLE_ADMIN).
+ * Aprova um usuário pendente (requer ROLE_ADMIN).
  * @param {string} id
  */
 export async function aprovarUsuario(id) {
   const res = await apiFetch(`/api/admin/usuarios/${id}/aprovar`, { method: 'POST' })
   const data = await parseJson(res)
-  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel aprovar o usuario')
+  if (!res.ok) throw new Error(data?.message || 'Não foi possível aprovar o usuário')
   return data
 }
 
 /**
- * Rejeita / desativa um usuario (requer ROLE_ADMIN).
+ * Rejeita / desativa um usuário (requer ROLE_ADMIN).
  * @param {string} id
  */
 export async function rejeitarUsuario(id) {
   const res = await apiFetch(`/api/admin/usuarios/${id}/rejeitar`, { method: 'POST' })
   const data = await parseJson(res)
-  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel rejeitar o usuario')
+  if (!res.ok) throw new Error(data?.message || 'Não foi possível rejeitar o usuário')
   return data
 }
 
 /**
- * Reativa um usuario inativo (requer ROLE_ADMIN).
+ * Reativa um usuário inativo (requer ROLE_ADMIN).
  * @param {string} id
  */
 export async function reativarUsuario(id) {
   const res = await apiFetch(`/api/admin/usuarios/${id}/reativar`, { method: 'POST' })
   const data = await parseJson(res)
-  if (!res.ok) throw new Error(data?.message || 'Nao foi possivel reativar o usuario')
+  if (!res.ok) throw new Error(data?.message || 'Não foi possível reativar o usuário')
   return data
 }
 
@@ -218,16 +218,16 @@ export async function reativarUsuario(id) {
 // ---------------------------------------------------------------------------
 
 /**
- * Obtem a configuracao de IA do condominio atual.
+ * Obtém a configuração de IA do condomínio atual.
  */
 export async function getIAConfig() {
   const res = await apiFetch('/api/ia/config')
-  if (!res.ok) throw new Error('Nao foi possivel carregar a configuracao de IA')
+  if (!res.ok) throw new Error('Não foi possível carregar a configuração de IA')
   return parseJson(res)
 }
 
 /**
- * Salva ou atualiza a configuracao de IA.
+ * Salva ou atualiza a configuração de IA.
  * @param {{ provider: string, apiKey?: string, model?: string, baseUrl?: string, ativo: boolean }} payload
  */
 export async function saveIAConfig(payload) {
@@ -236,12 +236,12 @@ export async function saveIAConfig(payload) {
     body: JSON.stringify(payload),
   })
   const data = await parseJson(res)
-  if (!res.ok) throw new Error(data?.message || 'Erro ao salvar configuracao de IA')
+  if (!res.ok) throw new Error(data?.message || 'Erro ao salvar configuração de IA')
   return data
 }
 
 /**
- * Testa a conexao com o LLM configurado.
+ * Testa a conexão com o LLM configurado.
  */
 export async function testIAConfig() {
   const res = await apiFetch('/api/ia/config/testar', { method: 'POST' })
@@ -264,7 +264,7 @@ export async function iaChat(mensagem) {
 }
 
 /**
- * Gera ata formal de uma reuniao via IA.
+ * Gera ata formal de uma reunião via IA.
  * @param {string} reuniaoId
  * @returns {Promise<{ ata: string }>}
  */
@@ -276,7 +276,7 @@ export async function iaGerarAta(reuniaoId) {
 }
 
 /**
- * Solicita analise financeira dos gastos via IA.
+ * Solicita análise financeira dos gastos via IA.
  * @param {{ mes?: number, ano?: number }} filtros
  * @returns {Promise<{ analise: string }>}
  */
@@ -293,7 +293,7 @@ export async function iaAnalisarGastos(filtros = {}) {
 }
 
 /**
- * Triagem inteligente de manutencao via IA.
+ * Triagem inteligente de manutenção via IA.
  * @param {string} descricao
  * @returns {Promise<{ tipo: string, categoria: string, urgencia: string, tituloSugerido: string, observacoes: string }>}
  */
@@ -303,6 +303,6 @@ export async function iaTriarManutencao(descricao) {
     body: JSON.stringify({ descricao }),
   })
   const data = await parseJson(res)
-  if (!res.ok) throw new Error(data?.message || 'Erro na triagem de manutencao')
+  if (!res.ok) throw new Error(data?.message || 'Erro na triagem de manutenção')
   return data
 }

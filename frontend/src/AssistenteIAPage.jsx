@@ -37,13 +37,13 @@ function AssistenteIAPage() {
         { role: 'assistant', content: data.resposta, ts: Date.now() },
       ])
     } catch (err) {
-      const isNotConfigured = err.message?.includes('nao configurada') || err.message?.includes('desativada')
+      const isNotConfigured = err.message?.includes('nao configurada') || err.message?.includes('não configurada') || err.message?.includes('desativada')
       setMessages((prev) => [
         ...prev,
         {
           role: 'error',
           content: isNotConfigured
-            ? 'A IA nao esta configurada para este condomínio. Solicite ao admin para configurar o provedor, modelo e chave de API na aba IA do painel administrativo.'
+            ? 'A IA não está configurada para este condomínio. Solicite ao admin para configurar o provedor, modelo e chave de API na aba IA do painel administrativo.'
             : err.message,
           ts: Date.now(),
         },
@@ -70,10 +70,10 @@ function AssistenteIAPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Inteligencia Artificial</p>
+        <p className="eyebrow">Inteligência Artificial</p>
         <h1>Assistente IA + RAG</h1>
         <p className="subtitle">
-          Tire duvidas gerais ou faça perguntas especificas sobre as manutencoes, gastos, moradores, reunioes e compromissos do seu condominio.
+          Tire dúvidas gerais ou faça perguntas específicas sobre as manutenções, gastos, moradores, reuniões e compromissos do seu condomínio.
         </p>
       </section>
 
@@ -83,7 +83,7 @@ function AssistenteIAPage() {
             <div className="ia-chat-empty">
               <p style={{ margin: '0 0 12px', fontWeight: 600 }}>Como posso ajudar?</p>
               <p className="muted" style={{ margin: '0 0 14px', fontSize: '0.88rem' }}>
-                Selecione uma sugestao ou escreva sua pergunta:
+                Selecione uma sugestão ou escreva sua pergunta:
               </p>
               <div className="ia-suggestions">
                 {SUGGESTIONS.map((s, i) => (
@@ -106,7 +106,7 @@ function AssistenteIAPage() {
               className={`ia-chat-bubble ia-chat-bubble--${msg.role}`}
             >
               <div className="ia-chat-bubble-label">
-                {msg.role === 'user' ? 'Voce' : msg.role === 'error' ? 'Erro' : 'Assistente'}
+                {msg.role === 'user' ? 'Você' : msg.role === 'error' ? 'Erro' : 'Assistente'}
               </div>
               <div className="ia-chat-bubble-content">{msg.content}</div>
             </div>

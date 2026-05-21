@@ -6,7 +6,7 @@ import Button from './components/ui/Button'
 import Card from './components/ui/Card'
 import Input, { Select, Textarea } from './components/ui/Input'
 
-const TIPO_LABELS = { MANUTENCAO: 'Manutencao', REUNIAO: 'Reuniao', OUTROS: 'Outros' }
+const TIPO_LABELS = { MANUTENCAO: 'Manutenção', REUNIAO: 'Reunião', OUTROS: 'Outros' }
 
 const INITIAL_FORM = {
   titulo: '',
@@ -83,7 +83,7 @@ function CompromissosPage() {
     try {
       const res = await apiFetch(`/api/compromissos/${id}/concluir`, { method: 'PATCH' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao concluir compromisso.'))
-      setSuccess('Compromisso marcado como concluido.')
+      setSuccess('Compromisso marcado como concluído.')
       await load()
     } catch (err) {
       setError(err.message)
@@ -96,7 +96,7 @@ function CompromissosPage() {
     try {
       const res = await apiFetch(`/api/compromissos/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir compromisso.'))
-      setSuccess('Compromisso excluido.')
+      setSuccess('Compromisso excluído.')
       setPendingDeleteId(null)
       await load()
     } catch (err) {
@@ -126,9 +126,9 @@ function CompromissosPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Agenda do condominio</p>
+        <p className="eyebrow">Agenda do condomínio</p>
         <h1>Compromissos</h1>
-        <p className="subtitle">Gerencie compromissos, tarefas e prazos do condominio em um so lugar.</p>
+        <p className="subtitle">Gerencie compromissos, tarefas e prazos do condomínio em um só lugar.</p>
       </section>
 
       <SuccessState message={success} />
@@ -145,7 +145,7 @@ function CompromissosPage() {
             className={`mode-button${filtro === 'concluidos' ? ' mode-button--active' : ''}`}
             onClick={() => setFiltro('concluidos')}
           >
-            Concluidos{concluidos.length > 0 ? ` (${concluidos.length})` : ''}
+            Concluídos{concluidos.length > 0 ? ` (${concluidos.length})` : ''}
           </button>
         </div>
         <Button onClick={() => setShowForm((v) => !v)} style={{ marginLeft: 'auto' }}>
@@ -158,26 +158,26 @@ function CompromissosPage() {
           <h2>Novo Compromisso</h2>
           <form onSubmit={onSubmit} className="form-grid">
             <label className="full">
-              Titulo *
+              Título *
               <Input
                 name="titulo"
                 value={form.titulo}
                 onChange={onChange}
                 required
                 maxLength={150}
-                placeholder="Ex: Vistoria da bomba d'agua"
+                placeholder="Ex: Vistoria da bomba d'água"
               />
             </label>
             <label>
-              Data de inicio *
+              Data de início *
               <Input type="date" name="inicioEm" value={form.inicioEm} onChange={onChange} required />
             </label>
             <label>
               Tipo
               <Select name="tipo" value={form.tipo} onChange={onChange}>
                 <option value="OUTROS">Outros</option>
-                <option value="MANUTENCAO">Manutencao</option>
-                <option value="REUNIAO">Reuniao</option>
+                <option value="MANUTENCAO">Manutenção</option>
+                <option value="REUNIAO">Reunião</option>
               </Select>
             </label>
             <label className="full">
@@ -187,11 +187,11 @@ function CompromissosPage() {
                 value={form.local}
                 onChange={onChange}
                 maxLength={150}
-                placeholder="Ex: Sala de reunioes, Subsolo..."
+                placeholder="Ex: Sala de reuniões, Subsolo..."
               />
             </label>
             <label className="full">
-              Descricao
+              Descrição
               <Textarea
                 name="descricao"
                 value={form.descricao}
@@ -215,7 +215,7 @@ function CompromissosPage() {
             message={
               filtro === 'abertos'
                 ? 'Nenhum compromisso em aberto. Clique em "+ Novo Compromisso" para adicionar.'
-                : 'Nenhum compromisso concluido ainda.'
+                : 'Nenhum compromisso concluído ainda.'
             }
           />
         ) : null}
@@ -230,14 +230,14 @@ function CompromissosPage() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8 }}>
                 {!concluido ? (
                   <button
-                    title="Marcar como concluido"
+                    title="Marcar como concluído"
                     onClick={() => onConcluir(c.id)}
                     style={{
                       flexShrink: 0, marginTop: 3, width: 20, height: 20,
                       border: '2px solid var(--border)', borderRadius: 6,
                       background: '#fff', cursor: 'pointer', padding: 0,
                     }}
-                    aria-label="Marcar como concluido"
+                    aria-label="Marcar como concluído"
                   />
                 ) : (
                   <span style={{
@@ -258,7 +258,7 @@ function CompromissosPage() {
                     <span className="tag" style={concluido
                       ? {}
                       : { background: '#fef9c3', color: '#854d0e' }}>
-                      {concluido ? 'Concluido' : 'Em aberto'}
+                      {concluido ? 'Concluído' : 'Em aberto'}
                     </span>
                     {c.tipo && c.tipo !== 'OUTROS' && (
                       <span className="tag" style={{ background: '#e0f2fe', color: '#0369a1' }}>
@@ -272,8 +272,8 @@ function CompromissosPage() {
               {c.descricao ? <p style={{ margin: '0 0 8px' }}>{c.descricao}</p> : null}
 
               <div className="muted" style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>
-                {c.inicioEm && <div>Inicio: {formatData(c.inicioEm)}</div>}
-                {c.fimEm && <div>Concluido em: {formatDataHora(c.fimEm)}</div>}
+                {c.inicioEm && <div>Início: {formatData(c.inicioEm)}</div>}
+                {c.fimEm && <div>Concluído em: {formatDataHora(c.fimEm)}</div>}
                 {c.local && <div>Local: {c.local}</div>}
               </div>
 
@@ -288,7 +288,7 @@ function CompromissosPage() {
       <ConfirmDialog
         open={pendingDeleteId != null}
         title="Excluir compromisso"
-        message="Deseja excluir este compromisso? Esta acao nao pode ser desfeita."
+        message="Deseja excluir este compromisso? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         onCancel={() => setPendingDeleteId(null)}
         onConfirm={() => onDelete(pendingDeleteId)}

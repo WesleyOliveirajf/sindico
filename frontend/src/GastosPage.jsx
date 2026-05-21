@@ -4,14 +4,14 @@ import { EmptyState, ErrorState, LoadingState, SuccessState } from './components
 import ConfirmDialog from './components/ConfirmDialog'
 
 const TIPOS = [
-  { value: 'AGUA',          label: 'Agua' },
+  { value: 'AGUA',          label: 'Água' },
   { value: 'LUZ',           label: 'Luz / Energia' },
-  { value: 'GAS',           label: 'Gas' },
+  { value: 'GAS',           label: 'Gás' },
   { value: 'SEGURO',        label: 'Seguro' },
   { value: 'LIMPEZA',       label: 'Limpeza' },
-  { value: 'MANUTENCAO',    label: 'Manutencao' },
-  { value: 'ADMINISTRACAO', label: 'Administracao' },
-  { value: 'SALARIOS',      label: 'Salarios / Funcionarios' },
+  { value: 'MANUTENCAO',    label: 'Manutenção' },
+  { value: 'ADMINISTRACAO', label: 'Administração' },
+  { value: 'SALARIOS',      label: 'Salários / Funcionários' },
   { value: 'IMPOSTOS',      label: 'Impostos / Taxas' },
   { value: 'OUTROS',        label: 'Outros' },
 ]
@@ -19,7 +19,7 @@ const TIPOS = [
 const MESES = [
   { value: '1',  label: 'Janeiro' },
   { value: '2',  label: 'Fevereiro' },
-  { value: '3',  label: 'Marco' },
+  { value: '3',  label: 'Março' },
   { value: '4',  label: 'Abril' },
   { value: '5',  label: 'Maio' },
   { value: '6',  label: 'Junho' },
@@ -165,32 +165,32 @@ function GastosPage() {
 
   const total = items.reduce((sum, g) => sum + Number(g.valor || 0), 0)
 
-  // anos disponiveis para o filtro (5 anos para tras + atual + proximo)
+  // anos disponíveis para o filtro (5 anos para trás + atual + próximo)
   const anos = Array.from({ length: 7 }, (_, i) => String(currentYear - 5 + i))
 
   return (
     <>
       <section className="hero">
         <p className="eyebrow">Financeiro</p>
-        <h1>Gastos do Condominio</h1>
-        <p className="subtitle">Registre e acompanhe todos os gastos fixos e variaveis do condominio.</p>
+        <h1>Gastos do Condomínio</h1>
+        <p className="subtitle">Registre e acompanhe todos os gastos fixos e variáveis do condomínio.</p>
       </section>
 
       <SuccessState message={success} />
 
-      {/* Formulario de cadastro */}
+      {/* Formulário de cadastro */}
       <section className="panel" style={{ marginTop: 20 }}>
         <h2>Novo gasto</h2>
         <form onSubmit={onSubmit} className="form-grid">
           <label>
-            Descricao *
+            Descrição *
             <input
               name="descricao"
               value={form.descricao}
               onChange={onChange}
               required
               maxLength={255}
-              placeholder="Ex: Conta de agua de maio"
+              placeholder="Ex: Conta de água de maio"
             />
           </label>
 
@@ -236,17 +236,17 @@ function GastosPage() {
               onChange={onChange}
               style={{ width: 'auto', marginTop: 0 }}
             />
-            Gasto fixo (recorrente todo mes)
+            Gasto fixo (recorrente todo mês)
           </label>
 
           <label className="full">
-            Observacoes
+            Observações
             <textarea
               name="observacoes"
               value={form.observacoes}
               onChange={onChange}
               rows={2}
-              placeholder="Informacoes adicionais..."
+              placeholder="Informações adicionais..."
             />
           </label>
 
@@ -261,7 +261,7 @@ function GastosPage() {
         <h2>Filtros</h2>
         <form onSubmit={onFiltrar} className="form-grid">
           <label>
-            Mes
+            Mês
             <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)}>
               <option value="">Todos os meses</option>
               {MESES.map((m) => (
@@ -299,10 +299,10 @@ function GastosPage() {
         </form>
       </section>
 
-      {/* Analise IA */}
+      {/* Análise IA */}
       <section className="panel" style={{ marginTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0, flex: 1 }}>Analise com IA</h2>
+          <h2 style={{ margin: 0, flex: 1 }}>Análise com IA</h2>
           <button
             className="submit"
             style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}
@@ -339,7 +339,7 @@ function GastosPage() {
           <p style={{ margin: 0 }}>
             <strong>{items.length}</strong> {items.length === 1 ? 'gasto encontrado' : 'gastos encontrados'} &mdash; Total:{' '}
             <strong>{formatCurrency(total)}</strong>
-            {' '}({items.filter((g) => g.fixo).length} fixos, {items.filter((g) => !g.fixo).length} variaveis)
+            {' '}({items.filter((g) => g.fixo).length} fixos, {items.filter((g) => !g.fixo).length} variáveis)
           </p>
         </section>
       )}
@@ -356,7 +356,7 @@ function GastosPage() {
                 <h3 style={{ margin: 0 }}>{g.descricao}</h3>
                 <p className="muted" style={{ marginTop: 4 }}>
                   {tipoLabel(g.tipo)}
-                  {g.fixo ? ' · Fixo' : ' · Variavel'}
+                  {g.fixo ? ' · Fixo' : ' · Variável'}
                   {' · '}{formatDate(g.dataGasto)}
                 </p>
                 <p style={{ marginTop: 6, fontWeight: 600 }}>{formatCurrency(g.valor)}</p>
@@ -385,7 +385,7 @@ function GastosPage() {
       <ConfirmDialog
         open={pendingDeleteId != null}
         title="Remover gasto"
-        message="Deseja remover este gasto? Esta acao nao pode ser desfeita."
+        message="Deseja remover este gasto? Esta ação não pode ser desfeita."
         confirmLabel="Remover"
         onCancel={() => setPendingDeleteId(null)}
         onConfirm={() => onDeletar(pendingDeleteId)}

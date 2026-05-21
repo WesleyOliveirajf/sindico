@@ -30,7 +30,7 @@ function ReunioesPage() {
     setError('')
     try {
       const res = await apiFetch('/api/reunioes')
-      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar reunioes.'))
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar reuniões.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -74,9 +74,9 @@ function ReunioesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar reuniao.'))
+        throw new Error(await parseError(res, 'Erro ao registrar reunião.'))
       }
-      setSuccess('Reuniao registrada com sucesso.')
+      setSuccess('Reunião registrada com sucesso.')
       setForm(INITIAL_FORM)
       await load()
     } catch (err) {
@@ -89,42 +89,42 @@ function ReunioesPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Gestao de reunioes</p>
-        <h1>Reunioes</h1>
-        <p className="subtitle">Registre pauta, decisoes, participantes e pendencias das reunioes do condominio.</p>
+        <p className="eyebrow">Gestão de reuniões</p>
+        <h1>Reuniões</h1>
+        <p className="subtitle">Registre pauta, decisões, participantes e pendências das reuniões do condomínio.</p>
       </section>
 
       <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova reuniao</h2>
+        <h2>Nova reunião</h2>
         <form onSubmit={onSubmit} className="form-grid">
-          <label>Titulo *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
-          <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="ORDINARIA">Ordinaria</option><option value="EXTRAORDINARIA">Extraordinaria</option><option value="CONSELHO">Conselho</option><option value="ASSEMBLEIA">Assembleia</option></select></label>
-          <label>Data e horario *<input type="datetime-local" name="dataHora" value={form.dataHora} onChange={onChange} required /></label>
+          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
+          <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="ORDINARIA">Ordinária</option><option value="EXTRAORDINARIA">Extraordinária</option><option value="CONSELHO">Conselho</option><option value="ASSEMBLEIA">Assembleia</option></select></label>
+          <label>Data e horário *<input type="datetime-local" name="dataHora" value={form.dataHora} onChange={onChange} required /></label>
           <label>Local<input name="local" value={form.local} onChange={onChange} maxLength={150} /></label>
           <label className="full">Link<input name="link" value={form.link} onChange={onChange} maxLength={500} /></label>
           <label className="full">Pauta<textarea name="pauta" value={form.pauta} onChange={onChange} rows={2} /></label>
           <label className="full">Resumo<textarea name="resumo" value={form.resumo} onChange={onChange} rows={2} /></label>
-          <label className="full">Decisoes<textarea name="decisoes" value={form.decisoes} onChange={onChange} rows={2} /></label>
-          <label className="full">Pendencias geradas<textarea name="pendenciasGeradas" value={form.pendenciasGeradas} onChange={onChange} rows={2} /></label>
-          <label className="full">Participantes (1 por linha)<textarea name="participantesTexto" value={form.participantesTexto} onChange={onChange} rows={3} placeholder="Maria Silva\nJoao Souza" /></label>
-          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar reuniao'}</button>
+          <label className="full">Decisões<textarea name="decisoes" value={form.decisoes} onChange={onChange} rows={2} /></label>
+          <label className="full">Pendências geradas<textarea name="pendenciasGeradas" value={form.pendenciasGeradas} onChange={onChange} rows={2} /></label>
+          <label className="full">Participantes (1 por linha)<textarea name="participantesTexto" value={form.participantesTexto} onChange={onChange} rows={3} placeholder="Maria Silva\nJoão Souza" /></label>
+          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar reunião'}</button>
         </form>
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <LoadingState message="Carregando reunioes..." /> : null}
+        {loading ? <LoadingState message="Carregando reuniões..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
-        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma reuniao registrada." /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma reunião registrada." /> : null}
         {items.map((r) => (
           <article key={r.id} className="item">
             <h3 style={{ margin: 0 }}>{r.titulo}</h3>
             <p className="muted" style={{ marginTop: 4 }}>{r.tipo} · {new Date(r.dataHora).toLocaleString('pt-BR')}</p>
             {r.local ? <p className="muted">Local: {r.local}</p> : null}
             {r.pauta ? <p style={{ marginTop: 6 }}><strong>Pauta:</strong> {r.pauta}</p> : null}
-            {r.decisoes ? <p style={{ marginTop: 6 }}><strong>Decisoes:</strong> {r.decisoes}</p> : null}
-            {r.pendenciasGeradas ? <p style={{ marginTop: 6 }}><strong>Pendencias:</strong> {r.pendenciasGeradas}</p> : null}
+            {r.decisoes ? <p style={{ marginTop: 6 }}><strong>Decisões:</strong> {r.decisoes}</p> : null}
+            {r.pendenciasGeradas ? <p style={{ marginTop: 6 }}><strong>Pendências:</strong> {r.pendenciasGeradas}</p> : null}
             {r.participantes?.length ? <p className="muted">Participantes: {r.participantes.map((p) => p.nome).join(', ')}</p> : null}
 
             <div style={{ marginTop: 10 }}>

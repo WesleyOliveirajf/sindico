@@ -15,9 +15,9 @@ import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
 
 const PAGES = {
   compromissos: "Compromissos",
-  manutencoes: "Manutencoes",
-  reunioes: "Reunioes",
-  anotacoes: "Anotacoes",
+  manutencoes: "Manutenções",
+  reunioes: "Reuniões",
+  anotacoes: "Anotações",
   moradores: "Moradores",
   prestadores: "Prestadores",
   gastos: "Gastos",
@@ -28,7 +28,7 @@ const IA_PAGES = {
 };
 
 function App() {
-  // null = ainda verificando; false = nao autenticado; objeto = usuario logado
+  // null = ainda verificando; false = não autenticado; objeto = usuário logado
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -37,9 +37,9 @@ function App() {
   const allPages = Object.entries(PAGES);
   const isAdmin = user?.roles?.includes("ROLE_ADMIN");
 
-  const sindicoNome = user?.nome || user?.email || "Sindico";
+  const sindicoNome = user?.nome || user?.email || "Síndico";
   const condominioNome =
-    user?.nomeCondominio || user?.condominioNome || user?.condominio?.nome || "Condominio";
+    user?.nomeCondominio || user?.condominioNome || user?.condominio?.nome || "Condomínio";
   const dataHoraTexto = now.toLocaleString("pt-BR", {
     dateStyle: "short",
     timeStyle: "medium",
@@ -102,10 +102,10 @@ function App() {
     return (
       <main className="page">
         <nav className="nav">
-          <span className="nav-brand">Sindico App</span>
+          <span className="nav-brand">Síndico App</span>
         </nav>
         <section className="hero">
-          <p className="muted">Verificando sessao...</p>
+          <p className="muted">Verificando sessão...</p>
         </section>
       </main>
     );
@@ -118,8 +118,8 @@ function App() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
-        <div className="sidebar-brand">Sindico App</div>
-        <nav className="sidebar-nav" aria-label="Modulos">
+        <div className="sidebar-brand">Síndico App</div>
+        <nav className="sidebar-nav" aria-label="Módulos">
           {allPages.map(([key, label]) => (
             <NavLink
               key={key}
@@ -183,7 +183,7 @@ function App() {
           </button>
           <div className="content-user" title={`${condominioNome} · ${sindicoNome}`}>
             <span className="content-user-line content-user-line--primary">{condominioNome}</span>
-            <span className="content-user-line">Sindico: {sindicoNome}</span>
+            <span className="content-user-line">Síndico: {sindicoNome}</span>
             <span className="content-user-line">Data e hora: {dataHoraTexto}</span>
           </div>
         </header>

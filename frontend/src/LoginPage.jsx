@@ -34,16 +34,16 @@ function LoginPage({ onLogin }) {
   return (
     <main className="page">
       <nav className="nav">
-        <span className="nav-brand">Sindico App</span>
+        <span className="nav-brand">Síndico App</span>
       </nav>
 
       <section className="hero">
-        <p className="eyebrow">Gestao de condominio</p>
+        <p className="eyebrow">Gestão de condomínio</p>
         <h1>{mode === 'login' ? 'Entrar' : 'Criar conta'}</h1>
         <p className="subtitle">
           {mode === 'login'
-            ? 'Acesse sua conta para gerenciar o condominio.'
-            : 'Cadastre seu condominio e tenha um login exclusivo de sindico.'}
+            ? 'Acesse sua conta para gerenciar o condomínio.'
+            : 'Cadastre seu condomínio e tenha um login exclusivo de síndico.'}
         </p>
       </section>
 
@@ -72,11 +72,11 @@ function LoginPage({ onLogin }) {
             {mode === 'register' ? (
               <>
                 <label>
-                  Nome do sindico
+                  Nome do síndico
                   <input value={nome} onChange={(e) => setNome(e.target.value)} required maxLength={150} />
                 </label>
                 <label>
-                  Nome do condominio
+                  Nome do condomínio
                   <input value={nomeCondominio} onChange={(e) => setNomeCondominio(e.target.value)} required maxLength={150} />
                 </label>
               </>
@@ -124,7 +124,7 @@ function LoginPage({ onLogin }) {
             </button>
           </form>
           <p className="auth-footer">
-            {mode === 'login' ? 'Nao tem conta? ' : 'Ja tem conta? '}
+            {mode === 'login' ? 'Não tem conta? ' : 'Já tem conta? '}
             <button
               type="button"
               className="link-button"

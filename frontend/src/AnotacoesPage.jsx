@@ -41,7 +41,7 @@ function AnotacoesPage() {
       const qs = params.toString()
       const res = await apiFetch(`/api/anotacoes${qs ? `?${qs}` : ''}`)
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Falha ao carregar anotacoes.'))
+        throw new Error(await parseError(res, 'Falha ao carregar anotações.'))
       }
       setItems(await parseJson(res))
     } catch (err) {
@@ -117,9 +117,9 @@ function AnotacoesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar anotacao.'))
+        throw new Error(await parseError(res, 'Erro ao registrar anotação.'))
       }
-      setSuccess('Anotacao registrada com sucesso.')
+      setSuccess('Anotação registrada com sucesso.')
       setForm(INITIAL_FORM)
       await load()
     } catch (err) {
@@ -146,8 +146,8 @@ function AnotacoesPage() {
           dataReferencia: data.dataReferencia || null,
         }),
       })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar anotacao.'))
-      setSuccess('Anotacao atualizada com sucesso.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar anotação.'))
+      setSuccess('Anotação atualizada com sucesso.')
       setEditing((prev) => { const c = { ...prev }; delete c[id]; return c })
       await load()
     } catch (err) {
@@ -160,8 +160,8 @@ function AnotacoesPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/anotacoes/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir anotacao.'))
-      setSuccess('Anotacao excluida com sucesso.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir anotação.'))
+      setSuccess('Anotação excluída com sucesso.')
       setPendingDeleteId(null)
       await load()
     } catch (err) {
@@ -174,9 +174,9 @@ function AnotacoesPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Registro de ocorrencias</p>
-        <h1>Anotacoes</h1>
-        <p className="subtitle">Registre informacoes, observacoes e ocorrencias relevantes do condominio.</p>
+        <p className="eyebrow">Registro de ocorrências</p>
+        <h1>Anotações</h1>
+        <p className="subtitle">Registre informações, observações e ocorrências relevantes do condomínio.</p>
       </section>
 
       <SuccessState message={success} />
@@ -185,12 +185,12 @@ function AnotacoesPage() {
         <h2>Filtros de busca</h2>
         <form onSubmit={onApplyFilters} className="form-grid">
           <label className="full">
-            Buscar por titulo, categoria, descricao ou referencia
+            Buscar por título, categoria, descrição ou referência
             <input
               name="texto"
               value={filters.texto}
               onChange={onFilterChange}
-              placeholder="Ex: reuniao, vazamento, orcamento"
+              placeholder="Ex: reunião, vazamento, orçamento"
               maxLength={200}
             />
           </label>
@@ -210,50 +210,50 @@ function AnotacoesPage() {
       </section>
 
       <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova anotacao</h2>
+        <h2>Nova anotação</h2>
         <form onSubmit={onSubmit} className="form-grid">
-          <label>Titulo *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
-          <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} placeholder="Ex: Manutencao, Financeiro..." /></label>
+          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
+          <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} placeholder="Ex: Manutenção, Financeiro..." /></label>
           <label>
-            Data da ocorrencia (opcional)
+            Data da ocorrência (opcional)
             <input type="date" name="dataReferencia" value={form.dataReferencia} onChange={onChange} />
           </label>
           <label>
-            Importancia
+            Importância
             <select name="importancia" value={form.importancia} onChange={onChange}>
               {IMPORTANCIAS.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </label>
-          <label>Referencia<input name="referencia" value={form.referencia} onChange={onChange} maxLength={200} placeholder="Ex: Nr documento, protocolo..." /></label>
-          <label className="full">Descricao<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} /></label>
+          <label>Referência<input name="referencia" value={form.referencia} onChange={onChange} maxLength={200} placeholder="Ex: nº documento, protocolo..." /></label>
+          <label className="full">Descrição<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} /></label>
           <button type="submit" disabled={submitting} className="submit full">
-            {submitting ? 'Salvando...' : 'Registrar anotacao'}
+            {submitting ? 'Salvando...' : 'Registrar anotação'}
           </button>
         </form>
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <LoadingState message="Carregando anotacoes..." /> : null}
+        {loading ? <LoadingState message="Carregando anotações..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
-        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma anotacao encontrada para os filtros selecionados." /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma anotação encontrada para os filtros selecionados." /> : null}
         {items.map((a) => (
           <article key={a.id} className="item">
             {editing[a.id] ? (
               <>
-                <label>Titulo<input name="titulo" value={editing[a.id].titulo} onChange={(e) => onEditChange(a.id, e)} /></label>
+                <label>Título<input name="titulo" value={editing[a.id].titulo} onChange={(e) => onEditChange(a.id, e)} /></label>
                 <label>Categoria<input name="categoria" value={editing[a.id].categoria} onChange={(e) => onEditChange(a.id, e)} /></label>
                 <label>
-                  Importancia
+                  Importância
                   <select name="importancia" value={editing[a.id].importancia} onChange={(e) => onEditChange(a.id, e)}>
                     {IMPORTANCIAS.map((i) => <option key={i} value={i}>{i}</option>)}
                   </select>
                 </label>
-                <label>Referencia<input name="referencia" value={editing[a.id].referencia} onChange={(e) => onEditChange(a.id, e)} /></label>
+                <label>Referência<input name="referencia" value={editing[a.id].referencia} onChange={(e) => onEditChange(a.id, e)} /></label>
                 <label>
-                  Data da ocorrencia (opcional)
+                  Data da ocorrência (opcional)
                   <input type="date" name="dataReferencia" value={editing[a.id].dataReferencia ?? ''} onChange={(e) => onEditChange(a.id, e)} />
                 </label>
-                <label className="full">Descricao<textarea name="descricao" value={editing[a.id].descricao} onChange={(e) => onEditChange(a.id, e)} rows={3} /></label>
+                <label className="full">Descrição<textarea name="descricao" value={editing[a.id].descricao} onChange={(e) => onEditChange(a.id, e)} rows={3} /></label>
                 <div className="item-actions">
                   <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(a.id)}>Salvar</button>
                   <button className="submit cancel" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[a.id]; return c })}>Cancelar</button>
@@ -268,7 +268,7 @@ function AnotacoesPage() {
                 {a.categoria ? <p className="muted" style={{ marginTop: 4 }}>Categoria: {a.categoria}</p> : null}
                 {formatDateIso(a.dataReferencia) ? (
                   <p className="muted" style={{ marginTop: 4 }}>
-                    Data da ocorrencia: {new Date(`${formatDateIso(a.dataReferencia)}T12:00:00`).toLocaleDateString('pt-BR')}
+                    Data da ocorrência: {new Date(`${formatDateIso(a.dataReferencia)}T12:00:00`).toLocaleDateString('pt-BR')}
                   </p>
                 ) : null}
                 {a.descricao ? <p style={{ marginTop: 6 }}>{a.descricao}</p> : null}
@@ -285,8 +285,8 @@ function AnotacoesPage() {
 
       <ConfirmDialog
         open={pendingDeleteId != null}
-        title="Excluir anotacao"
-        message="Deseja excluir esta anotacao? Esta acao nao pode ser desfeita."
+        title="Excluir anotação"
+        message="Deseja excluir esta anotação? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         onCancel={() => setPendingDeleteId(null)}
         onConfirm={() => onDelete(pendingDeleteId)}

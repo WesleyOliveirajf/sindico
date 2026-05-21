@@ -4,7 +4,7 @@ import Button from './ui/Button'
 export function ErrorState({ message, onRetry }) {
   return (
     <div className="state-block state-block--error" role="alert">
-      <p className="state-title">Nao foi possivel carregar os dados.</p>
+      <p className="state-title">Não foi possível carregar os dados.</p>
       <p className="state-text">{message}</p>
       {onRetry ? (
         <Button onClick={onRetry}>

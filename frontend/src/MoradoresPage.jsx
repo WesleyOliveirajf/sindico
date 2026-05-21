@@ -158,7 +158,7 @@ function MoradoresPage() {
       <section className="hero">
         <p className="eyebrow">Cadastro de moradores</p>
         <h1>Unidades e Moradores</h1>
-        <p className="subtitle">Gerencie as unidades e os moradores do condominio.</p>
+        <p className="subtitle">Gerencie as unidades e os moradores do condomínio.</p>
       </section>
 
       <SuccessState message={success} />
@@ -168,7 +168,7 @@ function MoradoresPage() {
           <h2>Nova unidade</h2>
           <form onSubmit={onSubmitUnidade} className="form-grid">
             <label>Bloco<input name="bloco" value={formUnidade.bloco} onChange={onUnidadeChange} maxLength={30} placeholder="Ex: A, Torre 1..." /></label>
-            <label>Numero *<input name="numero" value={formUnidade.numero} onChange={onUnidadeChange} required maxLength={30} /></label>
+            <label>Número *<input name="numero" value={formUnidade.numero} onChange={onUnidadeChange} required maxLength={30} /></label>
             <label className="full">Complemento<input name="complemento" value={formUnidade.complemento} onChange={onUnidadeChange} maxLength={100} /></label>
             <button type="submit" disabled={submittingUnidade} className="submit full">
               {submittingUnidade ? 'Salvando...' : 'Cadastrar unidade'}
@@ -195,7 +195,7 @@ function MoradoresPage() {
             </label>
             <label>Email<input name="email" type="email" value={formMorador.email} onChange={onMoradorChange} maxLength={150} /></label>
             <label>Telefone<input name="telefone" value={formMorador.telefone} onChange={onMoradorChange} maxLength={30} /></label>
-            <label className="full">Observacoes<textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
+            <label className="full">Observações<textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
             <button type="submit" disabled={submittingMorador} className="submit full">
               {submittingMorador ? 'Salvando...' : 'Cadastrar morador'}
             </button>
@@ -227,7 +227,7 @@ function MoradoresPage() {
                 </label>
                 <label>Email<input name="email" type="email" value={editingMorador[m.id].email} onChange={(e) => onEditChange(m.id, e)} /></label>
                 <label>Telefone<input name="telefone" value={editingMorador[m.id].telefone} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label className="full">Observacoes<textarea name="observacoes" value={editingMorador[m.id].observacoes} onChange={(e) => onEditChange(m.id, e)} rows={2} /></label>
+                <label className="full">Observações<textarea name="observacoes" value={editingMorador[m.id].observacoes} onChange={(e) => onEditChange(m.id, e)} rows={2} /></label>
                 <div className="item-actions">
                   <button className="submit" style={{ flex: 1 }} onClick={() => onUpdateMorador(m.id)}>Salvar</button>
                   <button className="submit cancel" onClick={() => setEditingMorador((prev) => { const c = { ...prev }; delete c[m.id]; return c })}>Cancelar</button>

@@ -126,9 +126,9 @@ function PrestadoresPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Servicos terceirizados</p>
-        <h1>Prestadores de servico</h1>
-        <p className="subtitle">Cadastre nome, telefone e area de atuacao dos profissionais.</p>
+        <p className="eyebrow">Serviços terceirizados</p>
+        <h1>Prestadores de serviço</h1>
+        <p className="subtitle">Cadastre nome, telefone e área de atuação dos profissionais.</p>
       </section>
 
       <SuccessState message={success} />
@@ -138,7 +138,7 @@ function PrestadoresPage() {
         <form onSubmit={onSubmit} className="form-grid">
           <label>Nome *<input name="nome" value={form.nome} onChange={onChange} required maxLength={150} /></label>
           <label>Telefone *<input name="telefone" value={form.telefone} onChange={onChange} required maxLength={30} placeholder="(11) 99999-0000" /></label>
-          <label className="full">Area de atuacao<textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidraulica, eletrica predial, manutencao de bombas." /></label>
+          <label className="full">Área de atuação<textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidráulica, elétrica predial, manutenção de bombas." /></label>
           <button type="submit" disabled={submitting} className="submit full">
             {submitting ? 'Salvando...' : 'Cadastrar prestador'}
           </button>
@@ -155,7 +155,7 @@ function PrestadoresPage() {
               <>
                 <label>Nome<input name="nome" value={editing[p.id].nome} onChange={(e) => onEditChange(p.id, e)} /></label>
                 <label>Telefone<input name="telefone" value={editing[p.id].telefone} onChange={(e) => onEditChange(p.id, e)} /></label>
-                <label>Area de atuacao<textarea name="areaAtuacao" value={editing[p.id].areaAtuacao} onChange={(e) => onEditChange(p.id, e)} rows={3} maxLength={4000} /></label>
+                <label>Área de atuação<textarea name="areaAtuacao" value={editing[p.id].areaAtuacao} onChange={(e) => onEditChange(p.id, e)} rows={3} maxLength={4000} /></label>
                 <div className="item-actions">
                   <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(p.id)}>Salvar</button>
                   <button className="submit cancel" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[p.id]; return c })}>Cancelar</button>
@@ -165,7 +165,7 @@ function PrestadoresPage() {
               <>
                 <h3>{p.nome}</h3>
                 <p className="phone">{p.telefone}</p>
-                {p.historicoServicos ? <p className="history">Area de atuacao: {p.historicoServicos}</p> : <p className="muted">Area de atuacao nao informada.</p>}
+                {p.historicoServicos ? <p className="history">Área de atuação: {p.historicoServicos}</p> : <p className="muted">Área de atuação não informada.</p>}
                 <div className="item-actions">
                   <button className="submit" onClick={() => startEdit(p)}>Editar</button>
                   <button className="submit danger" onClick={() => onInactivate(p.id)}>Inativar</button>

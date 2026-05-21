@@ -96,7 +96,7 @@ export default function AdminPage() {
     <div className="admin-page">
       <h1 className="page-title">Painel Administrativo</h1>
 
-      <div className="admin-tabs" role="tablist" aria-label="Secoes administrativas">
+      <div className="admin-tabs" role="tablist" aria-label="Seções administrativas">
         <button
           type="button"
           role="tab"
@@ -104,7 +104,7 @@ export default function AdminPage() {
           className={`admin-tab${activeTab === 'usuarios' ? ' admin-tab--active' : ''}`}
           onClick={() => setActiveTab('usuarios')}
         >
-          Usuarios
+          Usuários
         </button>
         <button
           type="button"
@@ -119,9 +119,9 @@ export default function AdminPage() {
 
       {activeTab === 'ia' ? (
         <section className="admin-section">
-          <h2 className="admin-section__title">Configuracao do assistente</h2>
+          <h2 className="admin-section__title">Configuração do assistente</h2>
           <p className="muted">
-            Escolha o provedor, modelo e credenciais que o assistente e os recursos de IA vao usar.
+            Escolha o provedor, modelo e credenciais que o assistente e os recursos de IA vão usar.
           </p>
           <ConfigIAPage embedded />
         </section>
@@ -129,17 +129,17 @@ export default function AdminPage() {
         <>
       {/* Stats */}
       <section className="admin-section">
-        <h2 className="admin-section__title">Visao Geral</h2>
+        <h2 className="admin-section__title">Visão Geral</h2>
         {errorStats && <p className="error-msg">{errorStats}</p>}
         {loadingStats ? (
           <p className="muted">Carregando...</p>
         ) : (
           <div className="stat-cards">
-            <StatCard label="Total de usuarios" value={stats?.totalUsuarios} />
+            <StatCard label="Total de usuários" value={stats?.totalUsuarios} />
             <StatCard label="Ativos" value={stats?.ativos} />
             <StatCard label="Pendentes" value={stats?.pendentes} highlight={stats?.pendentes > 0} />
             <StatCard label="Inativos" value={stats?.inativos} />
-            <StatCard label="Condominios" value={stats?.totalCondominios} />
+            <StatCard label="Condomínios" value={stats?.totalCondominios} />
             <StatCard label="Online (15 min)" value={stats?.onlineAgora} />
           </div>
         )}
@@ -148,7 +148,7 @@ export default function AdminPage() {
       {/* Pending approvals */}
       {pendentes.length > 0 && (
         <section className="admin-section">
-          <h2 className="admin-section__title">Aprovacoes Pendentes ({pendentes.length})</h2>
+          <h2 className="admin-section__title">Aprovações Pendentes ({pendentes.length})</h2>
           {actionError && <p className="error-msg">{actionError}</p>}
           <div className="table-wrap">
             <table className="data-table">
@@ -156,9 +156,9 @@ export default function AdminPage() {
                 <tr>
                   <th>Nome</th>
                   <th>E-mail</th>
-                  <th>Condominio</th>
+                  <th>Condomínio</th>
                   <th>Cadastro</th>
-                  <th>Acoes</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,7 +194,7 @@ export default function AdminPage() {
 
       {/* All users */}
       <section className="admin-section">
-        <h2 className="admin-section__title">Todos os Usuarios</h2>
+        <h2 className="admin-section__title">Todos os Usuários</h2>
         {errorUsuarios && <p className="error-msg">{errorUsuarios}</p>}
         {loadingUsuarios ? (
           <p className="muted">Carregando...</p>
@@ -205,11 +205,11 @@ export default function AdminPage() {
                 <tr>
                   <th>Nome</th>
                   <th>E-mail</th>
-                  <th>Condominio</th>
+                  <th>Condomínio</th>
                   <th>Perfil</th>
                   <th>Status</th>
-                  <th>Ultimo acesso</th>
-                  <th>Acoes</th>
+                  <th>Último acesso</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>

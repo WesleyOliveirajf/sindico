@@ -73,7 +73,7 @@ function ManutencoesPage() {
     setError('')
     try {
       const res = await apiFetch('/api/manutencoes')
-      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar manutencoes.'))
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar manutenções.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -149,9 +149,9 @@ function ManutencoesPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar manutencao.'))
+        throw new Error(await parseError(res, 'Erro ao registrar manutenção.'))
       }
-      setSuccess('Manutencao registrada com sucesso.')
+      setSuccess('Manutenção registrada com sucesso.')
       setForm(INITIAL_FORM)
       await load()
     } catch (err) {
@@ -164,17 +164,17 @@ function ManutencoesPage() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Gestao de manutencao</p>
-        <h1>Manutencoes</h1>
-        <p className="subtitle">Registre manutencoes preventivas e corretivas com custos, status e responsavel.</p>
+        <p className="eyebrow">Gestão de manutenção</p>
+        <h1>Manutenções</h1>
+        <p className="subtitle">Registre manutenções preventivas e corretivas com custos, status e responsável.</p>
       </section>
 
       <SuccessState message={success} />
 
       <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova manutencao</h2>
+        <h2>Nova manutenção</h2>
         <form onSubmit={onSubmit} className="form-grid">
-          <label>Titulo *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
+          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
           <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="PREVENTIVA">Preventiva</option><option value="CORRETIVA">Corretiva</option></select></label>
           <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} /></label>
           <label>Local<input name="local" value={form.local} onChange={onChange} maxLength={150} /></label>
@@ -187,10 +187,10 @@ function ManutencoesPage() {
               ))}
             </select>
           </label>
-          <label>Responsavel interno<input name="responsavelInterno" value={form.responsavelInterno} onChange={onChange} maxLength={150} /></label>
-          <label>Status<select name="status" value={form.status} onChange={onChange}><option value="ABERTA">Aberta</option><option value="AGENDADA">Agendada</option><option value="EM_ANDAMENTO">Em andamento</option><option value="CONCLUIDA">Concluida</option><option value="CANCELADA">Cancelada</option></select></label>
-          <label>Data da ocorrencia<input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
-          <label>Data da execucao<input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
+          <label>Responsável interno<input name="responsavelInterno" value={form.responsavelInterno} onChange={onChange} maxLength={150} /></label>
+          <label>Status<select name="status" value={form.status} onChange={onChange}><option value="ABERTA">Aberta</option><option value="AGENDADA">Agendada</option><option value="EM_ANDAMENTO">Em andamento</option><option value="CONCLUIDA">Concluída</option><option value="CANCELADA">Cancelada</option></select></label>
+          <label>Data da ocorrência<input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
+          <label>Data da execução<input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
           <label>
             Custo previsto
             <input
@@ -217,7 +217,7 @@ function ManutencoesPage() {
               placeholder="R$ 0,00"
             />
           </label>
-          <label className="full">Descricao<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} placeholder="Descreva o problema ou servico necessario..." /></label>
+          <label className="full">Descrição<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} placeholder="Descreva o problema ou serviço necessário..." /></label>
 
           <div className="full" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <button
@@ -237,8 +237,8 @@ function ManutencoesPage() {
                     titulo: data.tituloSugerido || prev.titulo,
                     observacoes: data.observacoes || prev.observacoes,
                   }))
-                  const urgLabel = data.urgencia ? ` · Urgencia: ${data.urgencia}` : ''
-                  setTriagemMsg(`Triagem concluida: ${data.tipo} · ${data.categoria}${urgLabel}`)
+                  const urgLabel = data.urgencia ? ` · Urgência: ${data.urgencia}` : ''
+                  setTriagemMsg(`Triagem concluída: ${data.tipo} · ${data.categoria}${urgLabel}`)
                 } catch (err) {
                   setTriagemMsg(`Erro: ${err.message}`)
                 } finally {
@@ -251,15 +251,15 @@ function ManutencoesPage() {
             {triagemMsg && <span className="muted" style={{ fontSize: '0.82rem' }}>{triagemMsg}</span>}
           </div>
 
-          <label className="full">Observacoes<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
-          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar manutencao'}</button>
+          <label className="full">Observações<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
+          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar manutenção'}</button>
         </form>
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <LoadingState message="Carregando manutencoes..." /> : null}
+        {loading ? <LoadingState message="Carregando manutenções..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
-        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma manutencao registrada." /> : null}
+        {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma manutenção registrada." /> : null}
         {items.map((m) => (
           <article key={m.id} className="item">
             {(() => {
@@ -268,10 +268,10 @@ function ManutencoesPage() {
                 <>
                   <h3 style={{ margin: 0 }}>{m.titulo}</h3>
                   <p className="muted" style={{ marginTop: 4 }}>{m.tipo} · {m.status}{m.categoria ? ` · ${m.categoria}` : ''}</p>
-                  {m.dataOcorrencia ? <p className="muted">Ocorrencia: {m.dataOcorrencia}</p> : null}
-                  {m.dataExecucao ? <p className="muted">Execucao: {m.dataExecucao}</p> : null}
+                  {m.dataOcorrencia ? <p className="muted">Ocorrência: {m.dataOcorrencia}</p> : null}
+                  {m.dataExecucao ? <p className="muted">Execução: {m.dataExecucao}</p> : null}
                   {m.local ? <p className="muted">Local: {m.local}</p> : null}
-                  {m.fornecedorId ? <p className="muted">Prestador: {prestador?.nome || 'Prestador nao encontrado'}</p> : null}
+                  {m.fornecedorId ? <p className="muted">Prestador: {prestador?.nome || 'Prestador não encontrado'}</p> : null}
                   {prestador?.telefone ? (
                     <p className="muted">
                       Telefone do prestador:{' '}
@@ -280,7 +280,7 @@ function ManutencoesPage() {
                       </a>
                     </p>
                   ) : null}
-                  {m.responsavelInterno ? <p className="muted">Responsavel: {m.responsavelInterno}</p> : null}
+                  {m.responsavelInterno ? <p className="muted">Responsável: {m.responsavelInterno}</p> : null}
                   {CURRENCY_FIELDS.some((field) => m[field] != null) ? (
                     <p className="muted">
                       Custos:{' '}
