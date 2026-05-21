@@ -124,11 +124,31 @@
                th:classappend="${#fields.hasErrors('senha')} ? 'input-error'">
         <div class="field-error" th:if="${#fields.hasErrors('senha')}" th:errors="*{senha}"></div>
         <p class="hint">Minimo 8 caracteres com letras e numeros.</p>
-
         <label for="confirmarSenha">Confirmar senha *</label>
         <input id="confirmarSenha" type="password" th:field="*{confirmarSenha}" autocomplete="new-password" required
                th:classappend="${#fields.hasErrors('confirmarSenha')} ? 'input-error'">
         <div class="field-error" th:if="${#fields.hasErrors('confirmarSenha')}" th:errors="*{confirmarSenha}"></div>
+
+        <div class="lgpd-container" style="margin-top: 15px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                <input id="aceitouTermos" type="checkbox" th:field="*{aceitouTermos}" required style="width: auto; margin-top: 4px; margin-bottom: 0;">
+                <label for="aceitouTermos" style="display: inline; font-size: 0.85rem; cursor: pointer;">
+                    Declaro que li e aceito os <a th:href="@{/termos}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">Termos de Uso</a> e a <a th:href="@{/privacidade}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">Política de Privacidade</a> da plataforma, e estou ciente de que meus dados pessoais serão tratados para criação da conta, autenticação, prestação dos serviços contratados, suporte, segurança da plataforma e cumprimento de obrigações legais.
+                </label>
+            </div>
+            <div class="field-error" th:if="${#fields.hasErrors('aceitouTermos')}" th:errors="*{aceitouTermos}" style="margin-top: -6px; margin-bottom: 10px;"></div>
+
+            <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px;">
+                <input id="aceitouMarketing" type="checkbox" th:field="*{aceitouMarketing}" style="width: auto; margin-top: 4px; margin-bottom: 0;">
+                <label for="aceitouMarketing" style="display: inline; font-size: 0.85rem; cursor: pointer;">
+                    Aceito receber comunicações comerciais, novidades e ofertas da plataforma por e-mail, WhatsApp ou telefone. Posso cancelar esse recebimento a qualquer momento.
+                </label>
+            </div>
+            
+            <div style="font-size: 0.78rem; color: var(--muted); text-align: center; margin-bottom: 10px;">
+                Consulte também a nossa <a th:href="@{/cookies}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 600;">Política de Cookies</a>.
+            </div>
+        </div>
 
         <button class="btn" type="submit">Criar conta</button>
     </form>

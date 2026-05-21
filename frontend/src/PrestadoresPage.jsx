@@ -139,6 +139,9 @@ function PrestadoresPage() {
           <label>Nome *<input name="nome" value={form.nome} onChange={onChange} required maxLength={150} /></label>
           <label>Telefone *<input name="telefone" value={form.telefone} onChange={onChange} required maxLength={30} placeholder="(11) 99999-0000" /></label>
           <label className="full">Área de atuação<textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidráulica, elétrica predial, manutenção de bombas." /></label>
+          <div className="full" style={{ backgroundColor: '#f8fafc', border: '1px solid #d8e0e8', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#5f6f80', marginBottom: '12px', lineHeight: '1.4' }}>
+            <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
+          </div>
           <button type="submit" disabled={submitting} className="submit full">
             {submitting ? 'Salvando...' : 'Cadastrar prestador'}
           </button>

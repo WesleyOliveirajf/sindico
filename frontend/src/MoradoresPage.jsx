@@ -196,6 +196,9 @@ function MoradoresPage() {
             <label>Email<input name="email" type="email" value={formMorador.email} onChange={onMoradorChange} maxLength={150} /></label>
             <label>Telefone<input name="telefone" value={formMorador.telefone} onChange={onMoradorChange} maxLength={30} /></label>
             <label className="full">Observações<textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
+            <div className="full" style={{ backgroundColor: '#f8fafc', border: '1px solid #d8e0e8', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#5f6f80', marginBottom: '12px', lineHeight: '1.4' }}>
+              <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
+            </div>
             <button type="submit" disabled={submittingMorador} className="submit full">
               {submittingMorador ? 'Salvando...' : 'Cadastrar morador'}
             </button>

@@ -48,7 +48,15 @@ public class AuthApiController {
     }
 
     public record LoginRequest(String email, String senha) {}
-    public record RegisterRequest(String nome, String email, String nomeCondominio, String senha, String confirmarSenha) {}
+    public record RegisterRequest(
+            String nome,
+            String email,
+            String nomeCondominio,
+            String senha,
+            String confirmarSenha,
+            Boolean aceitouTermos,
+            Boolean aceitouMarketing
+    ) {}
 
     /**
      * Autentica via credenciais JSON, cria sessao e retorna dados do usuario.
@@ -75,7 +83,10 @@ public class AuthApiController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest body) {
+    public ResponseEntity<?> register(
+            @RequestBody RegisterRequest body,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
         try {
             CadastroForm form = new CadastroForm();
             form.setNome(body.nome());
@@ -83,8 +94,13 @@ public class AuthApiController {
             form.setNomeCondominio(body.nomeCondominio());
             form.setSenha(body.senha());
             form.setConfirmarSenha(body.confirmarSenha());
+            form.setAceitouTermos(body.aceitouTermos() != null && body.aceitouTermos());
+            form.setAceitouMarketing(body.aceitouMarketing() != null && body.aceitouMarketing());
 
-            cadastroService.cadastrar(form);
+            String ipAddress = request.getRemoteAddr();
+            String userAgent = request.getHeader("User-Agent");
+
+            cadastroService.cadastrar(form, ipAddress, userAgent, "api");
 
             return ResponseEntity.status(201).body(Map.of(
                     "message", "Conta criada com sucesso"

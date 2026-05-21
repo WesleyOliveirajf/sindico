@@ -293,6 +293,9 @@
                         <label for="m-obs">Observacoes</label>
                         <textarea id="m-obs" th:field="*{observacoes}" placeholder="Restricao de horario, autorizacao de visitante, etc."></textarea>
                     </div>
+                    <div class="full" style="background-color: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; line-height: 1.4;">
+                        <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
+                    </div>
                     <div class="full">
                         <button class="btn" type="submit" th:disabled="${#lists.isEmpty(unidades)}">Cadastrar morador</button>
                     </div>

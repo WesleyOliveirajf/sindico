@@ -8,6 +8,8 @@ function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [aceitouTermos, setAceitouTermos] = useState(false)
+  const [aceitouMarketing, setAceitouMarketing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -19,7 +21,10 @@ function LoginPage({ onLogin }) {
     setLoading(true)
     try {
       if (mode === 'register') {
-        await register({ nome, email, nomeCondominio, senha, confirmarSenha })
+        if (!aceitouTermos) {
+          throw new Error('Você precisa ler e aceitar os Termos de Uso e a Política de Privacidade.')
+        }
+        await register({ nome, email, nomeCondominio, senha, confirmarSenha, aceitouTermos, aceitouMarketing })
         setSuccess('Cadastro realizado. Entrando na sua conta...')
       }
       const user = await login(email, senha)
@@ -105,7 +110,7 @@ function LoginPage({ onLogin }) {
                 autoComplete="current-password"
               />
             </label>
-            {mode === 'register' ? (
+             {mode === 'register' ? (
               <label>
                 Confirmar senha
                 <input
@@ -116,6 +121,38 @@ function LoginPage({ onLogin }) {
                   autoComplete="new-password"
                 />
               </label>
+            ) : null}
+            {mode === 'register' ? (
+              <div className="lgpd-checkboxes-container" style={{ margin: '15px 0', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', gridColumn: '1 / -1' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--ink)' }}>
+                  <input
+                    type="checkbox"
+                    checked={aceitouTermos}
+                    onChange={(e) => setAceitouTermos(e.target.checked)}
+                    required
+                    style={{ width: 'auto', marginTop: '3px', flexShrink: 0 }}
+                  />
+                  <span style={{ lineHeight: '1.4', textAlign: 'left' }}>
+                    Declaro que li e aceito os <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Política de Privacidade</a> da plataforma, e estou ciente de que meus dados pessoais serão tratados para criação da conta, autenticação, prestação dos serviços contratados, suporte, segurança da plataforma e cumprimento de obrigações legais.
+                  </span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--ink)' }}>
+                  <input
+                    type="checkbox"
+                    checked={aceitouMarketing}
+                    onChange={(e) => setAceitouMarketing(e.target.checked)}
+                    style={{ width: 'auto', marginTop: '3px', flexShrink: 0 }}
+                  />
+                  <span style={{ lineHeight: '1.4', textAlign: 'left' }}>
+                    Aceito receber comunicações comerciais, novidades e ofertas da plataforma por e-mail, WhatsApp ou telefone. Posso cancelar esse recebimento a qualquer momento.
+                  </span>
+                </label>
+                
+                <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '0.78rem', color: 'var(--muted)' }}>
+                  Consulte também a nossa <a href="/cookies" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Política de Cookies</a>.
+                </div>
+              </div>
             ) : null}
             {error ? <p className="message error">{error}</p> : null}
             {success ? <p className="message success">{success}</p> : null}
@@ -136,6 +173,11 @@ function LoginPage({ onLogin }) {
           </p>
         </article>
       </section>
+      <footer style={{ textAlign: 'center', padding: '16px 20px 32px', fontSize: '0.78rem', color: 'var(--muted)', width: '100%' }}>
+        <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Termos de Uso</a> | 
+        <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Política de Privacidade</a> | 
+        <a href="/cookies" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Cookies</a>
+      </footer>
     </main>
   )
 }

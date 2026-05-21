@@ -1,5 +1,6 @@
 package br.com.sindico.app.cadastro;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -26,6 +27,11 @@ public class CadastroForm {
     @NotBlank(message = "Confirme a senha")
     private String confirmarSenha;
 
+    @AssertTrue(message = "Você precisa ler e aceitar os Termos de Uso e a Política de Privacidade")
+    private boolean aceitouTermos;
+
+    private boolean aceitouMarketing;
+
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
 
@@ -40,4 +46,10 @@ public class CadastroForm {
 
     public String getConfirmarSenha() { return confirmarSenha; }
     public void setConfirmarSenha(String confirmarSenha) { this.confirmarSenha = confirmarSenha; }
+
+    public boolean isAceitouTermos() { return aceitouTermos; }
+    public void setAceitouTermos(boolean aceitouTermos) { this.aceitouTermos = aceitouTermos; }
+
+    public boolean isAceitouMarketing() { return aceitouMarketing; }
+    public void setAceitouMarketing(boolean aceitouMarketing) { this.aceitouMarketing = aceitouMarketing; }
 }

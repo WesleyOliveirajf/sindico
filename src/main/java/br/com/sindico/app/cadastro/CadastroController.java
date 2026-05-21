@@ -28,7 +28,8 @@ public class CadastroController {
             @Valid @ModelAttribute("form") CadastroForm form,
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
-            Model model) {
+            Model model,
+            jakarta.servlet.http.HttpServletRequest request) {
 
         // Validacao extra: senhas conferem (antes de chamar service)
         if (!bindingResult.hasErrors() && !form.getSenha().equals(form.getConfirmarSenha())) {
@@ -40,7 +41,9 @@ public class CadastroController {
         }
 
         try {
-            cadastroService.cadastrar(form);
+            String ipAddress = request.getRemoteAddr();
+            String userAgent = request.getHeader("User-Agent");
+            cadastroService.cadastrar(form, ipAddress, userAgent, "thymeleaf");
         } catch (IllegalArgumentException ex) {
             model.addAttribute("erro", ex.getMessage());
             return "cadastro";
