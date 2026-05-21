@@ -132,7 +132,7 @@ function LoginPage({ onLogin }) {
   }
 
   const LogoSVG = () => (
-    <svg className="auth-logo-svg" width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className="auth-logo-svg" width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="logo-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#2dd4bf" />
@@ -170,7 +170,7 @@ function LoginPage({ onLogin }) {
             LiveSind<span className="brand-ia">IA</span>
           </h1>
           <p className="auth-subtitle">
-            Gestão condominial inteligente com IA e total segurança de dados
+            Transformando sua Gestão mais eficiente com a ajuda da  inteligente com IA e total segurança de dados
           </p>
         </header>
 
