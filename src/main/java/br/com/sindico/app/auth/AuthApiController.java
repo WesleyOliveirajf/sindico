@@ -111,10 +111,15 @@ public class AuthApiController {
         }
 
         if (authentication.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
-            // Atualiza ultimo acesso do usuario
+            // MELHORIA-004: Throttle — atualiza ultimo_acesso apenas se passaram >5 min
+            // Evita write no banco em cada chamada ao /api/auth/me (chamado em toda navegação)
             usuarioRepository.findById(principal.getUsuarioId()).ifPresent(u -> {
-                u.setUltimoAcesso(LocalDateTime.now());
-                usuarioRepository.save(u);
+                LocalDateTime agora = LocalDateTime.now();
+                if (u.getUltimoAcesso() == null ||
+                        u.getUltimoAcesso().isBefore(agora.minusMinutes(5))) {
+                    u.setUltimoAcesso(agora);
+                    usuarioRepository.save(u);
+                }
             });
             return ResponseEntity.ok(buildAuthPayload(principal));
         }

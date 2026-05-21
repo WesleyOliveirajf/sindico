@@ -60,16 +60,21 @@ public class AdminApiController {
     public ResponseEntity<?> listarUsuarios() {
         List<Usuario> usuarios = usuarioRepository.findAllByOrderByCreatedAtDesc();
 
-        List<Map<String, Object>> result = usuarios.stream().map(u -> {
-            List<UsuarioCondominio> vinculos =
-                    usuarioCondominioRepository.findByUsuario_IdOrderByCondominio_NomeAsc(u.getId());
+        // BUG-002 corrigido: uma única query para buscar todos os vínculos (evita N+1)
+        List<UUID> ids = usuarios.stream().map(Usuario::getId).toList();
+        Map<UUID, UsuarioCondominio> vinculoPorUsuario = ids.isEmpty()
+                ? Map.of()
+                : usuarioCondominioRepository.findByUsuarioIdsComCondominio(ids).stream()
+                        .collect(Collectors.toMap(
+                                uc -> uc.getUsuario().getId(),
+                                uc -> uc,
+                                (first, ignored) -> first)); // Mantém primeiro vínculo em caso de múltiplos condominios
 
-            String condominioNome = vinculos.isEmpty()
-                    ? ""
-                    : vinculos.getFirst().getCondominio().getNome();
-            String perfil = vinculos.isEmpty()
-                    ? ""
-                    : vinculos.getFirst().getPerfil();
+        List<Map<String, Object>> result = usuarios.stream().map(u -> {
+            UsuarioCondominio vinculo = vinculoPorUsuario.get(u.getId());
+
+            String condominioNome = vinculo != null ? vinculo.getCondominio().getNome() : "";
+            String perfil = vinculo != null ? vinculo.getPerfil() : "";
 
             Map<String, Object> dto = new LinkedHashMap<>();
             dto.put("id", u.getId().toString());

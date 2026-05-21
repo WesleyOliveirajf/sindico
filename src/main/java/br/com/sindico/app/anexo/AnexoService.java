@@ -2,8 +2,8 @@ package br.com.sindico.app.anexo;
 
 import br.com.sindico.app.manutencao.ManutencaoRepository;
 import br.com.sindico.app.reuniao.ReuniaoRepository;
+import br.com.sindico.app.security.SecurityUtils;
 import br.com.sindico.app.security.TenantAccessor;
-import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,8 +16,6 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -171,11 +169,7 @@ public class AnexoService {
     }
 
     private UUID usuarioAtualId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
-            return principal.getUsuarioId();
-        }
-        throw new IllegalStateException("Nao foi possivel identificar usuario autenticado");
+        return SecurityUtils.usuarioAtualId();
     }
 
     private static String sanitizeFileName(String fileName) {

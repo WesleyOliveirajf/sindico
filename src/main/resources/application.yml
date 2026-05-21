@@ -22,6 +22,16 @@ server:
         secure: true
         http-only: true
 
+# BUG-003: Actuator — expõe apenas /actuator/health por padrão (Railway/Docker health check)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
   condominio:
@@ -47,7 +57,7 @@ spring:
     activate:
       on-profile: supabase
   thymeleaf:
-    cache: false
+    cache: true  # Cache habilitado em produção (SUG-007 corrigido)
   datasource:
     # Supabase: em Database > Connection string use "URI" da conexão direta (porta 5432).
     # Ex.: jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres?sslmode=require

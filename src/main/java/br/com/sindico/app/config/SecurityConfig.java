@@ -108,7 +108,8 @@ public class SecurityConfig {
                                 "/login", "/cadastro",
                                 "/esqueci-senha", "/redefinir-senha",
                                 "/css/**", "/js/**", "/error",
-                                "/api/auth/login", "/api/auth/register").permitAll()
+                                "/api/auth/login", "/api/auth/register",
+                                "/actuator/health").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/ia/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/ia/config/**").hasRole("ADMIN")

@@ -1,12 +1,10 @@
 package br.com.sindico.app.manutencao;
 
+import br.com.sindico.app.security.SecurityUtils;
 import br.com.sindico.app.security.TenantAccessor;
-import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ public class ManutencaoService {
         Manutencao m = new Manutencao();
         apply(m, req);
         m.setCondominioId(tenantAccessor.condominioAtual());
-        m.setCriadoPor(usuarioAtualId());
+        m.setCriadoPor(SecurityUtils.usuarioAtualId());
         return manutencaoRepository.save(m);
     }
 
@@ -54,32 +52,18 @@ public class ManutencaoService {
 
     private static void apply(Manutencao m, ManutencaoRequest req) {
         m.setTitulo(req.titulo().trim());
-        m.setDescricao(blankToNull(req.descricao()));
+        m.setDescricao(SecurityUtils.blankToNull(req.descricao()));
         m.setTipo(req.tipo());
-        m.setCategoria(blankToNull(req.categoria()));
-        m.setLocal(blankToNull(req.local()));
+        m.setCategoria(SecurityUtils.blankToNull(req.categoria()));
+        m.setLocal(SecurityUtils.blankToNull(req.local()));
         m.setAtivoId(req.ativoId());
         m.setFornecedorId(req.fornecedorId());
-        m.setResponsavelInterno(blankToNull(req.responsavelInterno()));
+        m.setResponsavelInterno(SecurityUtils.blankToNull(req.responsavelInterno()));
         m.setDataOcorrencia(req.dataOcorrencia());
         m.setDataExecucao(req.dataExecucao());
         m.setCustoPrevisto(req.custoPrevisto());
         m.setCustoRealizado(req.custoRealizado());
         m.setStatus(req.status());
-        m.setObservacoes(blankToNull(req.observacoes()));
-    }
-
-    private static String blankToNull(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
-    }
-
-    private UUID usuarioAtualId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof UsuarioTenantPrincipal principal) {
-            return principal.getUsuarioId();
-        }
-        throw new IllegalStateException("Nao foi possivel identificar usuario autenticado");
+        m.setObservacoes(SecurityUtils.blankToNull(req.observacoes()));
     }
 }
