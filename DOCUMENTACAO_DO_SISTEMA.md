@@ -1,4 +1,4 @@
-# Documentação Viva do Sistema Síndico App
+# Documentação Viva do Sistema LiveSindIA
 
 Última atualização: 10/05/2026  
 Objetivo do arquivo: servir como ponto único para entender onde o projeto está, o que já existe, como o sistema funciona, quais riscos existem e quais próximos passos fazem sentido.
@@ -7,7 +7,7 @@ Objetivo do arquivo: servir como ponto único para entender onde o projeto está
 
 ## 1. Visão Geral
 
-O **Síndico App** é um sistema para centralizar o histórico operacional e administrativo de condomínios. A aplicação ajuda o síndico a registrar, consultar e acompanhar:
+O **LiveSindIA** é um sistema para centralizar o histórico operacional e administrativo de condomínios. A aplicação ajuda o síndico a registrar, consultar e acompanhar:
 
 - manutenções preventivas e corretivas;
 - reuniões ordinárias, extraordinárias e assembleias;
@@ -1464,3 +1464,4 @@ O projeto já saiu da fase de ideia e possui base funcional sólida: autenticaç
 O maior risco atual não é arquitetura; é **finalização de qualidade para produção**: segurança de JWT/reset, testes dos módulos novos, autorização por papel, rate limiting, validação extra em uploads e hardening de deploy.
 
 Próximo foco recomendado: **fechar manutenção + reunião + anexos com testes e segurança**, depois evoluir pendências e timeline.
+

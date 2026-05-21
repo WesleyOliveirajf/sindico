@@ -1,4 +1,4 @@
-# 📊 Relatório de QA — Síndico App
+# 📊 Relatório de QA — LiveSindIA
 
 > **Data:** 2026-05-21  
 > **Versão analisada:** `0.0.1-SNAPSHOT`  
@@ -287,4 +287,5 @@ src/test/java/br/com/sindico/app/
 > Para atingir **produção com segurança**, criar testes básicos para `AuthApiController` (fluxo de login) e configurar as variáveis de ambiente obrigatórias no Railway.
 > 
 > Todos os bloqueadores de performance e observabilidade foram resolvidos nesta sessão.
+
 

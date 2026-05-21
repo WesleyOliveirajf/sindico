@@ -102,7 +102,7 @@ function App() {
     return (
       <main className="page">
         <nav className="nav">
-          <span className="nav-brand">Síndico App</span>
+          <span className="nav-brand">LiveSindIA</span>
         </nav>
         <section className="hero">
           <p className="muted">Verificando sessão...</p>
@@ -118,7 +118,7 @@ function App() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
-        <div className="sidebar-brand">Síndico App</div>
+        <div className="sidebar-brand">LiveSindIA</div>
         <nav className="sidebar-nav" aria-label="Módulos">
           {allPages.map(([key, label]) => (
             <NavLink
@@ -216,3 +216,4 @@ function App() {
 }
 
 export default App;
+

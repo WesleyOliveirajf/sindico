@@ -1,4 +1,4 @@
-# Documentação de Banco de Dados - Síndico App
+# Documentação de Banco de Dados - LiveSindIA
 
 ## ⚠️ AVISO DE SEGURANÇA
 
@@ -321,3 +321,4 @@ ALTER USER sindico_user WITH PASSWORD 'nova_senha';
 ---
 
 **Última atualização:** 2026-05-02
+

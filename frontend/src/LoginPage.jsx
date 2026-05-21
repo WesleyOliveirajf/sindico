@@ -34,7 +34,7 @@ function LoginPage({ onLogin }) {
   return (
     <main className="page">
       <nav className="nav">
-        <span className="nav-brand">Síndico App</span>
+        <span className="nav-brand">LiveSindIA</span>
       </nav>
 
       <section className="hero">
@@ -141,3 +141,4 @@ function LoginPage({ onLogin }) {
 }
 
 export default LoginPage
+
