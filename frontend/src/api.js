@@ -129,9 +129,31 @@ export async function login(email, senha) {
 }
 
 /**
+ * Autentica o usuário utilizando o fluxo de login social do Google.
+ * Em caso de sucesso salva o token JWT e retorna os dados do usuario; do contrario, lanca erro.
+ *
+ * @param {{ credentialToken: string, aceitouTermos: boolean, aceitouMarketing: boolean }} payload
+ * @returns {Promise<{email: string, condominioId: string, token?: string}>}
+ */
+export async function loginComGoogle(payload) {
+  const res = await apiFetch('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  const data = await parseJson(res)
+  if (!res.ok) {
+    throw new Error(data?.error || 'Erro na autenticação com o Google')
+  }
+  if (data?.token) {
+    setToken(data.token)
+  }
+  return data
+}
+
+/**
  * Cadastra um novo síndico com seu condomínio.
  *
- * @param {{nome: string, email: string, nomeCondominio: string, senha: string, confirmarSenha: string}} payload
+ * @param {{nome: string, email: string, nomeCondominio: string, senha: string, confirmarSenha: string, aceitouTermos: boolean, aceitouMarketing: boolean}} payload
  */
 export async function register(payload) {
   const res = await apiFetch('/api/auth/register', {

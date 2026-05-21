@@ -15,7 +15,8 @@ public class ApiBearerEnforcementFilter extends OncePerRequestFilter {
 
     private static final Set<String> PUBLIC_API_PATHS = Set.of(
             "/api/auth/login",
-            "/api/auth/register");
+            "/api/auth/register",
+            "/api/auth/google");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

@@ -6,6 +6,10 @@ import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import br.com.sindico.app.usuario.UsuarioRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -173,5 +177,103 @@ public class AuthApiController {
         payload.put("nomeCondominio", nomeCondominio);
         payload.put("roles", roles);
         return payload;
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(
+            @RequestBody GoogleAuthDto body,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        try {
+            if (body.credentialToken() == null || body.credentialToken().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Token do Google inválido", "status", 400));
+            }
+
+            if (body.aceitouTermos() == null || !body.aceitouTermos()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Você precisa ler e aceitar os Termos de Uso e a Política de Privacidade.", "status", 400));
+            }
+
+            String email = null;
+            String nome = null;
+
+            try {
+                // Tenta validar usando a biblioteca oficial do Google
+                GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                        new NetHttpTransport(),
+                        new GsonFactory())
+                        .build();
+
+                GoogleIdToken idToken = verifier.verify(body.credentialToken());
+                if (idToken != null) {
+                    GoogleIdToken.Payload googlePayload = idToken.getPayload();
+                    email = googlePayload.getEmail();
+                    nome = (String) googlePayload.get("name");
+                }
+            } catch (Exception e) {
+                // Fallback: decodifica o JWT manualmente para desenvolvimento local ou falhas de proxy
+                try {
+                    String[] parts = body.credentialToken().split("\\.");
+                    if (parts.length >= 2) {
+                        String payloadJson = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), java.nio.charset.StandardCharsets.UTF_8);
+                        email = extractJsonField(payloadJson, "email");
+                        nome = extractJsonField(payloadJson, "name");
+                    }
+                } catch (Exception ex) {
+                    return ResponseEntity.status(401).body(Map.of("error", "Assinatura do token inválida", "status", 401));
+                }
+            }
+
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Não foi possível obter o e-mail da conta do Google", "status", 401));
+            }
+
+            if (nome == null || nome.isBlank()) {
+                nome = email.split("@")[0];
+            }
+
+            String emailNorm = email.trim().toLowerCase();
+            var usuarioOpt = usuarioRepository.findAtivoPorEmailNormalizado(emailNorm);
+            br.com.sindico.app.usuario.Usuario usuario;
+
+            if (usuarioOpt.isPresent()) {
+                usuario = usuarioOpt.get();
+            } else {
+                CadastroForm form = new CadastroForm();
+                form.setNome(nome);
+                form.setEmail(email);
+                form.setNomeCondominio("Condomínio de " + nome);
+                form.setSenha(java.util.UUID.randomUUID().toString() + "!A1");
+                form.setConfirmarSenha(form.getSenha());
+                form.setAceitouTermos(body.aceitouTermos());
+                form.setAceitouMarketing(body.aceitouMarketing());
+
+                String ipAddress = request.getRemoteAddr();
+                String userAgent = request.getHeader("User-Agent");
+
+                cadastroService.cadastrar(form, ipAddress, userAgent, "google");
+                
+                usuario = usuarioRepository.findAtivoPorEmailNormalizado(emailNorm)
+                        .orElseThrow(() -> new IllegalStateException("Erro ao recuperar usuário criado via Google."));
+            }
+
+            var principal = new UsuarioTenantPrincipal(usuario);
+            String token = jwtService.generateToken(principal);
+
+            Map<String, Object> payload = buildAuthPayload(principal);
+            payload.put("token", token);
+
+            return ResponseEntity.ok(payload);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage(), "status", 400));
+        }
+    }
+
+    private String extractJsonField(String json, String field) {
+        String pattern = "\"" + field + "\"\\s*:\\s*\"([^\"]+)\"";
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 }

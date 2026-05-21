@@ -109,7 +109,7 @@ public class SecurityConfig {
                                 "/termos", "/privacidade", "/cookies",
                                 "/esqueci-senha", "/redefinir-senha",
                                 "/css/**", "/js/**", "/error",
-                                "/api/auth/login", "/api/auth/register",
+                                "/api/auth/login", "/api/auth/register", "/api/auth/google",
                                 "/actuator/health").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/ia/config").hasRole("ADMIN")

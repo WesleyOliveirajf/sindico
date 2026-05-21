@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { login, register } from './api'
+import { useState, useEffect, useRef } from 'react'
+import { login, register, loginComGoogle } from './api'
 
 function LoginPage({ onLogin }) {
   const [mode, setMode] = useState('login')
@@ -14,6 +14,101 @@ function LoginPage({ onLogin }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // Usamos Refs para evitar stale closures no callback assíncrono do Google Sign-In
+  const aceitouTermosRef = useRef(aceitouTermos)
+  const aceitouMarketingRef = useRef(aceitouMarketing)
+
+  useEffect(() => {
+    aceitouTermosRef.current = aceitouTermos
+  }, [aceitouTermos])
+
+  useEffect(() => {
+    aceitouMarketingRef.current = aceitouMarketing
+  }, [aceitouMarketing])
+
+  // Efeito para carregar o Google Identity Services SDK dinamicamente
+  useEffect(() => {
+    const scriptId = 'google-gsi-client'
+    let script = document.getElementById(scriptId)
+
+    if (!script) {
+      script = document.createElement('script')
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.id = scriptId
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script)
+    }
+
+    script.onload = () => {
+      inicializarGoogleSignIn()
+    }
+
+    if (window.google) {
+      inicializarGoogleSignIn()
+    }
+
+    function inicializarGoogleSignIn() {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '7569526-tfrrghq40es98m92r09f4m8i97e930u8.apps.googleusercontent.com',
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        })
+
+        // Renderiza o botão oficial com visual neutro e adaptado
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin-btn-container'),
+          {
+            theme: 'filled_blue',
+            size: 'large',
+            width: '100%',
+            text: 'continue_with',
+            shape: 'pill',
+            locale: 'pt-BR'
+          }
+        )
+      } catch (e) {
+        console.error('Erro ao inicializar SDK do Google:', e)
+      }
+    }
+  }, [])
+
+  // Callback acionado quando o Google retorna o token de credencial
+  async function handleCredentialResponse(response) {
+    setError('')
+    setSuccess('')
+    
+    // Validação estrita da LGPD no frontend antes de bater no backend
+    if (!aceitouTermosRef.current) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade antes de continuar com o Google.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const user = await loginComGoogle({
+        credentialToken: response.credential,
+        aceitouTermos: aceitouTermosRef.current,
+        aceitouMarketing: aceitouMarketingRef.current
+      })
+      setSuccess('Autenticação com o Google realizada com sucesso!')
+      onLogin(user)
+    } catch (err) {
+      setError(err.message || 'Falha na autenticação com o Google.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Intercepta e barra o clique no Google se as políticas LGPD não forem aceitas
+  function handleGoogleClickBlocked(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setError('Por favor, declare o seu consentimento marcando o checkbox dos Termos de Uso e Política de Privacidade para habilitar a conexão com o Google.')
+  }
+
   async function onSubmit(event) {
     event.preventDefault()
     setError('')
@@ -25,162 +120,239 @@ function LoginPage({ onLogin }) {
           throw new Error('Você precisa ler e aceitar os Termos de Uso e a Política de Privacidade.')
         }
         await register({ nome, email, nomeCondominio, senha, confirmarSenha, aceitouTermos, aceitouMarketing })
-        setSuccess('Cadastro realizado. Entrando na sua conta...')
+        setSuccess('Cadastro realizado com sucesso! Entrando na sua conta...')
       }
       const user = await login(email, senha)
       onLogin(user)
     } catch (err) {
-      setError(err.message || 'Credenciais invalidas')
+      setError(err.message || 'Credenciais inválidas')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <main className="page">
-      <nav className="nav">
-        <span className="nav-brand">LiveSindIA</span>
-      </nav>
+    <main className="auth-page">
+      {/* Elementos de ambient glow decorativos */}
+      <div className="auth-glow-1"></div>
+      <div className="auth-glow-2"></div>
 
-      <section className="hero">
-        <p className="eyebrow">Gestão de condomínio</p>
-        <h1>{mode === 'login' ? 'Entrar' : 'Criar conta'}</h1>
-        <p className="subtitle">
-          {mode === 'login'
-            ? 'Acesse sua conta para gerenciar o condomínio.'
-            : 'Cadastre seu condomínio e tenha um login exclusivo de síndico.'}
+      <header className="auth-brand-container">
+        <h1 className="auth-brand">
+          LiveSindIA
+        </h1>
+        <p className="auth-subtitle">
+          Gestão condominial inteligente com IA e total segurança de dados
         </p>
-      </section>
+      </header>
 
-      <section className="layout" style={{ justifyContent: 'center' }}>
-        <article className="panel" style={{ maxWidth: '420px', width: '100%' }}>
-          <h2>{mode === 'login' ? 'Login' : 'Cadastro'}</h2>
-          <div className="auth-mode-toggle" aria-label="Alternar entre login e cadastro">
-            <button
-              type="button"
-              className={`mode-button ${mode === 'login' ? 'mode-button--active' : ''}`}
-              onClick={() => setMode('login')}
+      <article className="auth-glass-panel">
+        <h2>{mode === 'login' ? 'Identifique-se' : 'Crie sua conta'}</h2>
+
+        <div className="auth-toggle-bar" aria-label="Alternar entre login e cadastro">
+          <button
+            type="button"
+            className={`auth-toggle-btn ${mode === 'login' ? 'auth-toggle-btn--active' : ''}`}
+            onClick={() => {
+              setMode('login')
+              setError('')
+              setSuccess('')
+            }}
+            disabled={loading}
+          >
+            Entrar
+          </button>
+          <button
+            type="button"
+            className={`auth-toggle-btn ${mode === 'register' ? 'auth-toggle-btn--active' : ''}`}
+            onClick={() => {
+              setMode('register')
+              setError('')
+              setSuccess('')
+            }}
+            disabled={loading}
+          >
+            Cadastrar
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="auth-form">
+          {mode === 'register' && (
+            <>
+              <div className="auth-input-group">
+                <label className="auth-input-label">Nome do síndico</label>
+                <input
+                  className="auth-input-field"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  maxLength={150}
+                  placeholder="Seu nome completo"
+                  disabled={loading}
+                />
+              </div>
+              <div className="auth-input-group">
+                <label className="auth-input-label">Nome do condomínio</label>
+                <input
+                  className="auth-input-field"
+                  value={nomeCondominio}
+                  onChange={(e) => setNomeCondominio(e.target.value)}
+                  required
+                  maxLength={150}
+                  placeholder="Ex: Condomínio Residencial Flores"
+                  disabled={loading}
+                />
+              </div>
+            </>
+          )}
+
+          <div className="auth-input-group">
+            <label className="auth-input-label">E-mail</label>
+            <input
+              type="email"
+              className="auth-input-field"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              placeholder="sindico@demo.local"
               disabled={loading}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              className={`mode-button ${mode === 'register' ? 'mode-button--active' : ''}`}
-              onClick={() => setMode('register')}
-              disabled={loading}
-            >
-              Cadastrar
-            </button>
+            />
           </div>
-          <form onSubmit={onSubmit} className="form-grid auth-form">
-            {mode === 'register' ? (
-              <>
-                <label>
-                  Nome do síndico
-                  <input value={nome} onChange={(e) => setNome(e.target.value)} required maxLength={150} />
-                </label>
-                <label>
-                  Nome do condomínio
-                  <input value={nomeCondominio} onChange={(e) => setNomeCondominio(e.target.value)} required maxLength={150} />
-                </label>
-              </>
-            ) : null}
-            <label>
-              E-mail
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="sindico@demo.local"
-              />
-            </label>
-            <label>
-              <span className="field-head">
-                <span>Senha</span>
-                {mode === 'login' ? <a href="/esqueci-senha">Esqueci minha senha</a> : null}
-              </span>
+
+          <div className="auth-input-group">
+            <div className="auth-input-label">
+              <span>Senha</span>
+              {mode === 'login' && <a href="/esqueci-senha">Esqueci minha senha</a>}
+            </div>
+            <input
+              type="password"
+              className="auth-input-field"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              required
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              placeholder="••••••••"
+              disabled={loading}
+            />
+          </div>
+
+          {mode === 'register' && (
+            <div className="auth-input-group">
+              <label className="auth-input-label">Confirmar senha</label>
               <input
                 type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                className="auth-input-field"
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                disabled={loading}
               />
-            </label>
-             {mode === 'register' ? (
-              <label>
-                Confirmar senha
-                <input
-                  type="password"
-                  value={confirmarSenha}
-                  onChange={(e) => setConfirmarSenha(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                />
-              </label>
-            ) : null}
-            {mode === 'register' ? (
-              <div className="lgpd-checkboxes-container" style={{ margin: '15px 0', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', gridColumn: '1 / -1' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--ink)' }}>
-                  <input
-                    type="checkbox"
-                    checked={aceitouTermos}
-                    onChange={(e) => setAceitouTermos(e.target.checked)}
-                    required
-                    style={{ width: 'auto', marginTop: '3px', flexShrink: 0 }}
-                  />
-                  <span style={{ lineHeight: '1.4', textAlign: 'left' }}>
-                    Declaro que li e aceito os <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Política de Privacidade</a> da plataforma, e estou ciente de que meus dados pessoais serão tratados para criação da conta, autenticação, prestação dos serviços contratados, suporte, segurança da plataforma e cumprimento de obrigações legais.
-                  </span>
-                </label>
+            </div>
+          )}
 
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--ink)' }}>
-                  <input
-                    type="checkbox"
-                    checked={aceitouMarketing}
-                    onChange={(e) => setAceitouMarketing(e.target.checked)}
-                    style={{ width: 'auto', marginTop: '3px', flexShrink: 0 }}
-                  />
-                  <span style={{ lineHeight: '1.4', textAlign: 'left' }}>
-                    Aceito receber comunicações comerciais, novidades e ofertas da plataforma por e-mail, WhatsApp ou telefone. Posso cancelar esse recebimento a qualquer momento.
-                  </span>
-                </label>
-                
-                <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '0.78rem', color: 'var(--muted)' }}>
-                  Consulte também a nossa <a href="/cookies" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Política de Cookies</a>.
+          {/* Seção LGPD: Sempre mostramos checkboxes para novos cadastros (seja clássico ou Google) */}
+          {(mode === 'register' || mode === 'login') && (
+            <div className="auth-lgpd-container">
+              {mode === 'login' && (
+                <div style={{ fontSize: '0.78rem', color: '#9ca3af', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  Acesso Social (Google)
                 </div>
-              </div>
-            ) : null}
-            {error ? <p className="message error">{error}</p> : null}
-            {success ? <p className="message success">{success}</p> : null}
-            <button type="submit" disabled={loading} className="submit full">
-              {loading ? 'Processando...' : mode === 'login' ? 'Entrar' : 'Cadastrar e entrar'}
-            </button>
-          </form>
-          <p className="auth-footer">
-            {mode === 'login' ? 'Não tem conta? ' : 'Já tem conta? '}
-            <button
-              type="button"
-              className="link-button"
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-              disabled={loading}
-            >
-              {mode === 'login' ? 'Criar conta gratuita' : 'Entrar'}
-            </button>
-          </p>
-        </article>
-      </section>
-      <footer style={{ textAlign: 'center', padding: '16px 20px 32px', fontSize: '0.78rem', color: 'var(--muted)', width: '100%' }}>
-        <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Termos de Uso</a> | 
-        <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Política de Privacidade</a> | 
-        <a href="/cookies" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--muted)', margin: '0 8px', textDecoration: 'none' }}>Cookies</a>
+              )}
+              
+              <label className="auth-lgpd-label">
+                <input
+                  type="checkbox"
+                  checked={aceitouTermos}
+                  onChange={(e) => setAceitouTermos(e.target.checked)}
+                  required={mode === 'register'}
+                  disabled={loading}
+                />
+                <span>
+                  Declaro que li e aceito os <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noopener noreferrer">Política de Privacidade</a> da plataforma, autorizando o tratamento dos meus dados.
+                </span>
+              </label>
+
+              <label className="auth-lgpd-label">
+                <input
+                  type="checkbox"
+                  checked={aceitouMarketing}
+                  onChange={(e) => setAceitouMarketing(e.target.checked)}
+                  disabled={loading}
+                />
+                <span>
+                  Aceito receber comunicações comerciais, atualizações do sistema e ofertas exclusivas da plataforma.
+                </span>
+              </label>
+
+              {mode === 'login' && (
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', marginTop: '2px' }}>
+                  Nota: Marque o primeiro checkbox acima para habilitar o login social com o Google de forma segura.
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && <p className="message error" style={{ margin: '0 0 16px 0', borderRadius: '10px' }}>{error}</p>}
+          {success && <p className="message success" style={{ margin: '0 0 16px 0', borderRadius: '10px' }}>{success}</p>}
+
+          <button type="submit" disabled={loading} className="auth-submit-btn">
+            {loading ? 'Processando...' : mode === 'login' ? 'Entrar com Email' : 'Cadastrar Conta'}
+          </button>
+        </form>
+
+        {/* Divisor e seção de Login Social */}
+        <div className="auth-divider">ou</div>
+
+        <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Container onde o Google Identity Services renderizará o botão oficial */}
+          <div id="google-signin-btn-container" style={{ width: '100%', minHeight: '44px' }}></div>
+          
+          {/* Overlay transparente que barra o clique caso a LGPD não seja consentida */}
+          {!aceitouTermos && (
+            <div
+              onClick={handleGoogleClickBlocked}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 20,
+                cursor: 'pointer',
+                background: 'transparent',
+                borderRadius: '9999px'
+              }}
+              title="Aceite os Termos e Políticas acima para habilitar o botão do Google"
+            />
+          )}
+        </div>
+
+        <p className="auth-footer-text">
+          {mode === 'login' ? 'Novo na plataforma? ' : 'Já possui uma conta? '}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login')
+              setError('')
+              setSuccess('')
+            }}
+            disabled={loading}
+          >
+            {mode === 'login' ? 'Crie uma conta grátis' : 'Acesse agora'}
+          </button>
+        </p>
+      </article>
+
+      <footer className="auth-global-footer">
+        <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Uso</a> | 
+        <a href="/privacidade" target="_blank" rel="noopener noreferrer">Diretrizes de Privacidade</a> | 
+        <a href="/cookies" target="_blank" rel="noopener noreferrer">Gestão de Cookies</a>
       </footer>
     </main>
   )
 }
 
 export default LoginPage
-
