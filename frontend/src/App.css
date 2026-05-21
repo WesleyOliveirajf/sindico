@@ -716,6 +716,32 @@ textarea {
   color: var(--fg);
 }
 
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.admin-tab:hover {
+  color: var(--accent);
+}
+
+.admin-tab--active {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
 .stat-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

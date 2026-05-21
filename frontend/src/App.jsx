@@ -9,7 +9,6 @@ import ManutencoesPage from "./ManutencoesPage";
 import ReunioesPage from "./ReunioesPage";
 import GastosPage from "./GastosPage";
 import AssistenteIAPage from "./AssistenteIAPage";
-import ConfigIAPage from "./ConfigIAPage";
 import LoginPage from "./LoginPage";
 import AdminPage from "./AdminPage";
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
@@ -26,7 +25,6 @@ const PAGES = {
 
 const IA_PAGES = {
   assistente: "Assistente IA",
-  "config-ia": "Config. IA",
 };
 
 function App() {
@@ -37,6 +35,7 @@ function App() {
   const [toolbarGlow, setToolbarGlow] = useState({ x: "50%", y: "50%", visible: false });
   const [now, setNow] = useState(() => new Date());
   const allPages = Object.entries(PAGES);
+  const isAdmin = user?.roles?.includes("ROLE_ADMIN");
 
   const sindicoNome = user?.nome || user?.email || "Sindico";
   const condominioNome =
@@ -149,7 +148,7 @@ function App() {
             </NavLink>
           ))}
 
-          {user?.roles?.includes("ROLE_ADMIN") && (
+          {isAdmin && (
             <NavLink
               to="/admin"
               onClick={closeMenu}
@@ -200,8 +199,14 @@ function App() {
             <Route path="/prestadores" element={<PrestadoresPage />} />
             <Route path="/gastos" element={<GastosPage />} />
             <Route path="/assistente" element={<AssistenteIAPage />} />
-            <Route path="/config-ia" element={<ConfigIAPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route
+              path="/config-ia"
+              element={<Navigate to={isAdmin ? "/admin" : "/assistente"} replace />}
+            />
+            <Route
+              path="/admin"
+              element={isAdmin ? <AdminPage /> : <Navigate to="/compromissos" replace />}
+            />
             <Route path="*" element={<Navigate to="/compromissos" replace />} />
           </Routes>
         </section>

@@ -6,6 +6,7 @@ import {
   reativarUsuario,
   rejeitarUsuario,
 } from './api'
+import ConfigIAPage from './ConfigIAPage'
 
 const STATUS_LABEL = {
   ativo: 'Ativo',
@@ -34,6 +35,7 @@ function StatCard({ label, value, highlight }) {
 }
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState('usuarios')
   const [stats, setStats] = useState(null)
   const [usuarios, setUsuarios] = useState([])
   const [loadingStats, setLoadingStats] = useState(true)
@@ -70,6 +72,7 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStats()
     fetchUsuarios()
   }, [fetchStats, fetchUsuarios])
@@ -93,6 +96,37 @@ export default function AdminPage() {
     <div className="admin-page">
       <h1 className="page-title">Painel Administrativo</h1>
 
+      <div className="admin-tabs" role="tablist" aria-label="Secoes administrativas">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'usuarios'}
+          className={`admin-tab${activeTab === 'usuarios' ? ' admin-tab--active' : ''}`}
+          onClick={() => setActiveTab('usuarios')}
+        >
+          Usuarios
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'ia'}
+          className={`admin-tab${activeTab === 'ia' ? ' admin-tab--active' : ''}`}
+          onClick={() => setActiveTab('ia')}
+        >
+          IA
+        </button>
+      </div>
+
+      {activeTab === 'ia' ? (
+        <section className="admin-section">
+          <h2 className="admin-section__title">Configuracao do assistente</h2>
+          <p className="muted">
+            Escolha o provedor, modelo e credenciais que o assistente e os recursos de IA vao usar.
+          </p>
+          <ConfigIAPage embedded />
+        </section>
+      ) : (
+        <>
       {/* Stats */}
       <section className="admin-section">
         <h2 className="admin-section__title">Visao Geral</h2>
@@ -236,6 +270,8 @@ export default function AdminPage() {
           </div>
         )}
       </section>
+        </>
+      )}
     </div>
   )
 }

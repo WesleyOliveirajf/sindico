@@ -10,7 +10,7 @@ const PROVIDERS = [
   { value: 'OLLAMA',        label: 'Ollama (local)', modelHint: 'llama3, mistral, codellama' },
 ]
 
-function ConfigIAPage() {
+function ConfigIAPage({ embedded = false }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -83,10 +83,12 @@ function ConfigIAPage() {
   if (loading) {
     return (
       <>
-        <section className="hero">
-          <p className="eyebrow">Inteligencia Artificial</p>
-          <h1>Configuracao de IA</h1>
-        </section>
+        {!embedded && (
+          <section className="hero">
+            <p className="eyebrow">Inteligencia Artificial</p>
+            <h1>Configuracao de IA</h1>
+          </section>
+        )}
         <LoadingState message="Carregando configuracao..." />
       </>
     )
@@ -94,13 +96,15 @@ function ConfigIAPage() {
 
   return (
     <>
-      <section className="hero">
-        <p className="eyebrow">Inteligencia Artificial</p>
-        <h1>Configuracao de IA</h1>
-        <p className="subtitle">
-          Configure seu provedor de IA para habilitar o assistente, geracao de atas, analise de gastos e triagem de manutencoes.
-        </p>
-      </section>
+      {!embedded && (
+        <section className="hero">
+          <p className="eyebrow">Inteligencia Artificial</p>
+          <h1>Configuracao de IA</h1>
+          <p className="subtitle">
+            Configure seu provedor de IA para habilitar o assistente, geracao de atas, analise de gastos e triagem de manutencoes.
+          </p>
+        </section>
+      )}
 
       <SuccessState message={success} />
 

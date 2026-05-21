@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { iaChat } from './api'
 
 const SUGGESTIONS = [
-  'Quais sao as obrigacoes legais de um sindico no Brasil?',
-  'Como conduzir uma assembleia extraordinaria?',
-  'Dicas para reduzir custos de manutencao em condominio.',
-  'Como lidar com moradores inadimplentes?',
-  'O que deve constar na convencao do condominio?',
+  'Quais manutenções estão pendentes no condomínio?',
+  'Qual o resumo dos gastos cadastrados recentemente?',
+  'Quem são os moradores ativos cadastrados e em quais unidades?',
+  'Quais foram as decisões e pendências da última reunião?',
+  'Quais são os próximos compromissos na nossa agenda?',
 ]
 
 function AssistenteIAPage() {
@@ -43,7 +43,7 @@ function AssistenteIAPage() {
         {
           role: 'error',
           content: isNotConfigured
-            ? 'A IA nao esta configurada para este condominio. Va em "Config. IA" no menu lateral para configurar o provedor e a chave de API.'
+            ? 'A IA nao esta configurada para este condomínio. Solicite ao admin para configurar o provedor, modelo e chave de API na aba IA do painel administrativo.'
             : err.message,
           ts: Date.now(),
         },
@@ -71,9 +71,9 @@ function AssistenteIAPage() {
     <>
       <section className="hero">
         <p className="eyebrow">Inteligencia Artificial</p>
-        <h1>Assistente IA</h1>
+        <h1>Assistente IA + RAG</h1>
         <p className="subtitle">
-          Tire duvidas sobre gestao condominial, legislacao, financas e boas praticas.
+          Tire duvidas gerais ou faça perguntas especificas sobre as manutencoes, gastos, moradores, reunioes e compromissos do seu condominio.
         </p>
       </section>
 
