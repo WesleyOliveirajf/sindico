@@ -120,9 +120,9 @@
 .content-user {
   color: var(--muted);
   display: grid;
-  justify-items: end;
+  justify-items: start;
   gap: 2px;
-  text-align: right;
+  text-align: left;
 }
 
 .content-user-line {
