@@ -131,49 +131,100 @@ function LoginPage({ onLogin }) {
     }
   }
 
+  const LogoSVG = () => (
+    <svg className="auth-logo-svg" width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="logo-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2dd4bf" />
+          <stop offset="100%" stopColor="#6366f1" />
+        </linearGradient>
+        <linearGradient id="logo-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#34d399" />
+        </linearGradient>
+      </defs>
+      <path d="M18 30 L32 18 L46 30 L46 48 L18 48 Z" stroke="url(#logo-grad-1)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+      <path d="M26 36 L40 25 L54 36 L54 54 L26 54 Z" stroke="url(#logo-grad-2)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="32" cy="18" r="3.5" fill="#2dd4bf" />
+      <circle cx="40" cy="25" r="3.5" fill="#6366f1" />
+      <circle cx="26" cy="36" r="3.5" fill="#34d399" />
+      <circle cx="46" cy="48" r="3" fill="#2dd4bf" opacity="0.8" />
+      <circle cx="54" cy="54" r="3" fill="#6366f1" />
+      <line x1="32" y1="18" x2="40" y2="25" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+      <line x1="40" y1="25" x2="26" y2="36" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+      <line x1="26" y1="36" x2="46" y2="48" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
+    </svg>
+  )
+
   return (
     <main className="auth-page">
-      {/* Elementos de ambient glow decorativos */}
-      <div className="auth-glow-1"></div>
-      <div className="auth-glow-2"></div>
 
-      <header className="auth-brand-container">
-        <svg className="auth-logo-svg" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="logo-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2dd4bf" />
-              <stop offset="100%" stopColor="#6366f1" />
-            </linearGradient>
-            <linearGradient id="logo-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#818cf8" />
-              <stop offset="100%" stopColor="#34d399" />
-            </linearGradient>
-          </defs>
-          {/* Unidade condominial 1 (Trás / Tecnologia) */}
-          <path d="M18 30 L32 18 L46 30 L46 48 L18 48 Z" stroke="url(#logo-grad-1)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-          {/* Unidade condominial 2 (Frente / IA) */}
-          <path d="M26 36 L40 25 L54 36 L54 54 L26 54 Z" stroke="url(#logo-grad-2)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {/* Pontos de conexão de IA */}
-          <circle cx="32" cy="18" r="3.5" fill="#2dd4bf" />
-          <circle cx="40" cy="25" r="3.5" fill="#6366f1" />
-          <circle cx="26" cy="36" r="3.5" fill="#34d399" />
-          <circle cx="46" cy="48" r="3" fill="#2dd4bf" opacity="0.8" />
-          <circle cx="54" cy="54" r="3" fill="#6366f1" />
-          {/* Linhas de rede neural conectando as unidades */}
-          <line x1="32" y1="18" x2="40" y2="25" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-          <line x1="40" y1="25" x2="26" y2="36" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-          <line x1="26" y1="36" x2="46" y2="48" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
-        </svg>
-        <h1 className="auth-brand">
-          LiveSind<span className="brand-ia">IA</span>
-        </h1>
-        <p className="auth-subtitle">
-          Gestão condominial inteligente com IA e total segurança de dados
-        </p>
-      </header>
+      {/* ── Painel esquerdo: Branding + Features ── */}
+      <aside className="auth-left-panel">
+        <div className="auth-glow-1" />
+        <div className="auth-glow-2" />
 
-      <article className="auth-glass-panel">
-        <h2>{mode === 'login' ? 'Identifique-se' : 'Crie sua conta'}</h2>
+        <header className="auth-brand-container">
+          <LogoSVG />
+          <h1 className="auth-brand">
+            LiveSind<span className="brand-ia">IA</span>
+          </h1>
+          <p className="auth-subtitle">
+            Gestão condominial inteligente com IA e total segurança de dados
+          </p>
+        </header>
+
+        <ul className="auth-features-list">
+          <li className="auth-feature-item">
+            <div className="auth-feature-icon">🏢</div>
+            <div className="auth-feature-text">
+              <strong>Manutenções e Reuniões</strong>
+              <span>Registre, acompanhe e gere atas automaticamente com IA.</span>
+            </div>
+          </li>
+          <li className="auth-feature-item">
+            <div className="auth-feature-icon">💰</div>
+            <div className="auth-feature-text">
+              <strong>Financeiro Integrado</strong>
+              <span>Controle de gastos, prestadores e análise financeira com IA.</span>
+            </div>
+          </li>
+          <li className="auth-feature-item">
+            <div className="auth-feature-icon">🤖</div>
+            <div className="auth-feature-text">
+              <strong>Assistente IA com RAG</strong>
+              <span>Tire dúvidas e tome decisões com dados reais do seu condomínio.</span>
+            </div>
+          </li>
+          <li className="auth-feature-item">
+            <div className="auth-feature-icon">🔒</div>
+            <div className="auth-feature-text">
+              <strong>Segurança e Privacidade</strong>
+              <span>Dados isolados por condomínio, conformidade com LGPD.</span>
+            </div>
+          </li>
+        </ul>
+
+        <div className="auth-trust-bar">
+          <div className="auth-trust-dots">
+            <span className="auth-trust-dot" />
+            <span className="auth-trust-dot" />
+            <span className="auth-trust-dot" />
+          </div>
+          <div className="auth-trust-text">
+            <strong>Confiança de síndicos em todo o Brasil</strong>
+            Plataforma segura, moderna e inteligente
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Painel direito: Formulário ── */}
+      <div className="auth-right-panel">
+        <article className="auth-glass-panel">
+          <h2>{mode === 'login' ? 'Bem-vindo de volta' : 'Crie sua conta'}</h2>
+          <p className="auth-panel-subtitle">
+            {mode === 'login' ? 'Entre na sua conta para continuar' : 'Gerencie seu condomínio com inteligência'}
+          </p>
 
         <div className="auth-toggle-bar" aria-label="Alternar entre login e cadastro">
           <button
@@ -373,10 +424,12 @@ function LoginPage({ onLogin }) {
       </article>
 
       <footer className="auth-global-footer">
-        <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Uso</a> | 
-        <a href="/privacidade" target="_blank" rel="noopener noreferrer">Diretrizes de Privacidade</a> | 
+        <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Uso</a> |
+        <a href="/privacidade" target="_blank" rel="noopener noreferrer">Diretrizes de Privacidade</a> |
         <a href="/cookies" target="_blank" rel="noopener noreferrer">Gestão de Cookies</a>
       </footer>
+      </div>
+
     </main>
   )
 }
