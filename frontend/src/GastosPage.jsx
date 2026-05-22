@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaAnalisarGastos } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
@@ -95,6 +95,20 @@ function buildRecebimentoQuery(filtroMes, filtroAno) {
   return qs ? `/api/recebimentos?${qs}` : '/api/recebimentos'
 }
 
+function gastoToForm(gasto) {
+  return {
+    descricao: gasto.descricao || '',
+    tipo: gasto.tipo || 'OUTROS',
+    valor: gasto.valor != null ? String(gasto.valor) : '',
+    dataGasto: gasto.dataGasto || '',
+    fixo: Boolean(gasto.fixo),
+    parcelado: Boolean(gasto.parcelado),
+    parcelaAtual: gasto.parcelaAtual != null ? String(gasto.parcelaAtual) : '',
+    parcelaTotal: gasto.parcelaTotal != null ? String(gasto.parcelaTotal) : '',
+    observacoes: gasto.observacoes || '',
+  }
+}
+
 /* ─── Estilos inline dos cards de resumo ──────────────────────── */
 const summaryContainerStyle = {
   display: 'grid',
@@ -153,7 +167,9 @@ function GastosPage() {
   const [activeTab, setActiveTab] = useState('gastos')
 
   // Formulário de gasto
+  const gastoFormRef = useRef(null)
   const [gastoForm, setGastoForm] = useState(INITIAL_GASTO)
+  const [editingGastoId, setEditingGastoId] = useState(null)
   const [gastos, setGastos] = useState([])
   const [gastosLoading, setGastosLoading] = useState(true)
   const [gastoSubmitting, setGastoSubmitting] = useState(false)
@@ -233,6 +249,22 @@ function GastosPage() {
     loadAll('', '', '')
   }
 
+  function resetGastoForm() {
+    setEditingGastoId(null)
+    setGastoForm(INITIAL_GASTO)
+  }
+
+  function onEditarGasto(gasto) {
+    setActiveTab('gastos')
+    setError('')
+    setSuccess('')
+    setEditingGastoId(gasto.id)
+    setGastoForm(gastoToForm(gasto))
+    window.setTimeout(() => {
+      gastoFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
+
   /* ─── Formulário de gasto ───────────────────────────────────── */
   function onGastoChange(e) {
     const { name, value, type, checked } = e.target
@@ -260,15 +292,16 @@ function GastosPage() {
         parcelaAtual: gastoForm.parcelado && gastoForm.parcelaAtual ? Number(gastoForm.parcelaAtual) : null,
         parcelaTotal: gastoForm.parcelado && gastoForm.parcelaTotal ? Number(gastoForm.parcelaTotal) : null,
       }
-      const res = await apiFetch('/api/gastos', {
-        method: 'POST',
+      const endpoint = editingGastoId ? `/api/gastos/${editingGastoId}` : '/api/gastos'
+      const res = await apiFetch(endpoint, {
+        method: editingGastoId ? 'PUT' : 'POST',
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar gasto.'))
+        throw new Error(await parseError(res, editingGastoId ? 'Erro ao atualizar gasto.' : 'Erro ao registrar gasto.'))
       }
-      setSuccess('Gasto registrado com sucesso.')
-      setGastoForm(INITIAL_GASTO)
+      setSuccess(editingGastoId ? 'Gasto atualizado com sucesso.' : 'Gasto registrado com sucesso.')
+      resetGastoForm()
       await loadAll(filtroMes, filtroAno, filtroTipo)
     } catch (err) {
       setError(err.message)
@@ -321,6 +354,9 @@ function GastosPage() {
         : `/api/recebimentos/${pendingDelete.id}`
       const res = await apiFetch(endpoint, { method: 'DELETE' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao remover registro.'))
+      if (pendingDelete.type === 'gasto' && pendingDelete.id === editingGastoId) {
+        resetGastoForm()
+      }
       setPendingDelete(null)
       await loadAll(filtroMes, filtroAno, filtroTipo)
     } catch (err) {
@@ -434,8 +470,8 @@ function GastosPage() {
       {activeTab === 'gastos' && (
         <>
           {/* Formulário de gasto */}
-          <section className="panel" style={{ marginTop: 20 }}>
-            <h2>Novo gasto</h2>
+          <section className="panel" style={{ marginTop: 20 }} ref={gastoFormRef}>
+            <h2>{editingGastoId ? 'Editar gasto' : 'Novo gasto'}</h2>
             <form onSubmit={onGastoSubmit} className="form-grid">
               <label>
                 Descrição *
@@ -545,9 +581,23 @@ function GastosPage() {
                 />
               </label>
 
-              <button type="submit" disabled={gastoSubmitting} className="submit full">
-                {gastoSubmitting ? 'Salvando...' : 'Registrar gasto'}
-              </button>
+              <div className="full" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="submit" disabled={gastoSubmitting} className="submit" style={{ flex: '1 1 220px' }}>
+                  {gastoSubmitting
+                    ? 'Salvando...'
+                    : editingGastoId ? 'Salvar alterações' : 'Registrar gasto'}
+                </button>
+                {editingGastoId && (
+                  <button
+                    type="button"
+                    className="submit"
+                    style={{ flex: '0 1 160px', background: 'var(--color-muted, #888)' }}
+                    onClick={resetGastoForm}
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
             </form>
           </section>
 
@@ -617,21 +667,36 @@ function GastosPage() {
                     <p style={{ marginTop: 6, fontWeight: 600 }}>{formatCurrency(g.valor)}</p>
                     {g.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {g.observacoes}</p> : null}
                   </div>
-                  <button
-                    onClick={() => setPendingDelete({ type: 'gasto', id: g.id })}
-                    style={{
-                      background: 'none',
-                      border: '1px solid #cc3333',
-                      color: '#cc3333',
-                      borderRadius: 4,
-                      padding: '4px 10px',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Remover
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => onEditarGasto(g)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #2563eb',
+                        color: '#2563eb',
+                        borderRadius: 4,
+                        padding: '4px 10px',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setPendingDelete({ type: 'gasto', id: g.id })}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #cc3333',
+                        color: '#cc3333',
+                        borderRadius: 4,
+                        padding: '4px 10px',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                      }}
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
