@@ -20,7 +20,7 @@ const PAGES = {
   anotacoes: "Anotações",
   moradores: "Moradores",
   prestadores: "Prestadores",
-  gastos: "Gastos",
+  gastos: "Controle de Gasto",
 };
 
 const IA_PAGES = {

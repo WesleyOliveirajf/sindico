@@ -1,4 +1,4 @@
-package br.com.sindico.app.gasto;
+package br.com.sindico.app.recebimento;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,8 +16,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "gastos")
-public class Gasto {
+@Table(name = "recebimentos")
+public class Recebimento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -34,25 +34,13 @@ public class Gasto {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private GastoTipo tipo;
+    private RecebimentoTipo tipo;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal valor;
 
-    @Column(name = "data_gasto", nullable = false)
-    private LocalDate dataGasto;
-
-    @Column(nullable = false)
-    private boolean fixo;
-
-    @Column(nullable = false)
-    private boolean parcelado;
-
-    @Column(name = "parcela_atual")
-    private Integer parcelaAtual;
-
-    @Column(name = "parcela_total")
-    private Integer parcelaTotal;
+    @Column(name = "data_recebimento", nullable = false)
+    private LocalDate dataRecebimento;
 
     @Column(columnDefinition = "TEXT")
     private String observacoes;
@@ -72,20 +60,12 @@ public class Gasto {
     public void setCriadoPor(UUID criadoPor) { this.criadoPor = criadoPor; }
     public String getDescricao() { return descricao; }
     public void setDescricao(String descricao) { this.descricao = descricao; }
-    public GastoTipo getTipo() { return tipo; }
-    public void setTipo(GastoTipo tipo) { this.tipo = tipo; }
+    public RecebimentoTipo getTipo() { return tipo; }
+    public void setTipo(RecebimentoTipo tipo) { this.tipo = tipo; }
     public BigDecimal getValor() { return valor; }
     public void setValor(BigDecimal valor) { this.valor = valor; }
-    public LocalDate getDataGasto() { return dataGasto; }
-    public void setDataGasto(LocalDate dataGasto) { this.dataGasto = dataGasto; }
-    public boolean isFixo() { return fixo; }
-    public void setFixo(boolean fixo) { this.fixo = fixo; }
-    public boolean isParcelado() { return parcelado; }
-    public void setParcelado(boolean parcelado) { this.parcelado = parcelado; }
-    public Integer getParcelaAtual() { return parcelaAtual; }
-    public void setParcelaAtual(Integer parcelaAtual) { this.parcelaAtual = parcelaAtual; }
-    public Integer getParcelaTotal() { return parcelaTotal; }
-    public void setParcelaTotal(Integer parcelaTotal) { this.parcelaTotal = parcelaTotal; }
+    public LocalDate getDataRecebimento() { return dataRecebimento; }
+    public void setDataRecebimento(LocalDate dataRecebimento) { this.dataRecebimento = dataRecebimento; }
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -12,6 +12,9 @@ public record GastoResponse(
         BigDecimal valor,
         LocalDate dataGasto,
         boolean fixo,
+        boolean parcelado,
+        Integer parcelaAtual,
+        Integer parcelaTotal,
         String observacoes,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -24,6 +27,9 @@ public record GastoResponse(
                 g.getValor(),
                 g.getDataGasto(),
                 g.isFixo(),
+                g.isParcelado(),
+                g.getParcelaAtual(),
+                g.getParcelaTotal(),
                 g.getObservacoes(),
                 g.getCreatedAt(),
                 g.getUpdatedAt());

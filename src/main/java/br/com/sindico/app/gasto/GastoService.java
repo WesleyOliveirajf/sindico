@@ -57,6 +57,23 @@ public class GastoService {
         g.setValor(req.valor());
         g.setDataGasto(req.dataGasto());
         g.setFixo(req.fixo());
+        g.setParcelado(req.parcelado());
+        if (req.parcelado()) {
+            if (req.parcelaAtual() == null || req.parcelaTotal() == null) {
+                throw new IllegalArgumentException("Informe a parcela atual e o total de parcelas.");
+            }
+            if (req.parcelaAtual() < 1 || req.parcelaTotal() < 1) {
+                throw new IllegalArgumentException("Parcela atual e total devem ser maiores que zero.");
+            }
+            if (req.parcelaAtual() > req.parcelaTotal()) {
+                throw new IllegalArgumentException("Parcela atual nao pode ser maior que o total de parcelas.");
+            }
+            g.setParcelaAtual(req.parcelaAtual());
+            g.setParcelaTotal(req.parcelaTotal());
+        } else {
+            g.setParcelaAtual(null);
+            g.setParcelaTotal(null);
+        }
         g.setObservacoes(SecurityUtils.blankToNull(req.observacoes()));
     }
 }
