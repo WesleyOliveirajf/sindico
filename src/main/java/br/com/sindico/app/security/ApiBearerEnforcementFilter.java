@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
 import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -18,9 +19,20 @@ public class ApiBearerEnforcementFilter extends OncePerRequestFilter {
             "/api/auth/register",
             "/api/auth/google");
 
+    private final boolean enforceBearer;
+
+    public ApiBearerEnforcementFilter(@Value("${app.security.enforce-bearer:true}") boolean enforceBearer) {
+        this.enforceBearer = enforceBearer;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        if (!enforceBearer) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String uri = request.getRequestURI();
 
         if (!uri.startsWith("/api/")) {

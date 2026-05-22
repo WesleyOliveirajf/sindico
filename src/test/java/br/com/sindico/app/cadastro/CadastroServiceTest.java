@@ -5,6 +5,8 @@ import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
+import br.com.sindico.app.usuario.UsuarioConsentimento;
+import br.com.sindico.app.usuario.UsuarioConsentimentoRepository;
 import br.com.sindico.app.usuario.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,9 @@ class CadastroServiceTest {
     private UsuarioCondominioRepository usuarioCondominioRepository;
 
     @Mock
+    private UsuarioConsentimentoRepository usuarioConsentimentoRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -54,6 +59,7 @@ class CadastroServiceTest {
         formValido.setNomeCondominio("Residencial Primavera");
         formValido.setSenha("senha123");
         formValido.setConfirmarSenha("senha123");
+        formValido.setAceitouTermos(true);
     }
 
     // -----------------------------------------------------------------------
@@ -75,11 +81,12 @@ class CadastroServiceTest {
 
         when(usuarioCondominioRepository.save(any(UsuarioCondominio.class))).thenReturn(new UsuarioCondominio());
 
-        assertThatCode(() -> cadastroService.cadastrar(formValido)).doesNotThrowAnyException();
+        assertThatCode(() -> cadastrar(formValido)).doesNotThrowAnyException();
 
         verify(usuarioRepository).save(any(Usuario.class));
         verify(condominioRepository).save(any(Condominio.class));
         verify(usuarioCondominioRepository).save(any(UsuarioCondominio.class));
+        verify(usuarioConsentimentoRepository).save(any(UsuarioConsentimento.class));
     }
 
     @Test
@@ -92,7 +99,7 @@ class CadastroServiceTest {
         when(condominioRepository.save(any())).thenReturn(c);
         when(usuarioCondominioRepository.save(any())).thenReturn(new UsuarioCondominio());
 
-        cadastroService.cadastrar(formValido);
+        cadastrar(formValido);
 
         verify(passwordEncoder).encode("senha123");
     }
@@ -108,7 +115,7 @@ class CadastroServiceTest {
         when(passwordEncoder.encode(any())).thenReturn("hash");
         when(usuarioCondominioRepository.save(any())).thenReturn(new UsuarioCondominio());
 
-        assertThatCode(() -> cadastroService.cadastrar(formValido)).doesNotThrowAnyException();
+        assertThatCode(() -> cadastrar(formValido)).doesNotThrowAnyException();
         verify(usuarioRepository).existsByEmailNormalizado("maria@cond.com");
     }
 
@@ -120,7 +127,7 @@ class CadastroServiceTest {
     void should_throw_when_email_already_exists() {
         when(usuarioRepository.existsByEmailNormalizado("maria@cond.com")).thenReturn(true);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ja existe uma conta com este e-mail");
 
@@ -137,7 +144,7 @@ class CadastroServiceTest {
         formValido.setConfirmarSenha("abc1");
         when(usuarioRepository.existsByEmailNormalizado(anyString())).thenReturn(false);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("minimo 8 caracteres");
     }
@@ -147,7 +154,7 @@ class CadastroServiceTest {
         formValido.setConfirmarSenha("diferente1");
         when(usuarioRepository.existsByEmailNormalizado(anyString())).thenReturn(false);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nao conferem");
     }
@@ -158,7 +165,7 @@ class CadastroServiceTest {
         formValido.setConfirmarSenha("12345678");
         when(usuarioRepository.existsByEmailNormalizado(anyString())).thenReturn(false);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("letras e numeros");
     }
@@ -169,7 +176,7 @@ class CadastroServiceTest {
         formValido.setConfirmarSenha("abcdefgh");
         when(usuarioRepository.existsByEmailNormalizado(anyString())).thenReturn(false);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("letras e numeros");
     }
@@ -182,7 +189,7 @@ class CadastroServiceTest {
     void should_throw_when_nome_is_blank() {
         formValido.setNome("  ");
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nome");
     }
@@ -191,9 +198,12 @@ class CadastroServiceTest {
     void should_throw_when_email_is_null() {
         formValido.setEmail(null);
 
-        assertThatThrownBy(() -> cadastroService.cadastrar(formValido))
+        assertThatThrownBy(() -> cadastrar(formValido))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("e-mail");
     }
-}
 
+    private void cadastrar(CadastroForm form) {
+        cadastroService.cadastrar(form, "127.0.0.1", "JUnit", "test");
+    }
+}

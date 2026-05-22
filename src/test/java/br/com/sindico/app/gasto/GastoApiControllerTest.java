@@ -56,7 +56,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
         mockMvc.perform(get("/api/gastos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].descricao").value("Agua e esgoto"))
-                .andExpect(jsonPath("$[0].tipo").value("FIXO"))
+                .andExpect(jsonPath("$[0].tipo").value("AGUA"))
                 .andExpect(jsonPath("$[0].valor").value(350.00));
     }
 
@@ -91,7 +91,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
     void should_create_gasto_and_return_201() throws Exception {
         GastoRequest req = new GastoRequest(
                 "Porteiro", GastoTipo.SALARIOS,
-                BigDecimal.valueOf(2500), LocalDate.of(2025, 5, 1), true, null);
+                BigDecimal.valueOf(2500), LocalDate.of(2025, 5, 1), true, false, null, null, null);
         Gasto g = gasto(UUID.randomUUID(), "Porteiro");
         when(gastoService.criar(any())).thenReturn(g);
 
@@ -106,7 +106,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
     @Test
     @WithMockUser
     void should_return_400_when_descricao_blank() throws Exception {
-        String body = "{\"descricao\":\"\",\"tipo\":\"FIXO\",\"valor\":100,\"dataGasto\":\"2025-05-01\"}";
+        String body = "{\"descricao\":\"\",\"tipo\":\"AGUA\",\"valor\":100,\"dataGasto\":\"2025-05-01\"}";
 
         mockMvc.perform(post("/api/gastos")
                         .with(csrf())
@@ -119,7 +119,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
     @Test
     @WithMockUser
     void should_return_400_when_valor_zero() throws Exception {
-        String body = "{\"descricao\":\"Agua\",\"tipo\":\"FIXO\",\"valor\":0,\"dataGasto\":\"2025-05-01\"}";
+        String body = "{\"descricao\":\"Agua\",\"tipo\":\"AGUA\",\"valor\":0,\"dataGasto\":\"2025-05-01\"}";
 
         mockMvc.perform(post("/api/gastos")
                         .with(csrf())
@@ -152,7 +152,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
         UUID id = UUID.randomUUID();
         GastoRequest req = new GastoRequest(
                 "Gas encanado", GastoTipo.GAS,
-                BigDecimal.valueOf(180), LocalDate.of(2025, 5, 10), true, null);
+                BigDecimal.valueOf(180), LocalDate.of(2025, 5, 10), true, false, null, null, null);
         Gasto g = gasto(id, "Gas encanado");
         when(gastoService.atualizar(eq(id), any())).thenReturn(g);
 
@@ -170,7 +170,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
         UUID id = UUID.randomUUID();
         GastoRequest req = new GastoRequest(
                 "X", GastoTipo.OUTROS,
-                BigDecimal.valueOf(10), LocalDate.now(), false, null);
+                BigDecimal.valueOf(10), LocalDate.now(), false, false, null, null, null);
         doThrow(new EntityNotFoundException("Gasto nao encontrado."))
                 .when(gastoService).atualizar(eq(id), any());
 
@@ -221,7 +221,7 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
 
     @Test
     void should_return_401_when_posting_without_auth() throws Exception {
-        String body = "{\"descricao\":\"Agua\",\"tipo\":\"FIXO\",\"valor\":100,\"dataGasto\":\"2025-05-01\"}";
+        String body = "{\"descricao\":\"Agua\",\"tipo\":\"AGUA\",\"valor\":100,\"dataGasto\":\"2025-05-01\"}";
         mockMvc.perform(post("/api/gastos")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -245,4 +245,3 @@ class GastoApiControllerTest extends WebMvcSecurityTestBase {
         return g;
     }
 }
-

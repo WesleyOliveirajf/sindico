@@ -5,6 +5,9 @@ import br.com.sindico.app.cadastro.CadastroService;
 import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
+import br.com.sindico.app.usuario.Usuario;
+import br.com.sindico.app.usuario.UsuarioCondominio;
+import br.com.sindico.app.usuario.UsuarioCondominioRepository;
 import br.com.sindico.app.usuario.UsuarioRepository;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -13,7 +16,10 @@ import com.google.api.client.json.gson.GsonFactory;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -22,6 +28,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +43,7 @@ public class AuthApiController {
     private final CadastroService cadastroService;
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioCondominioRepository usuarioCondominioRepository;
     private final CondominioRepository condominioRepository;
 
     public AuthApiController(
@@ -43,11 +51,13 @@ public class AuthApiController {
             CadastroService cadastroService,
             JwtService jwtService,
             UsuarioRepository usuarioRepository,
+            UsuarioCondominioRepository usuarioCondominioRepository,
             CondominioRepository condominioRepository) {
         this.authenticationManager = authenticationManager;
         this.cadastroService = cadastroService;
         this.jwtService = jwtService;
         this.usuarioRepository = usuarioRepository;
+        this.usuarioCondominioRepository = usuarioCondominioRepository;
         this.condominioRepository = condominioRepository;
     }
 
@@ -233,7 +243,7 @@ public class AuthApiController {
 
             String emailNorm = email.trim().toLowerCase();
             var usuarioOpt = usuarioRepository.findAtivoPorEmailNormalizado(emailNorm);
-            br.com.sindico.app.usuario.Usuario usuario;
+            Usuario usuario;
 
             if (usuarioOpt.isPresent()) {
                 usuario = usuarioOpt.get();
@@ -256,7 +266,7 @@ public class AuthApiController {
                         .orElseThrow(() -> new IllegalStateException("Erro ao recuperar usuário criado via Google."));
             }
 
-            var principal = new UsuarioTenantPrincipal(usuario);
+            var principal = buildPrincipal(usuario);
             String token = jwtService.generateToken(principal);
 
             Map<String, Object> payload = buildAuthPayload(principal);
@@ -266,6 +276,36 @@ public class AuthApiController {
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage(), "status", 400));
         }
+    }
+
+    private UsuarioTenantPrincipal buildPrincipal(Usuario usuario) {
+        List<UsuarioCondominio> vinculos =
+                usuarioCondominioRepository.findByUsuario_IdOrderByCondominio_NomeAsc(usuario.getId());
+        if (vinculos.isEmpty()) {
+            throw new IllegalStateException("Usuario sem condominio associado.");
+        }
+
+        var condominioPadraoId = Optional.ofNullable(vinculos.getFirst().getCondominioId())
+                .orElseThrow(() -> new IllegalStateException("Usuario sem condominio associado."));
+
+        Set<java.util.UUID> condominiosPermitidos =
+                vinculos.stream().map(UsuarioCondominio::getCondominioId).collect(Collectors.toSet());
+
+        Map<String, GrantedAuthority> roles = new LinkedHashMap<>();
+        for (UsuarioCondominio vinculo : vinculos) {
+            String perfil = vinculo.getPerfil() == null || vinculo.getPerfil().isBlank()
+                    ? "USUARIO"
+                    : vinculo.getPerfil().trim().toUpperCase(Locale.ROOT);
+            roles.put(perfil, new SimpleGrantedAuthority("ROLE_" + perfil));
+        }
+
+        return new UsuarioTenantPrincipal(
+                usuario.getId(),
+                condominioPadraoId,
+                condominiosPermitidos,
+                usuario.getEmail(),
+                usuario.getSenhaHash(),
+                List.copyOf(roles.values()));
     }
 
     private String extractJsonField(String json, String field) {

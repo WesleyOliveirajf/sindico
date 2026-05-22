@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -46,18 +47,19 @@ class CadastroControllerTest extends WebMvcSecurityTestBase {
                         .param("email", "joao@email.com")
                         .param("nomeCondominio", "Residencial das Flores")
                         .param("senha", "Senha123")
-                        .param("confirmarSenha", "Senha123"))
+                        .param("confirmarSenha", "Senha123")
+                        .param("aceitouTermos", "true"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"))
                 .andExpect(flash().attributeExists("mensagem"));
 
-        verify(cadastroService).cadastrar(any());
+        verify(cadastroService).cadastrar(any(CadastroForm.class), anyString(), any(), anyString());
     }
 
     @Test
     void postCadastroEmailDuplicadoExibeErro() throws Exception {
         doThrow(new IllegalArgumentException("Ja existe uma conta com este e-mail."))
-                .when(cadastroService).cadastrar(any());
+                .when(cadastroService).cadastrar(any(CadastroForm.class), anyString(), any(), anyString());
 
         mockMvc.perform(post("/cadastro")
                         .with(csrf())
@@ -65,7 +67,8 @@ class CadastroControllerTest extends WebMvcSecurityTestBase {
                         .param("email", "joao@email.com")
                         .param("nomeCondominio", "Residencial das Flores")
                         .param("senha", "Senha123")
-                        .param("confirmarSenha", "Senha123"))
+                        .param("confirmarSenha", "Senha123")
+                        .param("aceitouTermos", "true"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("cadastro"))
                 .andExpect(model().attributeExists("erro"));
@@ -79,7 +82,8 @@ class CadastroControllerTest extends WebMvcSecurityTestBase {
                         .param("email", "joao@email.com")
                         .param("nomeCondominio", "Residencial das Flores")
                         .param("senha", "Senha123")
-                        .param("confirmarSenha", "SenhaDiferente"))
+                        .param("confirmarSenha", "SenhaDiferente")
+                        .param("aceitouTermos", "true"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("cadastro"));
     }
@@ -91,7 +95,8 @@ class CadastroControllerTest extends WebMvcSecurityTestBase {
                         .param("email", "joao@email.com")
                         .param("nomeCondominio", "Residencial das Flores")
                         .param("senha", "Senha123")
-                        .param("confirmarSenha", "Senha123"))
+                        .param("confirmarSenha", "Senha123")
+                        .param("aceitouTermos", "true"))
                 .andExpect(status().isForbidden());
     }
 
