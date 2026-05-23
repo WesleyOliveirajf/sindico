@@ -1,5 +1,32 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { login, register, loginComGoogle } from './api'
+
+function LogoSVG() {
+  return (
+    <svg className="auth-logo-svg" width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="logo-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2dd4bf" />
+          <stop offset="100%" stopColor="#6366f1" />
+        </linearGradient>
+        <linearGradient id="logo-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#818cf8" />
+          <stop offset="100%" stopColor="#34d399" />
+        </linearGradient>
+      </defs>
+      <path d="M18 30 L32 18 L46 30 L46 48 L18 48 Z" stroke="url(#logo-grad-1)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+      <path d="M26 36 L40 25 L54 36 L54 54 L26 54 Z" stroke="url(#logo-grad-2)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="32" cy="18" r="3.5" fill="#2dd4bf" />
+      <circle cx="40" cy="25" r="3.5" fill="#6366f1" />
+      <circle cx="26" cy="36" r="3.5" fill="#34d399" />
+      <circle cx="46" cy="48" r="3" fill="#2dd4bf" opacity="0.8" />
+      <circle cx="54" cy="54" r="3" fill="#6366f1" />
+      <line x1="32" y1="18" x2="40" y2="25" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+      <line x1="40" y1="25" x2="26" y2="36" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+      <line x1="26" y1="36" x2="46" y2="48" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
+    </svg>
+  )
+}
 
 function LoginPage({ onLogin }) {
   const [mode, setMode] = useState('login')
@@ -26,6 +53,33 @@ function LoginPage({ onLogin }) {
     aceitouMarketingRef.current = aceitouMarketing
   }, [aceitouMarketing])
 
+  // Callback acionado quando o Google retorna o token de credencial
+  const handleCredentialResponse = useCallback(async (response) => {
+    setError('')
+    setSuccess('')
+    
+    // Validação estrita da LGPD no frontend antes de bater no backend
+    if (!aceitouTermosRef.current) {
+      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade antes de continuar com o Google.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const user = await loginComGoogle({
+        credentialToken: response.credential,
+        aceitouTermos: aceitouTermosRef.current,
+        aceitouMarketing: aceitouMarketingRef.current
+      })
+      setSuccess('Autenticação com o Google realizada com sucesso!')
+      onLogin(user)
+    } catch (err) {
+      setError(err.message || 'Falha na autenticação com o Google.')
+    } finally {
+      setLoading(false)
+    }
+  }, [onLogin])
+
   // Efeito para carregar o Google Identity Services SDK dinamicamente
   useEffect(() => {
     const scriptId = 'google-gsi-client'
@@ -35,17 +89,9 @@ function LoginPage({ onLogin }) {
       script = document.createElement('script')
       script.src = 'https://accounts.google.com/gsi/client'
       script.id = scriptId
-      script.async = true;
-      script.defer = true;
+      script.async = true
+      script.defer = true
       document.body.appendChild(script)
-    }
-
-    script.onload = () => {
-      inicializarGoogleSignIn()
-    }
-
-    if (window.google) {
-      inicializarGoogleSignIn()
     }
 
     function inicializarGoogleSignIn() {
@@ -73,34 +119,15 @@ function LoginPage({ onLogin }) {
         console.error('Erro ao inicializar SDK do Google:', e)
       }
     }
-  }, [])
 
-  // Callback acionado quando o Google retorna o token de credencial
-  async function handleCredentialResponse(response) {
-    setError('')
-    setSuccess('')
-    
-    // Validação estrita da LGPD no frontend antes de bater no backend
-    if (!aceitouTermosRef.current) {
-      setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade antes de continuar com o Google.')
-      return
+    script.onload = () => {
+      inicializarGoogleSignIn()
     }
 
-    setLoading(true)
-    try {
-      const user = await loginComGoogle({
-        credentialToken: response.credential,
-        aceitouTermos: aceitouTermosRef.current,
-        aceitouMarketing: aceitouMarketingRef.current
-      })
-      setSuccess('Autenticação com o Google realizada com sucesso!')
-      onLogin(user)
-    } catch (err) {
-      setError(err.message || 'Falha na autenticação com o Google.')
-    } finally {
-      setLoading(false)
+    if (window.google) {
+      inicializarGoogleSignIn()
     }
-  }
+  }, [handleCredentialResponse])
 
   // Intercepta e barra o clique no Google se as políticas LGPD não forem aceitas
   function handleGoogleClickBlocked(e) {
@@ -130,31 +157,6 @@ function LoginPage({ onLogin }) {
       setLoading(false)
     }
   }
-
-  const LogoSVG = () => (
-    <svg className="auth-logo-svg" width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="logo-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2dd4bf" />
-          <stop offset="100%" stopColor="#6366f1" />
-        </linearGradient>
-        <linearGradient id="logo-grad-2" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#34d399" />
-        </linearGradient>
-      </defs>
-      <path d="M18 30 L32 18 L46 30 L46 48 L18 48 Z" stroke="url(#logo-grad-1)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-      <path d="M26 36 L40 25 L54 36 L54 54 L26 54 Z" stroke="url(#logo-grad-2)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="32" cy="18" r="3.5" fill="#2dd4bf" />
-      <circle cx="40" cy="25" r="3.5" fill="#6366f1" />
-      <circle cx="26" cy="36" r="3.5" fill="#34d399" />
-      <circle cx="46" cy="48" r="3" fill="#2dd4bf" opacity="0.8" />
-      <circle cx="54" cy="54" r="3" fill="#6366f1" />
-      <line x1="32" y1="18" x2="40" y2="25" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-      <line x1="40" y1="25" x2="26" y2="36" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-      <line x1="26" y1="36" x2="46" y2="48" stroke="#fff" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.4" />
-    </svg>
-  )
 
   return (
     <main className="auth-page">
@@ -427,6 +429,12 @@ function LoginPage({ onLogin }) {
         <a href="/termos" target="_blank" rel="noopener noreferrer">Termos de Uso</a> |
         <a href="/privacidade" target="_blank" rel="noopener noreferrer">Diretrizes de Privacidade</a> |
         <a href="/cookies" target="_blank" rel="noopener noreferrer">Gestão de Cookies</a>
+        <p className="auth-credit">
+          Criado e desenvolvido por{' '}
+          <a href="https://www.instagram.com/analisandoIA" target="_blank" rel="noopener noreferrer">
+            @analisandoIA
+          </a>
+        </p>
       </footer>
       </div>
 

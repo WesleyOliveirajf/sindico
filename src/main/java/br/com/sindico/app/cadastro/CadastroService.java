@@ -2,6 +2,7 @@ package br.com.sindico.app.cadastro;
 
 import br.com.sindico.app.condominio.Condominio;
 import br.com.sindico.app.condominio.CondominioRepository;
+import br.com.sindico.app.security.PasswordPolicy;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
@@ -53,7 +54,7 @@ public class CadastroService {
             throw new IllegalArgumentException("Ja existe uma conta com este e-mail.");
         }
 
-        validarSenha(form.getSenha(), form.getConfirmarSenha());
+        PasswordPolicy.validateNewPassword(form.getSenha(), form.getConfirmarSenha());
 
         // 1. Cria usuario
         Usuario usuario = new Usuario();
@@ -99,18 +100,4 @@ public class CadastroService {
         return limpo;
     }
 
-    private static void validarSenha(String senha, String confirmar) {
-        if (senha == null || senha.length() < 8) {
-            throw new IllegalArgumentException("Senha deve ter no minimo 8 caracteres.");
-        }
-        if (!senha.equals(confirmar)) {
-            throw new IllegalArgumentException("As senhas nao conferem.");
-        }
-        // Minimo: 1 letra + 1 numero
-        boolean temLetra = senha.chars().anyMatch(Character::isLetter);
-        boolean temNumero = senha.chars().anyMatch(Character::isDigit);
-        if (!temLetra || !temNumero) {
-            throw new IllegalArgumentException("Senha deve conter letras e numeros.");
-        }
-    }
 }

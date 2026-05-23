@@ -1,5 +1,6 @@
 package br.com.sindico.app.senha;
 
+import br.com.sindico.app.security.PasswordPolicy;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioRepository;
@@ -43,17 +44,7 @@ public class PerfilService {
         if (!passwordEncoder.matches(senhaAtual, u.getSenhaHash())) {
             throw new IllegalArgumentException("Senha atual incorreta.");
         }
-        if (novaSenha == null || novaSenha.length() < 8) {
-            throw new IllegalArgumentException("Nova senha deve ter no minimo 8 caracteres.");
-        }
-        if (!novaSenha.equals(confirmarSenha)) {
-            throw new IllegalArgumentException("As senhas nao conferem.");
-        }
-        boolean temLetra = novaSenha.chars().anyMatch(Character::isLetter);
-        boolean temNumero = novaSenha.chars().anyMatch(Character::isDigit);
-        if (!temLetra || !temNumero) {
-            throw new IllegalArgumentException("Senha deve conter letras e numeros.");
-        }
+        PasswordPolicy.validateNewPassword(novaSenha, confirmarSenha, "Nova senha deve ter no minimo 8 caracteres.");
         if (passwordEncoder.matches(novaSenha, u.getSenhaHash())) {
             throw new IllegalArgumentException("Nova senha deve ser diferente da atual.");
         }

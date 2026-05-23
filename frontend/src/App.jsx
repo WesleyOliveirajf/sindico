@@ -224,6 +224,13 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </section>
+
+        <footer className="app-global-footer">
+          Criado e desenvolvido por{' '}
+          <a href="https://www.instagram.com/analisandoIA" target="_blank" rel="noopener noreferrer">
+            @analisandoIA
+          </a>
+        </footer>
       </main>
     </div>
   );

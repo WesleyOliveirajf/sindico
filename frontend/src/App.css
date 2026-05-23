@@ -2219,6 +2219,36 @@ textarea {
 
 .auth-global-footer a:hover { color: #6b7280; }
 
+.auth-credit {
+  margin: 10px 0 0;
+  font-size: 0.68rem;
+  color: #4b5563;
+}
+
+.auth-credit a {
+  color: #2dd4bf;
+  font-weight: 600;
+}
+
+.auth-credit a:hover { color: #5eead4; }
+
+.app-global-footer {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 24px 20px 32px;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.app-global-footer a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-global-footer a:hover { text-decoration: underline; }
+
 /* ---- Responsividade ---- */
 @media (max-width: 980px) {
   .auth-page {

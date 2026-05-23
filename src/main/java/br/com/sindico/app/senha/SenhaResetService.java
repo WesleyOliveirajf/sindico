@@ -1,6 +1,7 @@
 package br.com.sindico.app.senha;
 
 import br.com.sindico.app.email.EmailService;
+import br.com.sindico.app.security.PasswordPolicy;
 import br.com.sindico.app.usuario.SenhaResetToken;
 import br.com.sindico.app.usuario.SenhaResetTokenRepository;
 import br.com.sindico.app.usuario.Usuario;
@@ -91,7 +92,7 @@ public class SenhaResetService {
             throw new IllegalArgumentException("Link invalido ou expirado. Solicite um novo.");
         }
 
-        validarNovaSenha(novaSenha, confirmarSenha);
+        PasswordPolicy.validateNewPassword(novaSenha, confirmarSenha);
 
         Usuario usuario = resetToken.getUsuario();
         usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
@@ -99,20 +100,6 @@ public class SenhaResetService {
 
         resetToken.setUsado(true);
         tokenRepository.save(resetToken);
-    }
-
-    private static void validarNovaSenha(String senha, String confirmar) {
-        if (senha == null || senha.length() < 8) {
-            throw new IllegalArgumentException("Senha deve ter no minimo 8 caracteres.");
-        }
-        if (!senha.equals(confirmar)) {
-            throw new IllegalArgumentException("As senhas nao conferem.");
-        }
-        boolean temLetra = senha.chars().anyMatch(Character::isLetter);
-        boolean temNumero = senha.chars().anyMatch(Character::isDigit);
-        if (!temLetra || !temNumero) {
-            throw new IllegalArgumentException("Senha deve conter letras e numeros.");
-        }
     }
 
     private static String gerarToken() {
