@@ -109,54 +109,13 @@ function gastoToForm(gasto) {
   }
 }
 
-/* ─── Estilos inline dos cards de resumo ──────────────────────── */
-const summaryContainerStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: 16,
-  marginTop: 20,
+/* ─── Cards de resumo financeiro (CSS responsivo) ─────────────── */
+const SUMMARY_VALUE_COLORS = {
+  danger: '#dc2626',
+  success: '#16a34a',
 }
-
-function summaryCardStyle(variant) {
-  const colors = {
-    danger:  { bg: 'rgba(220, 38, 38, 0.08)', border: '#dc2626', text: '#dc2626' },
-    success: { bg: 'rgba(22, 163, 74, 0.08)', border: '#16a34a', text: '#16a34a' },
-    info:    { bg: 'rgba(59, 130, 246, 0.08)', border: '#3b82f6', text: '#3b82f6' },
-  }
-  const c = colors[variant] || colors.info
-  return {
-    background: c.bg,
-    borderLeft: `4px solid ${c.border}`,
-    borderRadius: 8,
-    padding: '16px 20px',
-  }
-}
-
-const summaryLabelStyle = { margin: 0, fontSize: '0.82rem', opacity: 0.7 }
-const summaryValueStyle = (color) => ({ margin: '4px 0 0', fontSize: '1.5rem', fontWeight: 700, color })
 
 /* ─── Abas ────────────────────────────────────────────────────── */
-const tabBarStyle = {
-  display: 'flex',
-  gap: 0,
-  borderBottom: '2px solid var(--color-border, #333)',
-  marginTop: 20,
-}
-
-function tabStyle(active) {
-  return {
-    padding: '10px 20px',
-    cursor: 'pointer',
-    fontWeight: active ? 700 : 400,
-    borderBottom: active ? '2px solid var(--color-accent, #3b82f6)' : '2px solid transparent',
-    marginBottom: -2,
-    background: 'none',
-    border: 'none',
-    color: active ? 'var(--color-accent, #3b82f6)' : 'inherit',
-    fontSize: '0.95rem',
-    transition: 'color 0.2s, border-color 0.2s',
-  }
-}
 
 /* ─── Componente principal ────────────────────────────────────── */
 function GastosPage() {
@@ -384,31 +343,36 @@ function GastosPage() {
 
       {/* ─── Painel financeiro ──────────────────────────────────── */}
       {!isLoading && (
-        <div style={summaryContainerStyle}>
-          <div style={summaryCardStyle('danger')}>
-            <p style={summaryLabelStyle}>💸 Total de Gastos</p>
-            <p style={summaryValueStyle('#dc2626')}>{formatCurrency(totalGastos)}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '0.78rem', opacity: 0.65 }}>
+        <div className="financial-summary">
+          <div className="financial-summary-card financial-summary-card--danger">
+            <p className="financial-summary-label">💸 Total de Gastos</p>
+            <p className="financial-summary-value" style={{ color: SUMMARY_VALUE_COLORS.danger }}>
+              {formatCurrency(totalGastos)}
+            </p>
+            <p className="financial-summary-meta">
               {gastos.length} {gastos.length === 1 ? 'registro' : 'registros'}
             </p>
           </div>
 
-          <div style={summaryCardStyle('success')}>
-            <p style={summaryLabelStyle}>💰 Total de Recebimentos</p>
-            <p style={summaryValueStyle('#16a34a')}>{formatCurrency(totalRecebimentos)}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '0.78rem', opacity: 0.65 }}>
+          <div className="financial-summary-card financial-summary-card--success">
+            <p className="financial-summary-label">💰 Total de Recebimentos</p>
+            <p className="financial-summary-value" style={{ color: SUMMARY_VALUE_COLORS.success }}>
+              {formatCurrency(totalRecebimentos)}
+            </p>
+            <p className="financial-summary-meta">
               {recebimentos.length} {recebimentos.length === 1 ? 'registro' : 'registros'}
             </p>
           </div>
 
-          <div style={summaryCardStyle(saldoReal >= 0 ? 'success' : 'danger')}>
-            <p style={summaryLabelStyle}>📊 Saldo Real</p>
-            <p style={summaryValueStyle(saldoReal >= 0 ? '#16a34a' : '#dc2626')}>
+          <div className={`financial-summary-card financial-summary-card--${saldoReal >= 0 ? 'success' : 'danger'}`}>
+            <p className="financial-summary-label">📊 Saldo Real</p>
+            <p
+              className="financial-summary-value"
+              style={{ color: SUMMARY_VALUE_COLORS[saldoReal >= 0 ? 'success' : 'danger'] }}
+            >
               {formatCurrency(saldoReal)}
             </p>
-            <p style={{ margin: '4px 0 0', fontSize: '0.78rem', opacity: 0.65 }}>
-              Recebimentos − Gastos
-            </p>
+            <p className="financial-summary-meta">Recebimentos − Gastos</p>
           </div>
         </div>
       )}
@@ -449,9 +413,9 @@ function GastosPage() {
             </label>
           )}
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <div className="form-actions">
             <button type="submit" className="submit">Filtrar</button>
-            <button type="button" className="submit" style={{ background: 'var(--color-muted, #888)' }} onClick={onLimparFiltros}>
+            <button type="button" className="submit cancel" onClick={onLimparFiltros}>
               Limpar
             </button>
           </div>
@@ -459,11 +423,19 @@ function GastosPage() {
       </section>
 
       {/* ─── Abas ──────────────────────────────────────────────── */}
-      <div style={tabBarStyle}>
-        <button style={tabStyle(activeTab === 'gastos')} onClick={() => setActiveTab('gastos')}>
+      <div className="page-tab-bar">
+        <button
+          type="button"
+          className={`page-tab${activeTab === 'gastos' ? ' page-tab--active' : ''}`}
+          onClick={() => setActiveTab('gastos')}
+        >
           💸 Gastos
         </button>
-        <button style={tabStyle(activeTab === 'recebimentos')} onClick={() => setActiveTab('recebimentos')}>
+        <button
+          type="button"
+          className={`page-tab${activeTab === 'recebimentos' ? ' page-tab--active' : ''}`}
+          onClick={() => setActiveTab('recebimentos')}
+        >
           💰 Recebimentos
         </button>
       </div>

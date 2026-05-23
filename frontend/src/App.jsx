@@ -80,6 +80,11 @@ function App() {
     return () => clearInterval(timerId);
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle("menu-open", menuOpen);
+    return () => document.body.classList.remove("menu-open");
+  }, [menuOpen]);
+
   async function handleLogout() {
     await logout();
     setUser(false);
@@ -119,7 +124,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
+      <aside id="app-sidebar" className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
         <div className="sidebar-brand">LiveSindIA</div>
         <nav className="sidebar-nav" aria-label="Módulos">
           {allPages.map(([key, label]) => (
@@ -180,13 +185,19 @@ function App() {
             "--toolbar-glow-opacity": toolbarGlow.visible ? 1 : 0,
           }}
         >
-          <button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">
-            Menu
+          <button
+            className="menu-toggle"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
+            aria-controls="app-sidebar"
+          >
+            {menuOpen ? "Fechar" : "Menu"}
           </button>
-          <div className="content-user" title={`${condominioNome} · ${sindicoNome}`}>
+          <div className="content-user" title={`${condominioNome} · ${sindicoNome} · ${dataHoraTexto}`}>
             <span className="content-user-line content-user-line--primary">{condominioNome}</span>
-            <span className="content-user-line">Síndico: {sindicoNome}</span>
-            <span className="content-user-line">Data e hora: {dataHoraTexto}</span>
+            <span className="content-user-line content-user-line--secondary">Síndico: {sindicoNome}</span>
+            <span className="content-user-line content-user-line--secondary">Data e hora: {dataHoraTexto}</span>
           </div>
         </header>
 

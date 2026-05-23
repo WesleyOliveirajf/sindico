@@ -4,6 +4,10 @@
   --muted: #5f6f80;
   --accent: #0f766e;
   --border: #d8e0e8;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
   line-height: 1.45;
   color: var(--ink);
@@ -14,8 +18,25 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
   background: radial-gradient(circle at top left, #eef8ff 0%, var(--bg) 45%, #edf4ef 100%);
+}
+
+body.menu-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
 }

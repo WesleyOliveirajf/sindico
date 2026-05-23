@@ -133,8 +133,8 @@ function CompromissosPage() {
 
       <SuccessState message={success} />
 
-      <div style={{ marginTop: 20, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="auth-mode-toggle" style={{ maxWidth: 320, marginBottom: 0 }}>
+      <div className="page-actions">
+        <div className="auth-mode-toggle">
           <button
             className={`mode-button${filtro === 'abertos' ? ' mode-button--active' : ''}`}
             onClick={() => setFiltro('abertos')}
@@ -148,7 +148,7 @@ function CompromissosPage() {
             Concluídos{concluidos.length > 0 ? ` (${concluidos.length})` : ''}
           </button>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)} style={{ marginLeft: 'auto' }}>
+        <Button onClick={() => setShowForm((v) => !v)} className="page-actions__primary">
           {showForm ? 'Cancelar' : '+ Novo Lembrete'}
         </Button>
       </div>
