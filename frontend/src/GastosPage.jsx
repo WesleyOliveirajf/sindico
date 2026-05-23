@@ -164,7 +164,9 @@ function GastosPage() {
   const currentMonth = String(new Date().getMonth() + 1)
 
   // Aba ativa: 'gastos' | 'recebimentos'
-  const [activeTab, setActiveTab] = useState('gastos')
+  const [activeTab, setActiveTab] = useState(() => (
+    window.location.hash === '#recebimentos' ? 'recebimentos' : 'gastos'
+  ))
 
   // Formulário de gasto
   const gastoFormRef = useRef(null)

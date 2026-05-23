@@ -19,6 +19,7 @@ mvnw.cmd
 # Ferramentas AI / assistentes de código
 /.agents/
 /.aider-desk/
+/.antigravitycli/
 /.augment/
 /.bob/
 /.claude/

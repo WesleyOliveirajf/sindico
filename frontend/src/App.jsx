@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
+import DashboardPage from "./DashboardPage";
 import CompromissosPage from "./CompromissosPage";
 import PrestadoresPage from "./PrestadoresPage";
 import AnotacoesPage from "./AnotacoesPage";
@@ -14,6 +15,7 @@ import AdminPage from "./AdminPage";
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
 
 const PAGES = {
+  dashboard: "Início",
   compromissos: "Compromissos",
   manutencoes: "Manutenções",
   reunioes: "Reuniões",
@@ -190,7 +192,8 @@ function App() {
 
         <section className="page">
           <Routes>
-            <Route path="/" element={<Navigate to="/compromissos" replace />} />
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/compromissos" element={<CompromissosPage />} />
             <Route path="/manutencoes" element={<ManutencoesPage />} />
             <Route path="/reunioes" element={<ReunioesPage />} />
@@ -207,7 +210,7 @@ function App() {
               path="/admin"
               element={isAdmin ? <AdminPage /> : <Navigate to="/compromissos" replace />}
             />
-            <Route path="*" element={<Navigate to="/compromissos" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </section>
       </main>
@@ -216,4 +219,3 @@ function App() {
 }
 
 export default App;
-

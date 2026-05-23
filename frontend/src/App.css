@@ -418,6 +418,146 @@ textarea {
   gap: 14px;
 }
 
+.dashboard-metrics {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.metric-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid #3b82f6;
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px;
+  display: grid;
+  gap: 4px;
+}
+
+.metric-card strong {
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.metric-card small,
+.metric-label {
+  color: var(--muted);
+}
+
+.metric-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metric-card--danger {
+  border-left-color: #dc2626;
+}
+
+.metric-card--success {
+  border-left-color: #16a34a;
+}
+
+.metric-card--warning {
+  border-left-color: #d97706;
+}
+
+.dashboard-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-panel {
+  min-width: 0;
+}
+
+.dashboard-panel--actions {
+  align-content: start;
+}
+
+.dashboard-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dashboard-panel-head h2 {
+  margin: 0;
+}
+
+.dashboard-panel-head a {
+  color: var(--accent);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dashboard-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-row {
+  border: 1px solid #e6ecf2;
+  border-radius: 10px;
+  background: #fbfcfd;
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.dashboard-row strong,
+.dashboard-row span,
+.dashboard-row small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-row span,
+.dashboard-row small {
+  color: var(--muted);
+}
+
+.dashboard-row small {
+  display: block;
+  margin-top: 2px;
+}
+
+.dashboard-row--split {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.quick-action {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--ink);
+  padding: 12px;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.quick-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .prestador-item {
   padding: 16px;
 }
@@ -641,6 +781,11 @@ textarea {
 
   .layout,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid,
+  .dashboard-row--split {
     grid-template-columns: 1fr;
   }
 
