@@ -68,6 +68,19 @@ public class CompromissoService {
         return compromissoRepository.save(c);
     }
 
+    @Transactional
+    public Compromisso atualizar(UUID id, NovoCompromissoForm form) {
+        Compromisso c = compromissoRepository.findById(id)
+                .filter(x -> x.getCondominioId().equals(tenantAccessor.condominioAtual()))
+                .orElseThrow(() -> new EntityNotFoundException("Lembrete nao encontrado."));
+        c.setTitulo(form.getTitulo());
+        c.setDescricao(form.getDescricao());
+        c.setTipo(form.getTipo() != null ? form.getTipo() : CompromissoTipo.OUTROS);
+        c.setInicioEm(form.getInicioEm());
+        c.setLocal(form.getLocal());
+        return compromissoRepository.save(c);
+    }
+
     /**
      * Marca o compromisso como CONCLUIDO e preenche fimEm com o momento atual.
      */

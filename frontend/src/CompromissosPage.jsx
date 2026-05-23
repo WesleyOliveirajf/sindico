@@ -16,11 +16,22 @@ const INITIAL_FORM = {
   tipo: 'OUTROS',
 }
 
+function formatDateIso(value) {
+  if (value == null) return ''
+  if (typeof value === 'string') return value.length >= 10 ? value.slice(0, 10) : value
+  if (Array.isArray(value) && value.length >= 3) {
+    const [y, m, d] = value
+    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  }
+  return ''
+}
+
 function CompromissosPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [filtro, setFiltro] = useState('abertos')
   const [form, setForm] = useState(INITIAL_FORM)
   const [error, setError] = useState('')
@@ -52,23 +63,57 @@ function CompromissosPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  function resetForm() {
+    setForm(INITIAL_FORM)
+    setEditingId(null)
+  }
+
+  function openCreateForm() {
+    resetForm()
+    setShowForm(true)
+    setError('')
+    setSuccess('')
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    resetForm()
+  }
+
+  function startEdit(item) {
+    setEditingId(item.id)
+    setForm({
+      titulo: item.titulo || '',
+      descricao: item.descricao || '',
+      inicioEm: formatDateIso(item.inicioEm),
+      local: item.local || '',
+      tipo: item.tipo || 'OUTROS',
+    })
+    setShowForm(true)
+    setError('')
+    setSuccess('')
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
     setSuccess('')
     setSubmitting(true)
+    const wasEditing = Boolean(editingId)
     try {
-      const res = await apiFetch('/api/compromissos', {
-        method: 'POST',
-        body: JSON.stringify(form),
-      })
+      const res = await apiFetch(
+        editingId ? `/api/compromissos/${editingId}` : '/api/compromissos',
+        {
+          method: editingId ? 'PUT' : 'POST',
+          body: JSON.stringify(form),
+        },
+      )
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao salvar lembrete.'))
+        throw new Error(await parseError(res, wasEditing ? 'Erro ao atualizar lembrete.' : 'Erro ao salvar lembrete.'))
       }
-      setSuccess('Lembrete criado com sucesso.')
-      setForm(INITIAL_FORM)
-      setShowForm(false)
-      setFiltro('abertos')
+      setSuccess(wasEditing ? 'Lembrete atualizado com sucesso.' : 'Lembrete criado com sucesso.')
+      closeForm()
+      if (!wasEditing) setFiltro('abertos')
       await load()
     } catch (err) {
       setError(err.message)
@@ -148,14 +193,17 @@ function CompromissosPage() {
             Concluídos{concluidos.length > 0 ? ` (${concluidos.length})` : ''}
           </button>
         </div>
-        <Button onClick={() => setShowForm((v) => !v)} className="page-actions__primary">
-          {showForm ? 'Cancelar' : '+ Novo Lembrete'}
+        <Button
+          onClick={() => (showForm && !editingId ? closeForm() : openCreateForm())}
+          className="page-actions__primary"
+        >
+          {showForm && !editingId ? 'Cancelar' : '+ Novo Lembrete'}
         </Button>
       </div>
 
       {showForm && (
         <Card style={{ marginTop: 16 }}>
-          <h2>Novo Lembrete</h2>
+          <h2>{editingId ? 'Editar Lembrete' : 'Novo Lembrete'}</h2>
           <form onSubmit={onSubmit} className="form-grid">
             <label className="full">
               Título *
@@ -201,8 +249,13 @@ function CompromissosPage() {
               />
             </label>
             <Button type="submit" disabled={submitting} className="full">
-              {submitting ? 'Salvando...' : 'Criar lembrete'}
+              {submitting ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Criar lembrete'}
             </Button>
+            {editingId ? (
+              <Button type="button" variant="secondary" className="full" onClick={closeForm}>
+                Cancelar edição
+              </Button>
+            ) : null}
           </form>
         </Card>
       )}
@@ -278,8 +331,9 @@ function CompromissosPage() {
               </div>
 
               <div className="item-actions">
-                  <Button variant="danger" onClick={() => setPendingDeleteId(c.id)}>Excluir</Button>
-                </div>
+                <Button variant="secondary" onClick={() => startEdit(c)}>Editar</Button>
+                <Button variant="danger" onClick={() => setPendingDeleteId(c.id)}>Excluir</Button>
+              </div>
               </article>
             )
         })}
