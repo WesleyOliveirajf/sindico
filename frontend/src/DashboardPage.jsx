@@ -49,6 +49,10 @@ function isConcluido(item) {
   return item?.status === 'CONCLUIDO' || item?.concluido === true
 }
 
+function isCompromissoPendente(item) {
+  return !isConcluido(item) && item?.status !== 'CANCELADO'
+}
+
 function isManutencaoAberta(item) {
   return !['CONCLUIDA', 'CANCELADA'].includes(item?.status)
 }
@@ -57,6 +61,23 @@ function toTime(value) {
   if (!value) return 0
   const time = new Date(value).getTime()
   return Number.isNaN(time) ? 0 : time
+}
+
+function startOfTodayTime() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today.getTime()
+}
+
+function compromissoSituacao(item) {
+  const time = toTime(item.inicioEm || item.dataHora || item.data)
+  if (!time) return 'A fazer'
+
+  const today = startOfTodayTime()
+  const oneDay = 24 * 60 * 60 * 1000
+  if (time < today) return 'Vencido'
+  if (time < today + oneDay) return 'Hoje'
+  return 'Agendado'
 }
 
 function DashboardPage() {
@@ -111,21 +132,10 @@ function DashboardPage() {
     const totalGastos = data.gastos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
     const totalRecebimentos = data.recebimentos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
     const saldo = totalRecebimentos - totalGastos
-    const now = Date.now()
-    const sevenDays = now + 7 * 24 * 60 * 60 * 1000
 
-    const compromissosAbertos = data.compromissos.filter((item) => !isConcluido(item))
-    const compromissosProximos = compromissosAbertos
-      .filter((item) => {
-        const time = toTime(item.inicioEm || item.dataHora || item.data)
-        return time >= now && time <= sevenDays
-      })
+    const compromissosAFazer = data.compromissos
+      .filter(isCompromissoPendente)
       .sort((a, b) => toTime(a.inicioEm || a.dataHora || a.data) - toTime(b.inicioEm || b.dataHora || b.data))
-
-    const compromissosVencidos = compromissosAbertos.filter((item) => {
-      const time = toTime(item.inicioEm || item.dataHora || item.data)
-      return time > 0 && time < now
-    })
 
     const manutencoesAbertas = data.manutencoes.filter(isManutencaoAberta)
     const reunioesRecentes = [...data.reunioes]
@@ -145,8 +155,7 @@ function DashboardPage() {
       totalGastos,
       totalRecebimentos,
       saldo,
-      compromissosProximos,
-      compromissosVencidos,
+      compromissosAFazer,
       manutencoesAbertas,
       reunioesRecentes,
       anotacoesRecentes,
@@ -188,27 +197,24 @@ function DashboardPage() {
               <strong>{formatCurrency(summary.saldo)}</strong>
               <small>{summary.saldo < 0 ? 'Atenção ao caixa' : 'Caixa positivo'}</small>
             </article>
-            <article className="metric-card metric-card--warning">
-              <span className="metric-label">Pendências</span>
-              <strong>{summary.compromissosVencidos.length + summary.manutencoesAbertas.length}</strong>
-              <small>vencidas ou abertas</small>
-            </article>
           </section>
 
           <section className="dashboard-grid">
             <article className="panel dashboard-panel">
               <div className="dashboard-panel-head">
-                <h2>Próximos compromissos</h2>
+                <h2>Compromissos a fazer</h2>
                 <Link to="/compromissos">Ver agenda</Link>
               </div>
-              {summary.compromissosProximos.length === 0 ? (
-                <EmptyState message="Nenhum compromisso nos próximos 7 dias." />
+              {summary.compromissosAFazer.length === 0 ? (
+                <EmptyState message="Nenhum compromisso em aberto." />
               ) : (
                 <div className="dashboard-list">
-                  {summary.compromissosProximos.slice(0, 5).map((item) => (
+                  {summary.compromissosAFazer.slice(0, 5).map((item) => (
                     <div key={item.id} className="dashboard-row">
                       <strong>{item.titulo}</strong>
-                      <span>{formatDateTime(item.inicioEm || item.dataHora || item.data)}</span>
+                      <span>
+                        {compromissoSituacao(item)} · {formatDateTime(item.inicioEm || item.dataHora || item.data)}
+                      </span>
                     </div>
                   ))}
                 </div>
