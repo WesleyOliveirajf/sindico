@@ -6,7 +6,7 @@ const SUGGESTIONS = [
   'Qual o resumo dos gastos cadastrados recentemente?',
   'Quem são os moradores ativos cadastrados e em quais unidades?',
   'Quais foram as decisões e pendências da última reunião?',
-  'Quais são os próximos compromissos na nossa agenda?',
+  'Quais são os próximos lembretes na nossa agenda?',
 ]
 
 function AssistenteIAPage() {
@@ -73,7 +73,7 @@ function AssistenteIAPage() {
         <p className="eyebrow">Inteligência Artificial</p>
         <h1>Assistente IA + RAG</h1>
         <p className="subtitle">
-          Tire dúvidas gerais ou faça perguntas específicas sobre as manutenções, gastos, moradores, reuniões e compromissos do seu condomínio.
+          Tire dúvidas gerais ou faça perguntas específicas sobre as manutenções, gastos, moradores, reuniões e lembretes do seu condomínio.
         </p>
       </section>
 

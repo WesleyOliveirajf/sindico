@@ -16,7 +16,7 @@ import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
 
 const PAGES = {
   dashboard: "Início",
-  compromissos: "Compromissos",
+  compromissos: "Lembretes",
   manutencoes: "Manutenções",
   reunioes: "Reuniões",
   anotacoes: "Anotações",

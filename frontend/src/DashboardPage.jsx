@@ -8,7 +8,7 @@ const quickActions = [
   { label: 'Novo recebimento', to: '/gastos#recebimentos' },
   { label: 'Nova manutenção', to: '/manutencoes' },
   { label: 'Nova reunião', to: '/reunioes' },
-  { label: 'Novo compromisso', to: '/compromissos' },
+  { label: 'Novo lembrete', to: '/compromissos' },
 ]
 
 function currentMonthParams() {
@@ -202,11 +202,11 @@ function DashboardPage() {
           <section className="dashboard-grid">
             <article className="panel dashboard-panel">
               <div className="dashboard-panel-head">
-                <h2>Compromissos a fazer</h2>
-                <Link to="/compromissos">Ver agenda</Link>
+                <h2>Lembretes a fazer</h2>
+                <Link to="/compromissos">Ver lembretes</Link>
               </div>
               {summary.compromissosAFazer.length === 0 ? (
-                <EmptyState message="Nenhum compromisso em aberto." />
+                <EmptyState message="Nenhum lembrete em aberto." />
               ) : (
                 <div className="dashboard-list">
                   {summary.compromissosAFazer.slice(0, 5).map((item) => (

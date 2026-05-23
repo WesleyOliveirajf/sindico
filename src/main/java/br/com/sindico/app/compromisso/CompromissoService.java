@@ -75,7 +75,7 @@ public class CompromissoService {
     public Compromisso concluir(UUID id) {
         Compromisso c = compromissoRepository.findById(id)
                 .filter(x -> x.getCondominioId().equals(tenantAccessor.condominioAtual()))
-                .orElseThrow(() -> new EntityNotFoundException("Compromisso nao encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Lembrete nao encontrado."));
         c.setStatus(CompromissoStatus.CONCLUIDO);
         c.setFimEm(LocalDateTime.now());
         return compromissoRepository.save(c);
@@ -85,7 +85,7 @@ public class CompromissoService {
     public void deletar(UUID id) {
         Compromisso c = compromissoRepository.findById(id)
                 .filter(x -> x.getCondominioId().equals(tenantAccessor.condominioAtual()))
-                .orElseThrow(() -> new EntityNotFoundException("Compromisso nao encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Lembrete nao encontrado."));
         compromissoRepository.delete(c);
     }
 }

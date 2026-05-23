@@ -89,7 +89,7 @@ class DashboardControllerWebMvcTest extends WebMvcSecurityTestBase {
                         .param("fimEm", "2026-05-10T10:00"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"))
-                .andExpect(flash().attribute("mensagem", "Compromisso salvo com sucesso."));
+                .andExpect(flash().attribute("mensagem", "Lembrete salvo com sucesso."));
 
         verify(compromissoService).criar(any());
     }

@@ -273,12 +273,12 @@ public class AIService {
         }
         sb.append("\n");
 
-        // 5. Compromissos
-        sb.append("[COMPROMISSOS DA AGENDA (Ultimos 20)]\n");
+        // 5. Lembretes
+        sb.append("[LEMBRETES DA AGENDA (Ultimos 20)]\n");
         List<Compromisso> compromissos = compromissoRepository.findByCondominioIdOrderByInicioEmDesc(condominioId)
                 .stream().limit(20).toList();
         if (compromissos.isEmpty()) {
-            sb.append("Nenhum compromisso agendado.\n");
+            sb.append("Nenhum lembrete agendado.\n");
         } else {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             for (Compromisso c : compromissos) {

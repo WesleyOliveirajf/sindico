@@ -250,7 +250,7 @@
          <div class="badge">Agenda do Condominio</div>
          <h1 th:text="${condominioNome}">Condominio Piloto</h1>
          <p>
-             Cadastre manutencoes e reunioes para acompanhar os compromissos do condominio.
+             Cadastre manutencoes e reunioes para acompanhar os lembretes do condominio.
           </p>
         <div class="hero-actions">
             <a class="link-btn" th:href="@{/condominio}">Editar condominio</a>
@@ -282,7 +282,7 @@
 
     <section class="layout">
         <article class="card">
-            <h2 class="panel-title">Novo compromisso</h2>
+            <h2 class="panel-title">Novo lembrete</h2>
 
             <div class="message message-ok" th:if="${mensagem}" th:text="${mensagem}"></div>
 
@@ -329,14 +329,14 @@
                     </div>
 
                     <div class="full">
-                        <button class="btn" type="submit" data-submit-btn>Salvar compromisso</button>
+                        <button class="btn" type="submit" data-submit-btn>Salvar lembrete</button>
                     </div>
                 </div>
             </form>
         </article>
 
         <article class="card">
-            <h2 class="panel-title">Proximos compromissos</h2>
+            <h2 class="panel-title">Proximos lembretes</h2>
             <div class="list" th:if="${!#lists.isEmpty(proximosCompromissos)}">
                 <div class="item" th:each="c : ${proximosCompromissos}">
                     <h3>
@@ -351,7 +351,7 @@
                     <p class="meta" th:if="${c.local}">Local: <span th:text="${c.local}">Sala</span></p>
                 </div>
             </div>
-            <p class="empty" th:if="${#lists.isEmpty(proximosCompromissos)}">Nenhum compromisso cadastrado ainda.</p>
+            <p class="empty" th:if="${#lists.isEmpty(proximosCompromissos)}">Nenhum lembrete cadastrado ainda.</p>
         </article>
     </section>
 </main>

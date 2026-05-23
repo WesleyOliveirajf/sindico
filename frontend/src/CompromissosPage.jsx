@@ -32,7 +32,7 @@ function CompromissosPage() {
     setError('')
     try {
       const res = await apiFetch('/api/compromissos')
-      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar compromissos.'))
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar lembretes.'))
       setItems(await parseJson(res))
     } catch (err) {
       setError(err.message)
@@ -63,9 +63,9 @@ function CompromissosPage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao salvar compromisso.'))
+        throw new Error(await parseError(res, 'Erro ao salvar lembrete.'))
       }
-      setSuccess('Compromisso criado com sucesso.')
+      setSuccess('Lembrete criado com sucesso.')
       setForm(INITIAL_FORM)
       setShowForm(false)
       setFiltro('abertos')
@@ -82,8 +82,8 @@ function CompromissosPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/compromissos/${id}/concluir`, { method: 'PATCH' })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao concluir compromisso.'))
-      setSuccess('Compromisso marcado como concluído.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao concluir lembrete.'))
+      setSuccess('Lembrete marcado como concluído.')
       await load()
     } catch (err) {
       setError(err.message)
@@ -95,8 +95,8 @@ function CompromissosPage() {
     setSuccess('')
     try {
       const res = await apiFetch(`/api/compromissos/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir compromisso.'))
-      setSuccess('Compromisso excluído.')
+      if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir lembrete.'))
+      setSuccess('Lembrete excluído.')
       setPendingDeleteId(null)
       await load()
     } catch (err) {
@@ -127,8 +127,8 @@ function CompromissosPage() {
     <>
       <section className="hero">
         <p className="eyebrow">Agenda do condomínio</p>
-        <h1>Compromissos</h1>
-        <p className="subtitle">Gerencie compromissos, tarefas e prazos do condomínio em um só lugar.</p>
+        <h1>Lembretes</h1>
+        <p className="subtitle">Gerencie lembretes, tarefas e prazos do condomínio em um só lugar.</p>
       </section>
 
       <SuccessState message={success} />
@@ -149,13 +149,13 @@ function CompromissosPage() {
           </button>
         </div>
         <Button onClick={() => setShowForm((v) => !v)} style={{ marginLeft: 'auto' }}>
-          {showForm ? 'Cancelar' : '+ Novo Compromisso'}
+          {showForm ? 'Cancelar' : '+ Novo Lembrete'}
         </Button>
       </div>
 
       {showForm && (
         <Card style={{ marginTop: 16 }}>
-          <h2>Novo Compromisso</h2>
+          <h2>Novo Lembrete</h2>
           <form onSubmit={onSubmit} className="form-grid">
             <label className="full">
               Título *
@@ -197,25 +197,25 @@ function CompromissosPage() {
                 value={form.descricao}
                 onChange={onChange}
                 rows={2}
-                placeholder="Detalhes do compromisso..."
+                placeholder="Detalhes do lembrete..."
               />
             </label>
             <Button type="submit" disabled={submitting} className="full">
-              {submitting ? 'Salvando...' : 'Criar compromisso'}
+              {submitting ? 'Salvando...' : 'Criar lembrete'}
             </Button>
           </form>
         </Card>
       )}
 
       <section className="board" style={{ marginTop: 20 }}>
-        {loading ? <LoadingState message="Carregando compromissos..." /> : null}
+        {loading ? <LoadingState message="Carregando lembretes..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
         {!loading && !error && lista.length === 0 ? (
           <EmptyState
             message={
               filtro === 'abertos'
-                ? 'Nenhum compromisso em aberto. Clique em "+ Novo Compromisso" para adicionar.'
-                : 'Nenhum compromisso concluído ainda.'
+                ? 'Nenhum lembrete em aberto. Clique em "+ Novo Lembrete" para adicionar.'
+                : 'Nenhum lembrete concluído ainda.'
             }
           />
         ) : null}
@@ -287,8 +287,8 @@ function CompromissosPage() {
 
       <ConfirmDialog
         open={pendingDeleteId != null}
-        title="Excluir compromisso"
-        message="Deseja excluir este compromisso? Esta ação não pode ser desfeita."
+        title="Excluir lembrete"
+        message="Deseja excluir este lembrete? Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         onCancel={() => setPendingDeleteId(null)}
         onConfirm={() => onDelete(pendingDeleteId)}

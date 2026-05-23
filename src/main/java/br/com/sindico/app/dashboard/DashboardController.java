@@ -52,7 +52,7 @@ public class DashboardController {
             return "dashboard";
         }
 
-        redirectAttributes.addFlashAttribute("mensagem", "Compromisso salvo com sucesso.");
+        redirectAttributes.addFlashAttribute("mensagem", "Lembrete salvo com sucesso.");
         return "redirect:/";
     }
 
