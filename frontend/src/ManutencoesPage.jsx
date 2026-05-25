@@ -18,7 +18,7 @@ const INITIAL_FORM = {
   observacoes: '',
 }
 
-const CURRENCY_FIELDS = new Set(['custoPrevisto', 'custoRealizado'])
+const CURRENCY_FIELDS = ['custoPrevisto', 'custoRealizado']
 
 function parseCurrencyValue(value) {
   if (value == null || value === '') return null
