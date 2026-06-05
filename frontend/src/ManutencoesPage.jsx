@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaTriarManutencao } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 
@@ -19,6 +19,18 @@ const INITIAL_FORM = {
 }
 
 const CURRENCY_FIELDS = ['custoPrevisto', 'custoRealizado']
+
+const STATUS_OPTIONS = [
+  { value: 'ABERTA', label: 'Aberta' },
+  { value: 'AGENDADA', label: 'Agendada' },
+  { value: 'EM_ANDAMENTO', label: 'Em andamento' },
+  { value: 'CONCLUIDA', label: 'Fechada' },
+  { value: 'CANCELADA', label: 'Cancelada' },
+]
+
+function statusLabel(value) {
+  return STATUS_OPTIONS.find((status) => status.value === value)?.label || value
+}
 
 function parseCurrencyValue(value) {
   if (value == null || value === '') return null
@@ -55,8 +67,28 @@ function formatCurrency(value) {
   return parsed.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+function manutencaoToForm(manutencao) {
+  return {
+    titulo: manutencao.titulo || '',
+    descricao: manutencao.descricao || '',
+    tipo: manutencao.tipo || 'PREVENTIVA',
+    categoria: manutencao.categoria || '',
+    local: manutencao.local || '',
+    fornecedorId: manutencao.fornecedorId || '',
+    responsavelInterno: manutencao.responsavelInterno || '',
+    dataOcorrencia: manutencao.dataOcorrencia || '',
+    dataExecucao: manutencao.dataExecucao || '',
+    custoPrevisto: manutencao.custoPrevisto != null ? formatCurrency(manutencao.custoPrevisto) : '',
+    custoRealizado: manutencao.custoRealizado != null ? formatCurrency(manutencao.custoRealizado) : '',
+    status: manutencao.status || 'ABERTA',
+    observacoes: manutencao.observacoes || '',
+  }
+}
+
 function ManutencoesPage() {
+  const formRef = useRef(null)
   const [form, setForm] = useState(INITIAL_FORM)
+  const [editingId, setEditingId] = useState(null)
   const [items, setItems] = useState([])
   const [prestadores, setPrestadores] = useState([])
   const [loading, setLoading] = useState(true)
@@ -130,6 +162,23 @@ function ManutencoesPage() {
     return `https://wa.me/${digits}`
   }
 
+  function resetForm() {
+    setEditingId(null)
+    setForm(INITIAL_FORM)
+    setTriagemMsg('')
+  }
+
+  function startEdit(manutencao) {
+    setError('')
+    setSuccess('')
+    setEditingId(manutencao.id)
+    setForm(manutencaoToForm(manutencao))
+    setTriagemMsg('')
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
+
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
@@ -144,15 +193,19 @@ function ManutencoesPage() {
         custoRealizado: parseCurrencyValue(form.custoRealizado),
         fornecedorId: form.fornecedorId || null,
       }
-      const res = await apiFetch('/api/manutencoes', {
-        method: 'POST',
+      const endpoint = editingId ? `/api/manutencoes/${editingId}` : '/api/manutencoes'
+      const res = await apiFetch(endpoint, {
+        method: editingId ? 'PUT' : 'POST',
         body: JSON.stringify(payload),
       })
       if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar manutenção.'))
+        throw new Error(await parseError(
+          res,
+          editingId ? 'Erro ao atualizar manutenção.' : 'Erro ao registrar manutenção.'
+        ))
       }
-      setSuccess('Manutenção registrada com sucesso.')
-      setForm(INITIAL_FORM)
+      setSuccess(editingId ? 'Manutenção atualizada com sucesso.' : 'Manutenção registrada com sucesso.')
+      resetForm()
       await load()
     } catch (err) {
       setError(err.message)
@@ -171,8 +224,8 @@ function ManutencoesPage() {
 
       <SuccessState message={success} />
 
-      <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova manutenção</h2>
+      <section className="panel" style={{ marginTop: 20 }} ref={formRef}>
+        <h2>{editingId ? 'Editar manutenção' : 'Nova manutenção'}</h2>
         <form onSubmit={onSubmit} className="form-grid">
           <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
           <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="PREVENTIVA">Preventiva</option><option value="CORRETIVA">Corretiva</option></select></label>
@@ -188,7 +241,14 @@ function ManutencoesPage() {
             </select>
           </label>
           <label>Responsável interno<input name="responsavelInterno" value={form.responsavelInterno} onChange={onChange} maxLength={150} /></label>
-          <label>Status<select name="status" value={form.status} onChange={onChange}><option value="ABERTA">Aberta</option><option value="AGENDADA">Agendada</option><option value="EM_ANDAMENTO">Em andamento</option><option value="CONCLUIDA">Concluída</option><option value="CANCELADA">Cancelada</option></select></label>
+          <label>
+            Status
+            <select name="status" value={form.status} onChange={onChange}>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
+          </label>
           <label>Data da ocorrência<input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
           <label>Data da execução<input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
           <label>
@@ -252,7 +312,16 @@ function ManutencoesPage() {
           </div>
 
           <label className="full">Observações<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
-          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar manutenção'}</button>
+          <div className="item-actions full">
+            <button type="submit" disabled={submitting} className="submit" style={{ flex: '1 1 220px' }}>
+              {submitting ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Registrar manutenção'}
+            </button>
+            {editingId ? (
+              <button type="button" className="submit cancel" onClick={resetForm}>
+                Cancelar edição
+              </button>
+            ) : null}
+          </div>
         </form>
       </section>
 
@@ -267,7 +336,7 @@ function ManutencoesPage() {
               return (
                 <>
                   <h3 style={{ margin: 0 }}>{m.titulo}</h3>
-                  <p className="muted" style={{ marginTop: 4 }}>{m.tipo} · {m.status}{m.categoria ? ` · ${m.categoria}` : ''}</p>
+                  <p className="muted" style={{ marginTop: 4 }}>{m.tipo} · {statusLabel(m.status)}{m.categoria ? ` · ${m.categoria}` : ''}</p>
                   {m.dataOcorrencia ? <p className="muted">Ocorrência: {m.dataOcorrencia}</p> : null}
                   {m.dataExecucao ? <p className="muted">Execução: {m.dataExecucao}</p> : null}
                   {m.local ? <p className="muted">Local: {m.local}</p> : null}
@@ -291,6 +360,11 @@ function ManutencoesPage() {
                   ) : null}
                   {m.descricao ? <p style={{ marginTop: 6 }}>{m.descricao}</p> : null}
                   {m.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {m.observacoes}</p> : null}
+                  <div className="item-actions" style={{ marginTop: 10 }}>
+                    <button type="button" className="submit" onClick={() => startEdit(m)}>
+                      Editar
+                    </button>
+                  </div>
                 </>
               )
             })()}
