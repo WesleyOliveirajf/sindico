@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, parseError, parseJson } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import ConfirmDialog from './components/ConfirmDialog'
+import Button from './components/ui/Button'
+import Input, { Textarea } from './components/ui/Input'
 
 const INITIAL_FORM = { nome: '', telefone: '', areaAtuacao: '' }
 
@@ -18,6 +21,7 @@ function PrestadoresPage() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [pendingInactivateId, setPendingInactivateId] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -117,6 +121,7 @@ function PrestadoresPage() {
       const res = await apiFetch(`/api/prestadores/${id}/inativar`, { method: 'POST' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao inativar prestador.'))
       setSuccess('Prestador inativado com sucesso.')
+      setPendingInactivateId(null)
       await loadPrestadores()
     } catch (err) {
       setError(err.message)
@@ -133,22 +138,22 @@ function PrestadoresPage() {
 
       <SuccessState message={success} />
 
-      <section className="panel" style={{ marginTop: 20 }}>
+      <section className="panel section-spacer">
         <h2>Novo prestador</h2>
         <form onSubmit={onSubmit} className="form-grid">
-          <label>Nome *<input name="nome" value={form.nome} onChange={onChange} required maxLength={150} /></label>
-          <label>Telefone *<input name="telefone" value={form.telefone} onChange={onChange} required maxLength={30} placeholder="(11) 99999-0000" /></label>
-          <label className="full">Área de atuação<textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidráulica, elétrica predial, manutenção de bombas." /></label>
-          <div className="full" style={{ backgroundColor: '#f8fafc', border: '1px solid #d8e0e8', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#5f6f80', marginBottom: '12px', lineHeight: '1.4' }}>
+          <label>Nome *<Input name="nome" value={form.nome} onChange={onChange} required maxLength={150} /></label>
+          <label>Telefone *<Input name="telefone" value={form.telefone} onChange={onChange} required maxLength={30} placeholder="(11) 99999-0000" /></label>
+          <label className="full">Área de atuação<Textarea name="areaAtuacao" value={form.areaAtuacao} onChange={onChange} rows={3} maxLength={4000} placeholder="Ex: Hidráulica, elétrica predial, manutenção de bombas." /></label>
+          <div className="notice-box full">
             <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
           </div>
-          <button type="submit" disabled={submitting} className="submit full">
+          <Button type="submit" disabled={submitting} className="full">
             {submitting ? 'Salvando...' : 'Cadastrar prestador'}
-          </button>
+          </Button>
         </form>
       </section>
 
-      <section className="board" style={{ marginTop: 20 }}>
+      <section className="board section-spacer">
         {loading ? <LoadingState message="Carregando prestadores..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={loadPrestadores} /> : null}
         {!loading && !error && items.length === 0 ? <EmptyState message="Nenhum prestador cadastrado." /> : null}
@@ -156,12 +161,12 @@ function PrestadoresPage() {
           <article key={p.id} className="item prestador-item">
             {editing[p.id] ? (
               <>
-                <label>Nome<input name="nome" value={editing[p.id].nome} onChange={(e) => onEditChange(p.id, e)} /></label>
-                <label>Telefone<input name="telefone" value={editing[p.id].telefone} onChange={(e) => onEditChange(p.id, e)} /></label>
-                <label>Área de atuação<textarea name="areaAtuacao" value={editing[p.id].areaAtuacao} onChange={(e) => onEditChange(p.id, e)} rows={3} maxLength={4000} /></label>
+                <label>Nome<Input name="nome" value={editing[p.id].nome} onChange={(e) => onEditChange(p.id, e)} /></label>
+                <label>Telefone<Input name="telefone" value={editing[p.id].telefone} onChange={(e) => onEditChange(p.id, e)} /></label>
+                <label>Área de atuação<Textarea name="areaAtuacao" value={editing[p.id].areaAtuacao} onChange={(e) => onEditChange(p.id, e)} rows={3} maxLength={4000} /></label>
                 <div className="item-actions">
-                  <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(p.id)}>Salvar</button>
-                  <button className="submit cancel" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[p.id]; return c })}>Cancelar</button>
+                  <Button onClick={() => onUpdate(p.id)}>Salvar</Button>
+                  <Button variant="secondary" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[p.id]; return c })}>Cancelar</Button>
                 </div>
               </>
             ) : (
@@ -170,14 +175,23 @@ function PrestadoresPage() {
                 <p className="phone">{p.telefone}</p>
                 {p.historicoServicos ? <p className="history">Área de atuação: {p.historicoServicos}</p> : <p className="muted">Área de atuação não informada.</p>}
                 <div className="item-actions">
-                  <button className="submit" onClick={() => startEdit(p)}>Editar</button>
-                  <button className="submit danger" onClick={() => onInactivate(p.id)}>Inativar</button>
+                  <Button onClick={() => startEdit(p)}>Editar</Button>
+                  <Button variant="danger" onClick={() => setPendingInactivateId(p.id)}>Inativar</Button>
                 </div>
               </>
             )}
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={pendingInactivateId != null}
+        title="Inativar prestador"
+        message="Deseja inativar este prestador? Ele deixará de aparecer na lista de prestadores ativos."
+        confirmLabel="Inativar"
+        onCancel={() => setPendingInactivateId(null)}
+        onConfirm={() => onInactivate(pendingInactivateId)}
+      />
     </>
   )
 }

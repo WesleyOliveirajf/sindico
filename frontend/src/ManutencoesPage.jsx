@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaTriarManutencao } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import Button from './components/ui/Button'
+import Input, { Select, Textarea } from './components/ui/Input'
 
 const INITIAL_FORM = {
   titulo: '',
@@ -224,36 +226,36 @@ function ManutencoesPage() {
 
       <SuccessState message={success} />
 
-      <section className="panel" style={{ marginTop: 20 }} ref={formRef}>
+      <section className="panel section-spacer" ref={formRef}>
         <h2>{editingId ? 'Editar manutenção' : 'Nova manutenção'}</h2>
         <form onSubmit={onSubmit} className="form-grid">
-          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
-          <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="PREVENTIVA">Preventiva</option><option value="CORRETIVA">Corretiva</option></select></label>
-          <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} /></label>
-          <label>Local<input name="local" value={form.local} onChange={onChange} maxLength={150} /></label>
+          <label>Título *<Input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
+          <label>Tipo<Select name="tipo" value={form.tipo} onChange={onChange}><option value="PREVENTIVA">Preventiva</option><option value="CORRETIVA">Corretiva</option></Select></label>
+          <label>Categoria<Input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} /></label>
+          <label>Local<Input name="local" value={form.local} onChange={onChange} maxLength={150} /></label>
           <label>
             Prestador que realizou *
-            <select name="fornecedorId" value={form.fornecedorId} onChange={onChange} required>
+            <Select name="fornecedorId" value={form.fornecedorId} onChange={onChange} required>
               <option value="">Selecione</option>
               {prestadores.map((p) => (
                 <option key={p.id} value={p.id}>{p.nome}</option>
               ))}
-            </select>
+            </Select>
           </label>
-          <label>Responsável interno<input name="responsavelInterno" value={form.responsavelInterno} onChange={onChange} maxLength={150} /></label>
+          <label>Responsável interno<Input name="responsavelInterno" value={form.responsavelInterno} onChange={onChange} maxLength={150} /></label>
           <label>
             Status
-            <select name="status" value={form.status} onChange={onChange}>
+            <Select name="status" value={form.status} onChange={onChange}>
               {STATUS_OPTIONS.map((status) => (
                 <option key={status.value} value={status.value}>{status.label}</option>
               ))}
-            </select>
+            </Select>
           </label>
-          <label>Data da ocorrência<input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
-          <label>Data da execução<input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
+          <label>Data da ocorrência<Input type="date" name="dataOcorrencia" value={form.dataOcorrencia} onChange={onChange} /></label>
+          <label>Data da execução<Input type="date" name="dataExecucao" value={form.dataExecucao} onChange={onChange} /></label>
           <label>
             Custo previsto
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               name="custoPrevisto"
@@ -266,7 +268,7 @@ function ManutencoesPage() {
           </label>
           <label>
             Custo realizado
-            <input
+            <Input
               type="text"
               inputMode="decimal"
               name="custoRealizado"
@@ -277,13 +279,12 @@ function ManutencoesPage() {
               placeholder="R$ 0,00"
             />
           </label>
-          <label className="full">Descrição<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} placeholder="Descreva o problema ou serviço necessário..." /></label>
+          <label className="full">Descrição<Textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} placeholder="Descreva o problema ou serviço necessário..." /></label>
 
-          <div className="full" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
+          <div className="ai-action-row full">
+            <Button
               type="button"
-              className="submit"
-              style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}
+              className="ui-button--ai"
               disabled={triando || !form.descricao.trim()}
               onClick={async () => {
                 setTriando(true)
@@ -307,25 +308,25 @@ function ManutencoesPage() {
               }}
             >
               {triando ? 'Triando...' : 'Triar com IA'}
-            </button>
-            {triagemMsg && <span className="muted" style={{ fontSize: '0.82rem' }}>{triagemMsg}</span>}
+            </Button>
+            {triagemMsg && <span className="muted ai-action-message">{triagemMsg}</span>}
           </div>
 
-          <label className="full">Observações<textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
+          <label className="full">Observações<Textarea name="observacoes" value={form.observacoes} onChange={onChange} rows={2} /></label>
           <div className="item-actions full">
-            <button type="submit" disabled={submitting} className="submit" style={{ flex: '1 1 220px' }}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Registrar manutenção'}
-            </button>
+            </Button>
             {editingId ? (
-              <button type="button" className="submit cancel" onClick={resetForm}>
+              <Button type="button" variant="secondary" onClick={resetForm}>
                 Cancelar edição
-              </button>
+              </Button>
             ) : null}
           </div>
         </form>
       </section>
 
-      <section className="board" style={{ marginTop: 20 }}>
+      <section className="board section-spacer">
         {loading ? <LoadingState message="Carregando manutenções..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
         {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma manutenção registrada." /> : null}
@@ -335,8 +336,8 @@ function ManutencoesPage() {
               const prestador = m.fornecedorId ? getPrestadorById(m.fornecedorId) : null
               return (
                 <>
-                  <h3 style={{ margin: 0 }}>{m.titulo}</h3>
-                  <p className="muted" style={{ marginTop: 4 }}>{m.tipo} · {statusLabel(m.status)}{m.categoria ? ` · ${m.categoria}` : ''}</p>
+                  <h3 className="item-title">{m.titulo}</h3>
+                  <p className="muted item-meta">{m.tipo} · {statusLabel(m.status)}{m.categoria ? ` · ${m.categoria}` : ''}</p>
                   {m.dataOcorrencia ? <p className="muted">Ocorrência: {m.dataOcorrencia}</p> : null}
                   {m.dataExecucao ? <p className="muted">Execução: {m.dataExecucao}</p> : null}
                   {m.local ? <p className="muted">Local: {m.local}</p> : null}
@@ -358,12 +359,12 @@ function ManutencoesPage() {
                       {m.custoRealizado != null ? `Realizado ${formatCurrency(m.custoRealizado)}` : 'Realizado -'}
                     </p>
                   ) : null}
-                  {m.descricao ? <p style={{ marginTop: 6 }}>{m.descricao}</p> : null}
-                  {m.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {m.observacoes}</p> : null}
-                  <div className="item-actions" style={{ marginTop: 10 }}>
-                    <button type="button" className="submit" onClick={() => startEdit(m)}>
+                  {m.descricao ? <p className="item-description">{m.descricao}</p> : null}
+                  {m.observacoes ? <p className="muted item-description">Obs: {m.observacoes}</p> : null}
+                  <div className="item-actions">
+                    <Button type="button" onClick={() => startEdit(m)}>
                       Editar
-                    </button>
+                    </Button>
                   </div>
                 </>
               )

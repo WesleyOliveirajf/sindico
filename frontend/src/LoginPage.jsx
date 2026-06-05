@@ -172,7 +172,7 @@ function LoginPage({ onLogin }) {
             LiveSind<span className="brand-ia">IA</span>
           </h1>
           <p className="auth-subtitle">
-            Transformando sua Gestão mais eficiente com a ajuda da  inteligente com IA e total segurança de dados
+            Gestão condominial mais eficiente com inteligência artificial e segurança de dados.
           </p>
         </header>
 

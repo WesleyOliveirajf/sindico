@@ -392,6 +392,60 @@ textarea {
   background: #fbfcfd;
 }
 
+.section-spacer {
+  margin-top: 20px;
+}
+
+.two-panel-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.notice-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.board-title,
+.item-title {
+  margin: 0;
+}
+
+.board-title {
+  margin-bottom: 12px;
+}
+
+.item-title small {
+  font-weight: 400;
+}
+
+.item-meta {
+  margin-top: 4px;
+}
+
+.item-description {
+  margin-top: 6px;
+}
+
+.ai-action-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ai-action-message {
+  font-size: 0.82rem;
+}
+
 .item header {
   display: flex;
   justify-content: space-between;
@@ -669,6 +723,13 @@ textarea {
   color: #fff;
 }
 
+.ui-button--ai {
+  background: #6d28d9;
+  color: #fff;
+  font-size: 0.82rem;
+  padding: 7px 14px;
+}
+
 .ui-button[disabled] {
   opacity: 0.7;
   cursor: not-allowed;
@@ -892,6 +953,7 @@ textarea {
   }
 
   .layout,
+  .two-panel-grid,
   .form-grid {
     grid-template-columns: 1fr;
   }

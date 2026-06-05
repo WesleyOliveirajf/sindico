@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { apiFetch, parseError, parseJson } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import ConfirmDialog from './components/ConfirmDialog'
+import Button from './components/ui/Button'
+import Input, { Select, Textarea } from './components/ui/Input'
 
 const PAPEIS = ['PROPRIETARIO', 'INQUILINO', 'DEPENDENTE', 'ZELADOR', 'OUTRO']
 
@@ -16,6 +19,7 @@ function MoradoresPage() {
   const [submittingUnidade, setSubmittingUnidade] = useState(false)
   const [submittingMorador, setSubmittingMorador] = useState(false)
   const [editingMorador, setEditingMorador] = useState({})
+  const [pendingInativarId, setPendingInativarId] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -147,6 +151,7 @@ function MoradoresPage() {
       const res = await apiFetch(`/api/moradores/${id}/inativar`, { method: 'POST' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao inativar morador.'))
       setSuccess('Morador inativado com sucesso.')
+      setPendingInativarId(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -163,16 +168,16 @@ function MoradoresPage() {
 
       <SuccessState message={success} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
+      <div className="two-panel-grid">
         <section className="panel">
           <h2>Nova unidade</h2>
           <form onSubmit={onSubmitUnidade} className="form-grid">
-            <label>Bloco<input name="bloco" value={formUnidade.bloco} onChange={onUnidadeChange} maxLength={30} placeholder="Ex: A, Torre 1..." /></label>
-            <label>Número *<input name="numero" value={formUnidade.numero} onChange={onUnidadeChange} required maxLength={30} /></label>
-            <label className="full">Complemento<input name="complemento" value={formUnidade.complemento} onChange={onUnidadeChange} maxLength={100} /></label>
-            <button type="submit" disabled={submittingUnidade} className="submit full">
+            <label>Bloco<Input name="bloco" value={formUnidade.bloco} onChange={onUnidadeChange} maxLength={30} placeholder="Ex: A, Torre 1..." /></label>
+            <label>Número *<Input name="numero" value={formUnidade.numero} onChange={onUnidadeChange} required maxLength={30} /></label>
+            <label className="full">Complemento<Input name="complemento" value={formUnidade.complemento} onChange={onUnidadeChange} maxLength={100} /></label>
+            <Button type="submit" disabled={submittingUnidade} className="full">
               {submittingUnidade ? 'Salvando...' : 'Cadastrar unidade'}
-            </button>
+            </Button>
           </form>
         </section>
 
@@ -181,33 +186,33 @@ function MoradoresPage() {
           <form onSubmit={onSubmitMorador} className="form-grid">
             <label className="full">
               Unidade *
-              <select name="unidadeId" value={formMorador.unidadeId} onChange={onMoradorChange} required>
+              <Select name="unidadeId" value={formMorador.unidadeId} onChange={onMoradorChange} required>
                 <option value="">Selecione...</option>
                 {unidades.map((u) => <option key={u.id} value={u.id}>{u.rotulo}</option>)}
-              </select>
+              </Select>
             </label>
-            <label>Nome *<input name="nome" value={formMorador.nome} onChange={onMoradorChange} required maxLength={150} /></label>
+            <label>Nome *<Input name="nome" value={formMorador.nome} onChange={onMoradorChange} required maxLength={150} /></label>
             <label>
               Papel
-              <select name="papel" value={formMorador.papel} onChange={onMoradorChange}>
+              <Select name="papel" value={formMorador.papel} onChange={onMoradorChange}>
                 {PAPEIS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              </Select>
             </label>
-            <label>Email<input name="email" type="email" value={formMorador.email} onChange={onMoradorChange} maxLength={150} /></label>
-            <label>Telefone<input name="telefone" value={formMorador.telefone} onChange={onMoradorChange} maxLength={30} /></label>
-            <label className="full">Observações<textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
-            <div className="full" style={{ backgroundColor: '#f8fafc', border: '1px solid #d8e0e8', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#5f6f80', marginBottom: '12px', lineHeight: '1.4' }}>
+            <label>Email<Input name="email" type="email" value={formMorador.email} onChange={onMoradorChange} maxLength={150} /></label>
+            <label>Telefone<Input name="telefone" value={formMorador.telefone} onChange={onMoradorChange} maxLength={30} /></label>
+            <label className="full">Observações<Textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
+            <div className="notice-box full">
               <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
             </div>
-            <button type="submit" disabled={submittingMorador} className="submit full">
+            <Button type="submit" disabled={submittingMorador} className="full">
               {submittingMorador ? 'Salvando...' : 'Cadastrar morador'}
-            </button>
+            </Button>
           </form>
         </section>
       </div>
 
-      <section className="board" style={{ marginTop: 24 }}>
-        <h2 style={{ marginBottom: 12 }}>Moradores ativos</h2>
+      <section className="board section-spacer">
+        <h2 className="board-title">Moradores ativos</h2>
         {loading ? <LoadingState message="Carregando moradores..." /> : null}
         {!loading && error ? <ErrorState message={error} onRetry={load} /> : null}
         {!loading && !error && moradores.length === 0 ? <EmptyState message="Nenhum morador cadastrado." /> : null}
@@ -217,39 +222,48 @@ function MoradoresPage() {
               <>
                 <label className="full">
                   Unidade
-                  <select name="unidadeId" value={editingMorador[m.id].unidadeId} onChange={(e) => onEditChange(m.id, e)}>
+                  <Select name="unidadeId" value={editingMorador[m.id].unidadeId} onChange={(e) => onEditChange(m.id, e)}>
                     {unidades.map((u) => <option key={u.id} value={u.id}>{u.rotulo}</option>)}
-                  </select>
+                  </Select>
                 </label>
-                <label>Nome<input name="nome" value={editingMorador[m.id].nome} onChange={(e) => onEditChange(m.id, e)} /></label>
+                <label>Nome<Input name="nome" value={editingMorador[m.id].nome} onChange={(e) => onEditChange(m.id, e)} /></label>
                 <label>
                   Papel
-                  <select name="papel" value={editingMorador[m.id].papel} onChange={(e) => onEditChange(m.id, e)}>
+                  <Select name="papel" value={editingMorador[m.id].papel} onChange={(e) => onEditChange(m.id, e)}>
                     {PAPEIS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
+                  </Select>
                 </label>
-                <label>Email<input name="email" type="email" value={editingMorador[m.id].email} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label>Telefone<input name="telefone" value={editingMorador[m.id].telefone} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label className="full">Observações<textarea name="observacoes" value={editingMorador[m.id].observacoes} onChange={(e) => onEditChange(m.id, e)} rows={2} /></label>
+                <label>Email<Input name="email" type="email" value={editingMorador[m.id].email} onChange={(e) => onEditChange(m.id, e)} /></label>
+                <label>Telefone<Input name="telefone" value={editingMorador[m.id].telefone} onChange={(e) => onEditChange(m.id, e)} /></label>
+                <label className="full">Observações<Textarea name="observacoes" value={editingMorador[m.id].observacoes} onChange={(e) => onEditChange(m.id, e)} rows={2} /></label>
                 <div className="item-actions">
-                  <button className="submit" style={{ flex: 1 }} onClick={() => onUpdateMorador(m.id)}>Salvar</button>
-                  <button className="submit cancel" onClick={() => setEditingMorador((prev) => { const c = { ...prev }; delete c[m.id]; return c })}>Cancelar</button>
+                  <Button onClick={() => onUpdateMorador(m.id)}>Salvar</Button>
+                  <Button variant="secondary" onClick={() => setEditingMorador((prev) => { const c = { ...prev }; delete c[m.id]; return c })}>Cancelar</Button>
                 </div>
               </>
             ) : (
               <>
-                <h3>{m.nome} <small className="muted" style={{ fontWeight: 400 }}>· {m.unidadeRotulo}</small></h3>
-                <p className="muted" style={{ marginTop: 2 }}>{m.papel}{m.telefone ? ` · ${m.telefone}` : ''}{m.email ? ` · ${m.email}` : ''}</p>
-                {m.observacoes ? <p style={{ marginTop: 4 }}>{m.observacoes}</p> : null}
+                <h3 className="item-title">{m.nome} <small className="muted">· {m.unidadeRotulo}</small></h3>
+                <p className="muted item-meta">{m.papel}{m.telefone ? ` · ${m.telefone}` : ''}{m.email ? ` · ${m.email}` : ''}</p>
+                {m.observacoes ? <p className="item-description">{m.observacoes}</p> : null}
                 <div className="item-actions">
-                  <button className="submit" onClick={() => startEditMorador(m)}>Editar</button>
-                  <button className="submit danger" onClick={() => onInativar(m.id)}>Inativar</button>
+                  <Button onClick={() => startEditMorador(m)}>Editar</Button>
+                  <Button variant="danger" onClick={() => setPendingInativarId(m.id)}>Inativar</Button>
                 </div>
               </>
             )}
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={pendingInativarId != null}
+        title="Inativar morador"
+        message="Deseja inativar este morador? Ele deixará de aparecer na lista de moradores ativos."
+        confirmLabel="Inativar"
+        onCancel={() => setPendingInativarId(null)}
+        onConfirm={() => onInativar(pendingInativarId)}
+      />
     </>
   )
 }
