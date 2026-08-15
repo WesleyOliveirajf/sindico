@@ -1,67 +1,121 @@
-# Sistema para Historico de Manutencao e Reunioes de Condominios
+# LiveSindIA — Gestão Condominial
 
-Este workspace agora contem a definicao inicial de um sistema para ajudar sindicos a registrar, consultar e acompanhar:
+Aplicação web para centralizar rotinas de condomínios, com histórico, rastreabilidade e organização de informações operacionais.
 
-- historico de manutencoes
-- historico de reunioes
-- anexos e evidencias
-- pendencias e acompanhamentos
+## Demonstração
 
-## Objetivo do produto
+[https://sindico-seven.vercel.app](https://sindico-seven.vercel.app)
 
-Centralizar o historico operacional do condominio em um unico lugar, reduzindo perda de informacao, facilitando auditoria e dando rastreabilidade para decisoes e servicos executados.
+A demonstração utiliza autenticação. Para conhecer as telas antes de criar uma conta, consulte a documentação do projeto.
 
-## MVP proposto
+## Funcionalidades
 
-O MVP deve atender quatro frentes:
+- Cadastro e gestão de condomínios
+- Autenticação por e-mail, JWT e login social
+- Controle de moradores e prestadores de serviço
+- Registro de manutenções e atualização de status
+- Gestão de reuniões, anotações e compromissos
+- Controle de gastos e recebimentos
+- Upload e organização de anexos
+- Dashboard e consultas por contexto
+- Política centralizada de senha e controles de autorização
 
-1. Cadastro do condominio e usuarios responsaveis.
-2. Registro de manutencoes preventivas e corretivas.
-3. Registro de reunioes ordinarias e extraordinarias.
-4. Consulta do historico com filtros, anexos e status.
+## Stack
 
-## Documentos criados
+| Camada | Tecnologias |
+|---|---|
+| Backend | Java 25, Spring Boot 3.5, Spring Web e Validation |
+| Segurança | Spring Security, JWT e Google OAuth |
+| Persistência | Spring Data JPA, PostgreSQL e Flyway |
+| Frontend | React 19, React Router e Vite |
+| Operação | Docker e Spring Boot Actuator |
+| Testes | Spring Boot Test e Spring Security Test |
 
-- [docs/visao-produto.md](docs/visao-produto.md)
-- [docs/requisitos-mvp.md](docs/requisitos-mvp.md)
-- [docs/modelo-dados.md](docs/modelo-dados.md)
-- [docs/arquitetura-sugerida.md](docs/arquitetura-sugerida.md)
-- [docs/backlog-inicial.md](docs/backlog-inicial.md)
-- [database/schema.sql](database/schema.sql)
+## Arquitetura
 
-## Recomendacao tecnica para iniciar rapido
+```text
+React/Vite
+    │
+    ▼
+API Spring Boot
+    │
+    ├── Controllers
+    ├── Services
+    ├── Repositories
+    ├── Segurança/JWT
+    └── Migrações Flyway
+            │
+            ▼
+       PostgreSQL
+```
 
-- Frontend: Thymeleaf no proprio Spring Boot para o piloto ou React em uma segunda etapa
-- Backend: Java 21 + Spring Boot
-- Banco: PostgreSQL em producao e H2 para desenvolvimento rapido
-- Persistencia: Spring Data JPA + Hibernate
-- Seguranca: Spring Security
-- Armazenamento de arquivos: disco local no piloto e S3 em producao
-- Hospedagem: Docker + VPS, Railway ou AWS
+O backend mantém separação por responsabilidades e o frontend consome a API por módulos de domínio.
 
-## Fluxo principal do usuario
+## Estrutura principal
 
-1. O sindico acessa o sistema.
-2. Cadastra o condominio.
-3. Registra uma manutencao ou uma reuniao.
-4. Anexa ata, notas fiscais, orcamentos, fotos ou contratos.
-5. Consulta o historico por periodo, categoria, fornecedor ou status.
+```text
+sindico/
+├── src/main/          # aplicação Spring Boot
+├── src/test/          # testes de serviços, controllers e segurança
+├── frontend/          # aplicação React
+├── docs/              # requisitos, arquitetura e relatórios de QA
+├── scripts/           # utilitários operacionais
+├── Dockerfile
+└── pom.xml
+```
 
-## Proximo passo recomendado
+## Executar o backend
 
-Transformar essa analise em um projeto funcional com:
+Pré-requisitos:
 
-- autenticacao
-- dashboard inicial
-- CRUD de manutencoes
-- CRUD de reunioes
-- upload de anexos
-- filtros e busca
+- Java 25
+- Maven
+- PostgreSQL
 
-## Estrategia recomendada para comecar pequeno e crescer certo
+Configure as variáveis descritas em `.env.example` e execute:
 
-- iniciar com um monolito modular em Spring Boot
-- suportar apenas um usuario no piloto para validar fluxo e modelo de dados
-- manter separacao por camadas desde o inicio: controller, service, repository e domain
-- usar PostgreSQL e migracoes para evitar retrabalho quando o sistema crescer
-- deixar preparado para multiusuario e multiconominio, mesmo que o piloto use um unico login
+```bash
+mvn spring-boot:run
+```
+
+## Executar o frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Validação
+
+Backend:
+
+```bash
+mvn test
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+O repositório contém testes para autenticação, autorização, cadastro, manutenção, reuniões, moradores, prestadores, gastos, recebimentos, anexos e outros fluxos principais.
+
+## Documentação
+
+- [Documentação completa](DOCUMENTACAO_DO_SISTEMA.md)
+- [Visão do produto](docs/visao-produto.md)
+- [Requisitos do MVP](docs/requisitos-mvp.md)
+- [Modelo de dados](docs/modelo-dados.md)
+- [Relatório de QA](docs/QA-REPORT.md)
+
+## Status
+
+Projeto funcional e em evolução contínua. O README descreve o estado atual do código disponível neste repositório.
+
+## Autor
+
+[Wesley Oliveira](https://github.com/WesleyOliveirajf)
