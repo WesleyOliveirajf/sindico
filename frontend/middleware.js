@@ -1,5 +1,5 @@
 /**
- * Vercel Edge Middleware — proxy para o backend Railway sem CORS.
+ * Vercel Edge Middleware — proxy para o backend (VPS) sem CORS.
  *
  * Intercepta /api/* ANTES do rewrite do vercel.json.
  * Remove o header Origin para que o Spring Security não ative
@@ -8,14 +8,14 @@
  * não há dependência de cookies cross-site — remoção do Origin é segura.
  */
 
-const RAILWAY_URL = 'https://sindico-production-f0ac.up.railway.app'
+const BACKEND_URL = 'https://app.analisandoia.com.br'
 
 export default async function middleware(request) {
   const { pathname, search } = new URL(request.url)
 
   if (!pathname.startsWith('/api/')) return
 
-  // Responde preflight OPTIONS diretamente sem consultar o Railway
+  // Responde preflight OPTIONS diretamente sem consultar o backend
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -28,7 +28,7 @@ export default async function middleware(request) {
     })
   }
 
-  const targetUrl = RAILWAY_URL + pathname + search
+  const targetUrl = BACKEND_URL + pathname + search
 
   // Constrói headers sem Origin/Host para não acionar CORS no Spring Security
   const forwardHeaders = new Headers()
