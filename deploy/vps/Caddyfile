@@ -1,8 +1,0 @@
-{$DOMAIN} {
-	encode zstd gzip
-	# Uploads de ate 10 MB (APP_MAX_FILE_SIZE_BYTES) + overhead multipart
-	request_body {
-		max_size 12MB
-	}
-	reverse_proxy app:8080
-}

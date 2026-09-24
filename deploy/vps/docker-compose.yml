@@ -1,66 +1,50 @@
 name: sindico
 
+# Somente o back-end. Banco continua no Supabase.
+# HTTPS e roteamento: Traefik ja existente na VPS (rede n8n_default, resolver mytlschallenge).
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: sindico
-      POSTGRES_USER: sindico
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sindico -d sindico"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # Sem "ports": banco acessivel apenas pela rede interna do Compose.
-
   app:
     build:
       context: ../..
       dockerfile: Dockerfile
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      # Perfil "supabase" so define datasource generico + baseline Flyway; funciona com qualquer Postgres.
       SPRING_PROFILES_ACTIVE: supabase
-      DB_URL: jdbc:postgresql://db:5432/sindico?sslmode=disable
-      DB_USERNAME: sindico
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_URL: ${DB_URL:?defina DB_URL no .env}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
       APP_JWT_SECRET: ${APP_JWT_SECRET:?defina APP_JWT_SECRET no .env}
       APP_CORS_ORIGINS: ${APP_CORS_ORIGINS}
       APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL}
       APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-}
       APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
-      APP_STORAGE_PROVIDER: local
-      # Atras do Caddy: respeita X-Forwarded-Proto/Host (redirects e cookie Secure).
+      APP_STORAGE_PROVIDER: ${APP_STORAGE_PROVIDER:-local}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-anexos}
+      # Atras do Traefik: respeita X-Forwarded-Proto/Host (redirects e cookie Secure).
       SERVER_FORWARD_HEADERS_STRATEGY: framework
-      JAVA_TOOL_OPTIONS: -Xmx768m
+      # A VPS e compartilhada com outros servicos: limita o heap.
+      JAVA_TOOL_OPTIONS: -Xmx512m
     volumes:
       - uploads:/app/uploads
-    # Sem "ports": so o Caddy acessa.
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - app
-    environment:
-      DOMAIN: ${DOMAIN:?defina DOMAIN no .env}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    mem_limit: 900m
+    networks:
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: n8n_default
+      traefik.http.routers.sindico.rule: Host(`${DOMAIN:?defina DOMAIN no .env}`)
+      traefik.http.routers.sindico.entrypoints: websecure
+      traefik.http.routers.sindico.tls: "true"
+      traefik.http.routers.sindico.tls.certresolver: mytlschallenge
+      traefik.http.services.sindico.loadbalancer.server.port: "8080"
 
 volumes:
-  pgdata:
   uploads:
-  caddy_data:
-  caddy_config:
+
+networks:
+  traefik:
+    name: n8n_default
+    external: true

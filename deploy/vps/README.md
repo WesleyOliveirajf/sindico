@@ -1,67 +1,44 @@
-# Deploy em VPS Ubuntu (Docker Compose + Caddy + Postgres)
+# Deploy do back-end em VPS Ubuntu (Docker Compose + Traefik)
 
-Stack: `caddy` (HTTPS automatico) -> `app` (Spring Boot) -> `db` (Postgres 16, rede interna).
+Somente o back-end Spring Boot. O banco continua no Supabase.
+HTTPS e roteamento ficam a cargo do Traefik ja rodando na VPS (rede `n8n_default`,
+resolver `mytlschallenge`). Nao ha Caddy nem Postgres neste compose.
 
-## 1. Preparar a VPS
+## Pre-requisitos
 
-```bash
-# Docker
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER   # relogar depois
+- Registro DNS `A` do dominio (`DOMAIN`) apontando para o IP da VPS.
+- Traefik na rede `n8n_default` com entrypoint `websecure` e resolver `mytlschallenge`
+  (ajuste os labels do `docker-compose.yml` se o seu for diferente).
 
-# Firewall: so SSH, HTTP, HTTPS
-sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw enable
-```
-
-Dominio: aponte um registro **A** para o IP da VPS (ex.: subdominio gratis em duckdns.org).
-Portas 80/443 precisam estar livres para o Caddy emitir o certificado.
-
-## 2. Subir
+## Subir
 
 ```bash
-git clone <repo> sindico && cd sindico/deploy/vps
-cp env.example .env && nano .env      # preencher
+git clone https://github.com/WesleyOliveirajf/sindico.git /opt/sindico
+cd /opt/sindico/deploy/vps
+cp env.example .env && nano .env      # preencher DB_PASSWORD, APP_JWT_SECRET etc.
 docker compose up -d --build
 docker compose logs -f app
 ```
 
-## 3. Migrar dados do Supabase
+Teste: `https://<DOMAIN>/actuator/health` -> `{"status":"UP"}`.
 
-Rode **antes** do primeiro start do app (ou pare o `app`: `docker compose stop app`).
+## Front (Vercel)
 
-```bash
-# Na VPS (ou local), dump so do schema public, sem owners/roles do Supabase:
-pg_dump "postgresql://postgres:SENHA@db.gbzmribcjrgxvzbibcqp.supabase.co:5432/postgres" \
-  --schema=public --no-owner --no-privileges --no-acl -Fc -f sindico.dump
+O front chama `/api/*` por rewrite em `frontend/vercel.json`. Troque o `destination`
+para `https://<DOMAIN>/api/:path*` e faca redeploy.
 
-# Restaurar:
-docker compose up -d db
-docker compose exec -T db pg_restore -U sindico -d sindico --no-owner < sindico.dump
-docker compose up -d app
-```
+## Anexos
 
-O dump traz `flyway_schema_history`, entao o Flyway continua de onde parou.
-Se os anexos estavam no Supabase Storage, baixe os arquivos do bucket e importe
-no volume `uploads` (ou mantenha `APP_STORAGE_PROVIDER=supabase` com `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`).
-
-## 4. Front (Vercel)
-
-Trocar a URL da API para `https://$DOMAIN` (variavel de ambiente do front) e redeployar.
-
-## 5. Backup
-
-```bash
-chmod +x backup.sh
-sudo mkdir -p /var/backups/sindico && sudo chown $USER /var/backups/sindico
-( crontab -l 2>/dev/null; echo "0 3 * * * $(pwd)/backup.sh >> /var/log/sindico-backup.log 2>&1" ) | crontab -
-```
-
-Configure tambem copia off-site (rclone para Drive/B2/R2). Backup so na mesma VPS nao protege contra perda da maquina.
-
-Restaurar backup: `gunzip -c db-XXXX.sql.gz | docker compose exec -T db psql -U sindico -d sindico`.
+- `APP_STORAGE_PROVIDER=local`: grava no volume `uploads` (persistente, mas so nesta VPS;
+  inclua o volume nos backups da VPS).
+- `APP_STORAGE_PROVIDER=supabase`: usa Supabase Storage (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`).
 
 ## Atualizar versao
 
 ```bash
-git pull && docker compose up -d --build
+cd /opt/sindico && git pull && cd deploy/vps && docker compose up -d --build
 ```
+
+## Rollback
+
+Enquanto o Railway estiver de pe, basta voltar o `destination` do `frontend/vercel.json`.
