@@ -8,6 +8,7 @@
  * não há dependência de cookies cross-site — remoção do Origin é segura.
  */
 
+/* global process */
 const BACKEND_URL = 'https://app.analisandoia.com.br'
 
 export default async function middleware(request) {
@@ -34,9 +35,22 @@ export default async function middleware(request) {
   const forwardHeaders = new Headers()
   for (const [key, value] of request.headers.entries()) {
     const lower = key.toLowerCase()
-    if (lower !== 'origin' && lower !== 'host' && lower !== 'referer') {
+    // x-sindico-*: cabecalhos internos; nunca repassar os que vieram do cliente.
+    if (lower !== 'origin' && lower !== 'host' && lower !== 'referer' && !lower.startsWith('x-sindico-')) {
       forwardHeaders.set(key, value)
     }
+  }
+
+  // O back-end enxerga o IP do Vercel; repassa o IP real do usuario, autenticado por segredo
+  // compartilhado (PROXY_SHARED_SECRET no Vercel = APP_TRUSTED_PROXY_SECRET na VPS).
+  const proxySecret = process.env.PROXY_SHARED_SECRET
+  if (proxySecret) {
+    const clientIp = (
+      request.headers.get('x-real-ip') ||
+      (request.headers.get('x-forwarded-for') || '').split(',')[0]
+    ).trim()
+    forwardHeaders.set('x-sindico-proxy-secret', proxySecret)
+    if (clientIp) forwardHeaders.set('x-sindico-client-ip', clientIp)
   }
 
   let body = undefined

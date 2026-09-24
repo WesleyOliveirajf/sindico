@@ -36,6 +36,10 @@ management:
 
 app:
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  security:
+    # Segredo compartilhado com o middleware do Vercel para receber o IP real do cliente
+    # (cabecalho X-Sindico-Client-Ip). Vazio = nao confia em nenhum cabecalho.
+    trusted-proxy-secret: ${APP_TRUSTED_PROXY_SECRET:}
   condominio:
     # Alinhado a migration V5 (condominio padrao do MVP)
     default-id: "00000000-0000-0000-0000-000000000001"

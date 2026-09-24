@@ -1,6 +1,7 @@
 package br.com.sindico.app.config;
 
 import br.com.sindico.app.security.SindicoLoginSuccessHandler;
+import br.com.sindico.app.security.TrustedProxyClientIpFilter;
 import br.com.sindico.app.security.ApiBearerEnforcementFilter;
 import br.com.sindico.app.security.AuthRateLimitFilter;
 import br.com.sindico.app.security.JwtAuthenticationFilter;
@@ -98,7 +99,8 @@ public class SecurityConfig {
             SindicoLoginSuccessHandler loginSuccessHandler,
             ApiBearerEnforcementFilter apiBearerEnforcementFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            AuthRateLimitFilter authRateLimitFilter)
+            AuthRateLimitFilter authRateLimitFilter,
+            TrustedProxyClientIpFilter trustedProxyClientIpFilter)
             throws Exception {
         return http
                 .cors(Customizer.withDefaults())
@@ -106,6 +108,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiBearerEnforcementFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(authRateLimitFilter, ApiBearerEnforcementFilter.class)
+                .addFilterBefore(trustedProxyClientIpFilter, AuthRateLimitFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login", "/cadastro",
