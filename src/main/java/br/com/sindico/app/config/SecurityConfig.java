@@ -2,6 +2,7 @@ package br.com.sindico.app.config;
 
 import br.com.sindico.app.security.SindicoLoginSuccessHandler;
 import br.com.sindico.app.security.ApiBearerEnforcementFilter;
+import br.com.sindico.app.security.AuthRateLimitFilter;
 import br.com.sindico.app.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
@@ -96,13 +97,15 @@ public class SecurityConfig {
             HttpSecurity http,
             SindicoLoginSuccessHandler loginSuccessHandler,
             ApiBearerEnforcementFilter apiBearerEnforcementFilter,
-            JwtAuthenticationFilter jwtAuthenticationFilter)
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            AuthRateLimitFilter authRateLimitFilter)
             throws Exception {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiBearerEnforcementFilter, JwtAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, ApiBearerEnforcementFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login", "/cadastro",

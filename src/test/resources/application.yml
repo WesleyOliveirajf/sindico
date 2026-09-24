@@ -9,5 +9,8 @@ spring:
 app:
   security:
     enforce-bearer: false
+    rate-limit:
+      # Testes de slice compartilham contexto/IP; o limitador tem testes proprios.
+      enabled: false
   condominio:
     default-id: "00000000-0000-0000-0000-000000000001"
