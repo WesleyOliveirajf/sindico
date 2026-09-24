@@ -23,8 +23,9 @@ services:
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
       SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-anexos}
-      # Atras do Traefik: respeita X-Forwarded-Proto/Host (redirects e cookie Secure).
-      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      # Atras do Traefik: "native" (Tomcat RemoteIpValve) resolve o IP real do cliente
+      # (rate limit e IP do aceite LGPD) alem de scheme/host. Confia so em proxies de rede interna.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
       # A VPS e compartilhada com outros servicos: limita o heap.
       JAVA_TOOL_OPTIONS: -Xmx512m
     volumes:

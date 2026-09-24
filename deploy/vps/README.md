@@ -33,6 +33,21 @@ para `https://<DOMAIN>/api/:path*` e faca redeploy.
   inclua o volume nos backups da VPS).
 - `APP_STORAGE_PROVIDER=supabase`: usa Supabase Storage (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`).
 
+## Backup dos anexos
+
+O banco fica no Supabase (com backup proprio). Os anexos ficam no volume `sindico_uploads`,
+so nesta VPS. Backup diario as 03:00, mantendo 14 dias:
+
+```bash
+chmod +x /opt/sindico/deploy/vps/backup-uploads.sh
+( crontab -l 2>/dev/null; echo "0 3 * * * /opt/sindico/deploy/vps/backup-uploads.sh >> /var/log/sindico-backup.log 2>&1" ) | crontab -
+```
+
+Backup so na mesma VPS nao protege contra perda da maquina: configure copia off-site
+(rclone) no final do script. Restaurar:
+`docker run --rm -v sindico_uploads:/data -v /var/backups/sindico:/in alpine tar xzf /in/uploads-XXXX.tar.gz -C /data`
+(depois ajuste o dono: `chown -R 10001:10001` no volume).
+
 ## Atualizar versao
 
 ```bash
