@@ -32,6 +32,7 @@ services:
     mem_limit: 900m
     networks:
       - traefik
+      - saida_v6
     labels:
       traefik.enable: "true"
       traefik.docker.network: n8n_default
@@ -48,3 +49,9 @@ networks:
   traefik:
     name: n8n_default
     external: true
+  # Supabase (conexao direta) so responde por IPv6; a rede padrao do Docker nao tem IPv6.
+  saida_v6:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd00:5:1c0::/64
