@@ -11,4 +11,6 @@ FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=builder /app/target/sindico-app-*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Ajustado para containers de 512 MB (Render free): heap relativo ao limite do container,
+# SerialGC (menor overhead) e stacks de thread menores.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=65", "-XX:+UseSerialGC", "-Xss512k", "-XX:TieredStopAtLevel=1", "-jar", "app.jar"]

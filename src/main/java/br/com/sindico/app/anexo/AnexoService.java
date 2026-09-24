@@ -6,16 +6,12 @@ import br.com.sindico.app.security.SecurityUtils;
 import br.com.sindico.app.security.TenantAccessor;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +33,7 @@ public class AnexoService {
     private final TenantAccessor tenantAccessor;
     private final ManutencaoRepository manutencaoRepository;
     private final ReuniaoRepository reuniaoRepository;
-    private final Path uploadRoot;
+    private final ArquivoStorage arquivoStorage;
     private final long maxFileSizeBytes;
 
     public AnexoService(
@@ -45,13 +41,13 @@ public class AnexoService {
             TenantAccessor tenantAccessor,
             ManutencaoRepository manutencaoRepository,
             ReuniaoRepository reuniaoRepository,
-            @Value("${app.storage.upload-dir:uploads}") String uploadDir,
+            ArquivoStorage arquivoStorage,
             @Value("${app.storage.max-file-size-bytes:10485760}") long maxFileSizeBytes) {
         this.anexoRepository = anexoRepository;
         this.tenantAccessor = tenantAccessor;
         this.manutencaoRepository = manutencaoRepository;
         this.reuniaoRepository = reuniaoRepository;
-        this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.arquivoStorage = arquivoStorage;
         this.maxFileSizeBytes = maxFileSizeBytes;
     }
 
@@ -77,20 +73,11 @@ public class AnexoService {
         String storedName = UUID.randomUUID() + (ext.isEmpty() ? "" : "." + ext);
 
         UUID condominioId = tenantAccessor.condominioAtual();
-        Path folder = uploadRoot.resolve(condominioId.toString()).resolve(tipo.toLowerCase()).resolve(entidadeId.toString()).normalize();
+        String chave = condominioId + "/" + tipo.toLowerCase() + "/" + entidadeId + "/" + storedName;
 
-        if (!folder.startsWith(uploadRoot)) {
-            throw new IllegalArgumentException("Caminho de upload invalido");
-        }
-
-        Path target = folder.resolve(storedName).normalize();
-        if (!target.startsWith(uploadRoot)) {
-            throw new IllegalArgumentException("Caminho de arquivo invalido");
-        }
-
-        try {
-            Files.createDirectories(folder);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        String referencia;
+        try (InputStream conteudo = file.getInputStream()) {
+            referencia = arquivoStorage.salvar(chave, conteudo, file.getSize(), file.getContentType());
         } catch (IOException e) {
             throw new IllegalStateException("Falha ao gravar arquivo", e);
         }
@@ -100,7 +87,7 @@ public class AnexoService {
         anexo.setEntidadeTipo(tipo);
         anexo.setEntidadeId(entidadeId);
         anexo.setNomeArquivo(originalName);
-        anexo.setUrlArquivo(target.toString());
+        anexo.setUrlArquivo(referencia);
         anexo.setMimeType(file.getContentType());
         anexo.setTamanhoBytes(file.getSize());
         anexo.setEnviadoPor(usuarioAtualId());
@@ -113,20 +100,8 @@ public class AnexoService {
         Anexo anexo = anexoRepository.findByIdAndCondominioId(anexoId, tenantAccessor.condominioAtual())
                 .orElseThrow(() -> new EntityNotFoundException("Anexo nao encontrado."));
 
-        Path filePath = Paths.get(anexo.getUrlArquivo()).toAbsolutePath().normalize();
-        if (!filePath.startsWith(uploadRoot)) {
-            throw new IllegalArgumentException("Arquivo fora do diretorio permitido");
-        }
-
-        try {
-            Resource resource = new UrlResource(filePath.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new EntityNotFoundException("Arquivo do anexo nao encontrado.");
-            }
-            return new DownloadPayload(resource, anexo.getNomeArquivo(), anexo.getMimeType());
-        } catch (IOException ex) {
-            throw new IllegalStateException("Falha ao ler arquivo", ex);
-        }
+        Resource resource = arquivoStorage.carregar(anexo.getUrlArquivo());
+        return new DownloadPayload(resource, anexo.getNomeArquivo(), anexo.getMimeType());
     }
 
     public record DownloadPayload(Resource resource, String fileName, String mimeType) {}

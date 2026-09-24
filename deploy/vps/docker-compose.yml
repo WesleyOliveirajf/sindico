@@ -1,0 +1,66 @@
+name: sindico
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sindico
+      POSTGRES_USER: sindico
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sindico -d sindico"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Sem "ports": banco acessivel apenas pela rede interna do Compose.
+
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Perfil "supabase" so define datasource generico + baseline Flyway; funciona com qualquer Postgres.
+      SPRING_PROFILES_ACTIVE: supabase
+      DB_URL: jdbc:postgresql://db:5432/sindico?sslmode=disable
+      DB_USERNAME: sindico
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?defina APP_JWT_SECRET no .env}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+      APP_STORAGE_PROVIDER: local
+      # Atras do Caddy: respeita X-Forwarded-Proto/Host (redirects e cookie Secure).
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+      JAVA_TOOL_OPTIONS: -Xmx768m
+    volumes:
+      - uploads:/app/uploads
+    # Sem "ports": so o Caddy acessa.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?defina DOMAIN no .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

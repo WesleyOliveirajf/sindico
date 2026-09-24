@@ -3,7 +3,29 @@
     {
       "name": "app.storage.upload-dir",
       "type": "java.lang.String",
-      "description": "Diretorio local usado para armazenar anexos no piloto."
+      "description": "Diretorio local usado para armazenar anexos quando app.storage.provider=local."
+    },
+    {
+      "name": "app.storage.provider",
+      "type": "java.lang.String",
+      "description": "Backend de armazenamento de anexos: local (disco) ou supabase (Supabase Storage).",
+      "defaultValue": "local"
+    },
+    {
+      "name": "app.storage.supabase.url",
+      "type": "java.lang.String",
+      "description": "URL do projeto Supabase (https://<ref>.supabase.co)."
+    },
+    {
+      "name": "app.storage.supabase.service-key",
+      "type": "java.lang.String",
+      "description": "service_role key do Supabase. Segredo: somente via variavel de ambiente."
+    },
+    {
+      "name": "app.storage.supabase.bucket",
+      "type": "java.lang.String",
+      "description": "Bucket privado do Supabase Storage para anexos.",
+      "defaultValue": "anexos"
     }
   ]
 }
