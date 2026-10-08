@@ -54,6 +54,11 @@ Backup so na mesma VPS nao protege contra perda da maquina: configure copia off-
 cd /opt/sindico && git pull && cd deploy/vps && docker compose up -d --build
 ```
 
+## Rotação do Segredo do Proxy
+
+Para rotacionar o segredo compartilhado (`APP_TRUSTED_PROXY_SECRET` / `PROXY_SHARED_SECRET`) sem downtime,
+consulte o passo a passo completo em [`ROTACAO_SEGREDO_PROXY.md`](ROTACAO_SEGREDO_PROXY.md).
+
 ## Rollback
 
 Ver `docs/DEPLOY.md` (secao Rollback).
