@@ -47,9 +47,6 @@
       "env": {
         "API_TOKEN": "${HOSTINGER_API_TOKEN}"
       }
-    },
-    "Railway": {
-      "url": "https://mcp.railway.com"
     }
   }
 }

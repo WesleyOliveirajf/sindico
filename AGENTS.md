@@ -144,9 +144,21 @@ src/main/java/br/com/sindico/app/
 
 **Front-end React/Vite** em `frontend/`, páginas em `frontend/src/`. Comunicação com `/api/**` via `frontend/src/api.js`. Deploy no Vercel.
 
+**Topologia de produção** (detalhes e rollback em `docs/DEPLOY.md`):
+
+```
+Navegador → Vercel (SPA + Edge Middleware frontend/middleware.js)
+          → /api/* proxy → VPS https://app.analisandoia.com.br (Traefik → container Spring Boot)
+          → Supabase (PostgreSQL; Storage opcional para anexos)
+```
+
+- O middleware do Vercel repassa `/api/*` ao back-end (URL fixa no próprio `middleware.js`), remove `Origin`/`Host`/`Referer` (sem CORS) e injeta `X-Sindico-Client-Ip` + `X-Sindico-Proxy-Secret` para o back-end enxergar o IP real do usuário.
+- O back-end só confia nesses cabeçalhos se `APP_TRUSTED_PROXY_SECRET` (VPS) for igual a `PROXY_SHARED_SECRET` (Vercel). Sem o segredo, todos os usuários caem no mesmo bucket de rate limit.
+- Deploy do back-end: `deploy/vps/` (Docker Compose + Traefik). Não há mais Railway/Render.
+
 **Templates Thymeleaf** em `src/main/resources/templates/`.
 
-**Migrações Flyway** em `src/main/resources/db/migration/` — arquivos `V{n}__{descricao}.sql`. **Nunca editar migrações já aplicadas; próxima é V15.**
+**Migrações Flyway** em `src/main/resources/db/migration/` — arquivos `V{n}__{descricao}.sql`. **Nunca editar migrações já aplicadas; a última é V19, a próxima é V20.**
 
 ### Stack tecnológica
 
@@ -161,15 +173,16 @@ src/main/java/br/com/sindico/app/
 | Template engine | Thymeleaf |
 | Build | Maven (`./mvnw`) |
 | Front-end | React 18 + Vite |
-| Deploy back | Railway / Docker |
-| Deploy front | Vercel |
+| Deploy back | VPS Ubuntu — Docker Compose + Traefik (`deploy/vps/`) |
+| Deploy front | Vercel (SPA + Edge Middleware como proxy de `/api/*`) |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) |
 
 ### Perfis Spring (`spring.profiles`)
 
 | Perfil | Uso |
 |--------|-----|
 | `default` (dev) | Desenvolvimento local sem datasource pré-configurado |
-| `supabase` | **Padrão ativo em produção** — Supabase direct (porta 5432) |
+| `supabase` | **Padrão ativo em produção** (`spring.profiles.default`) — Supabase direct (porta 5432); baseline Flyway em V10 |
 | `prod` | Alternativo produção com `sslMode: verify-full` |
 
 ### Variáveis de ambiente
@@ -184,6 +197,27 @@ src/main/java/br/com/sindico/app/
 | `APP_CORS_ORIGINS` | Não | localhost + domínios Vercel | Origens permitidas para CORS (vírgula-separadas) |
 | `APP_MAX_FILE_SIZE_BYTES` | Não | `10485760` (10 MB) | Tamanho máximo de upload |
 | `APP_FLYWAY_REPAIR` | Não | `false` | Executa `flyway repair` antes da migração |
+| `APP_PUBLIC_BASE_URL` | Não | URL do front (Vercel) | URL pública do front, usada em links de e-mail |
+| `APP_ADMIN_EMAIL` / `APP_ADMIN_PASSWORD` | Não | vazio | Admin inicial (o e-mail é lido de `APP_ADMIN_EMAIL`, não `APP_ADMIN_USERNAME`) |
+| `APP_TRUSTED_PROXY_SECRET` | **Sim em prod** | vazio | Segredo compartilhado com o middleware do Vercel (`PROXY_SHARED_SECRET`). Vazio = nenhum cabeçalho de IP é aceito |
+| `APP_STORAGE_PROVIDER` | Não | `local` | `local` (volume `uploads` da VPS) ou `supabase` (Supabase Storage) |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_STORAGE_BUCKET` | Só com provider `supabase` | bucket `anexos` | Credenciais do Supabase Storage (bucket privado) |
+| `DB_POOL_SIZE` | Não | `5` | Tamanho máximo do pool Hikari |
+| `SERVER_FORWARD_HEADERS_STRATEGY` | Não | — | `native` na VPS (atrás do Traefik) para resolver scheme/host/IP |
+| `PORT` | Não | `8080` | Porta HTTP do Spring Boot |
+| `JAVA_TOOL_OPTIONS` | Não | — | Ex.: `-Xmx512m` (a VPS é compartilhada) |
+
+Rate limit de autenticação (`app.security.rate-limit.*`, ver `docs/DEPLOY.md`):
+
+| Propriedade | Padrão |
+|---|---|
+| `app.security.rate-limit.enabled` | `true` |
+| `app.security.rate-limit.login.max-requests` / `.window-seconds` | `10` / `60` |
+| `app.security.rate-limit.account.max-requests` / `.window-seconds` | `5` / `600` |
+
+**Variável do Vercel (front):** `PROXY_SHARED_SECRET` (mesmo valor de `APP_TRUSTED_PROXY_SECRET`). `VITE_API_BASE_URL` fica vazia em produção (o front chama `/api/*` na própria origem) e `VITE_API_PROXY_TARGET` só vale no `npm run dev`.
+
+Modelos de `.env`: `.env.example` (dev), `deploy/vps/env.example` (VPS) e `frontend/.env.example`. Nunca commitar segredos.
 
 ### Comandos essenciais
 
@@ -207,11 +241,18 @@ npm run dev     # dev server em localhost:5173
 npm run build   # build de produção
 ```
 
-**Docker:**
+**Docker (imagem local):**
 ```bash
 docker build -t sindico-app .
 docker run -e DB_URL=... -e DB_PASSWORD=... -e APP_JWT_SECRET=... -p 8080:8080 sindico-app
 ```
+
+**Deploy na VPS** (ver `deploy/vps/README.md` e `docs/DEPLOY.md`):
+```bash
+cd /opt/sindico && git pull && cd deploy/vps && docker compose up -d --build
+```
+
+**CI:** `.github/workflows/ci.yml` roda `mvn verify` (back-end) e `npm run lint` + `npm run build` (front-end) em push na `main` e em PRs.
 
 ### Convenções do projeto
 
