@@ -5,7 +5,7 @@ import { cwd } from 'node:process'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, cwd(), '')
-  // Permite alternar entre backend local e Railway via variavel de ambiente.
+  // Permite alternar entre backend local e a VPS via variavel de ambiente.
   // Padrao: backend local na porta 8080.
   const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:8080'
 

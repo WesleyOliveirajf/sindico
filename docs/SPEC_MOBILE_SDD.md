@@ -2054,7 +2054,7 @@ Celular (offline)          Servidor              Desktop
 | Expo (EAS) | Gratis (tier free: 30 builds/mes) | Build na nuvem |
 | Expo (EAS Pro) | US$ 99/mes (opcional) | Builds ilimitados + priority |
 | Supabase (existente) | Ja pago | PostgreSQL |
-| VPS/Railway (existente) | Ja pago | Spring Boot |
+| VPS (existente) | Ja pago | Spring Boot |
 
 ### 23.2 Custo Mensal Estimado (Producao)
 

@@ -56,4 +56,4 @@ cd /opt/sindico && git pull && cd deploy/vps && docker compose up -d --build
 
 ## Rollback
 
-Enquanto o Railway estiver de pe, basta voltar o `destination` do `frontend/vercel.json`.
+Ver `docs/DEPLOY.md` (secao Rollback).

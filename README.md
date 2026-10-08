@@ -28,7 +28,7 @@ A demonstração utiliza autenticação. Para conhecer as telas antes de criar u
 | Segurança | Spring Security, JWT e Google OAuth |
 | Persistência | Spring Data JPA, PostgreSQL e Flyway |
 | Frontend | React 19, React Router e Vite |
-| Operação | Docker e Spring Boot Actuator |
+| Operação | Docker Compose + Traefik (VPS), Vercel, Spring Boot Actuator e GitHub Actions |
 | Testes | Spring Boot Test e Spring Security Test |
 
 ## Arquitetura
@@ -51,6 +51,14 @@ API Spring Boot
 
 O backend mantém separação por responsabilidades e o frontend consome a API por módulos de domínio.
 
+### Produção
+
+```text
+Navegador → Vercel (SPA + Edge Middleware) → VPS (Traefik → Spring Boot) → Supabase (PostgreSQL)
+```
+
+O front fica no Vercel; o middleware (`frontend/middleware.js`) repassa `/api/*` ao back-end na VPS e informa o IP real do usuário. Detalhes, variáveis e rollback em [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Estrutura principal
 
 ```text
@@ -59,6 +67,7 @@ sindico/
 ├── src/test/          # testes de serviços, controllers e segurança
 ├── frontend/          # aplicação React
 ├── docs/              # requisitos, arquitetura e relatórios de QA
+├── deploy/vps/        # Docker Compose + Traefik, env.example e backup dos anexos
 ├── scripts/           # utilitários operacionais
 ├── Dockerfile
 └── pom.xml
@@ -86,6 +95,10 @@ npm install
 npm run dev
 ```
 
+## Integração contínua
+
+`.github/workflows/ci.yml` roda em push na `main` e em PRs: `mvn verify` (build + testes do back-end) e `npm run lint` + `npm run build` (front-end).
+
 ## Validação
 
 Backend:
@@ -110,6 +123,7 @@ O repositório contém testes para autenticação, autorização, cadastro, manu
 - [Visão do produto](docs/visao-produto.md)
 - [Requisitos do MVP](docs/requisitos-mvp.md)
 - [Modelo de dados](docs/modelo-dados.md)
+- [Deploy, variáveis e rollback](docs/DEPLOY.md)
 - [Relatório de QA](docs/QA-REPORT.md)
 
 ## Status

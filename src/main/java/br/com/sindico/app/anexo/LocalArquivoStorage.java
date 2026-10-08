@@ -12,7 +12,7 @@ import org.springframework.core.io.UrlResource;
 
 /**
  * Grava anexos no disco local. Adequado para desenvolvimento; em hosts com disco efemero
- * (Render free, containers) os arquivos se perdem a cada deploy — use o provider supabase.
+ * (containers sem volume) os arquivos se perdem a cada deploy — use o provider supabase.
  */
 public class LocalArquivoStorage implements ArquivoStorage {
 

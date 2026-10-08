@@ -262,7 +262,7 @@ src/test/java/br/com/sindico/app/
 ```
 
 **Pré-condições mínimas para produção (variáveis de ambiente):**
-- ✅ `APP_JWT_SECRET` configurado no Railway (≠ valor padrão)
+- ✅ `APP_JWT_SECRET` configurado no ambiente de producao (≠ valor padrão)
 - ✅ `APP_ADMIN_EMAIL` + `APP_ADMIN_PASSWORD` configurados
 - ✅ `APP_CORS_ORIGINS` com domínio Vercel correto
 - ✅ `DB_URL` + `DB_PASSWORD` configurados
@@ -284,7 +284,7 @@ src/test/java/br/com/sindico/app/
 
 ### 🚦 Status: **QUASE PRONTO — 1 item restante antes do deploy**
 
-> Para atingir **produção com segurança**, criar testes básicos para `AuthApiController` (fluxo de login) e configurar as variáveis de ambiente obrigatórias no Railway.
+> Para atingir **produção com segurança**, criar testes básicos para `AuthApiController` (fluxo de login) e configurar as variáveis de ambiente obrigatórias no ambiente de produção (VPS).
 > 
 > Todos os bloqueadores de performance e observabilidade foram resolvidos nesta sessão.
 
