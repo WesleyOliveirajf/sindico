@@ -5,8 +5,10 @@ import br.com.sindico.app.security.TrustedProxyClientIpFilter;
 import br.com.sindico.app.security.ApiBearerEnforcementFilter;
 import br.com.sindico.app.security.AuthRateLimitFilter;
 import br.com.sindico.app.security.JwtAuthenticationFilter;
+import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -91,6 +93,42 @@ public class SecurityConfig {
     @Bean
     public SindicoLoginSuccessHandler sindicoLoginSuccessHandler() {
         return new SindicoLoginSuccessHandler();
+    }
+
+    /*
+     * Os filtros abaixo sao @Component (precisam ser beans para a cadeia de seguranca e para os
+     * testes @WebMvcTest, que escaneiam Filter). Sem o registro desabilitado, o Spring Boot os
+     * registraria tambem como filtros de servlet, e cada um rodaria duas vezes por requisicao.
+     * Eles devem rodar apenas dentro do SecurityFilterChain, na ordem definida em securityFilterChain.
+     */
+
+    @Bean
+    public FilterRegistrationBean<TrustedProxyClientIpFilter> trustedProxyClientIpFilterRegistration(
+            TrustedProxyClientIpFilter filter) {
+        return desabilitarRegistroDeServlet(filter);
+    }
+
+    @Bean
+    public FilterRegistrationBean<AuthRateLimitFilter> authRateLimitFilterRegistration(AuthRateLimitFilter filter) {
+        return desabilitarRegistroDeServlet(filter);
+    }
+
+    @Bean
+    public FilterRegistrationBean<ApiBearerEnforcementFilter> apiBearerEnforcementFilterRegistration(
+            ApiBearerEnforcementFilter filter) {
+        return desabilitarRegistroDeServlet(filter);
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        return desabilitarRegistroDeServlet(filter);
+    }
+
+    private static <T extends Filter> FilterRegistrationBean<T> desabilitarRegistroDeServlet(T filter) {
+        FilterRegistrationBean<T> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
