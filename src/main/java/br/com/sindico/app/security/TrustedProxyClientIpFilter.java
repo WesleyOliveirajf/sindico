@@ -59,30 +59,96 @@ public class TrustedProxyClientIpFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    /** Retorna o IP em forma canonica ou null se o valor nao for um IP literal valido. */
+    /**
+     * Retorna o IP em forma canonica ou null se o valor nao for um IP literal valido.
+     *
+     * O literal e validado por um parser proprio e estrito (IPv4 e IPv6) que produz os bytes do
+     * endereco; a forma canonica vem de {@link InetAddress#getByAddress(byte[])}, que nunca faz
+     * consulta DNS. IPv4 e IPv6 passam pelo mesmo caminho, entao {@code 001.2.3.4} e
+     * {@code 1.2.3.4} resultam no mesmo valor, assim como as formas abreviada e completa de um IPv6.
+     */
     static String normalizeIp(String value) {
         if (value == null) {
             return null;
         }
         String candidate = value.trim();
-        var v4 = IPV4.matcher(candidate);
-        if (v4.matches()) {
-            for (int i = 1; i <= 4; i++) {
-                if (Integer.parseInt(v4.group(i)) > 255) {
-                    return null;
-                }
-            }
-            return candidate;
+        byte[] bytes = candidate.indexOf(':') >= 0 ? parseIpv6(candidate) : parseIpv4(candidate);
+        if (bytes == null) {
+            return null;
         }
-        // Presenca de ':' garante literal IPv6 (um hostname nunca contem ':'), entao nao ha consulta DNS.
-        if (candidate.indexOf(':') >= 0 && IPV6_CHARS.matcher(candidate).matches()) {
-            try {
-                return InetAddress.getByName(candidate).getHostAddress();
-            } catch (java.net.UnknownHostException e) {
+        try {
+            return InetAddress.getByAddress(bytes).getHostAddress();
+        } catch (java.net.UnknownHostException e) {
+            return null; // so ocorre se o tamanho do array for invalido; nao ha DNS envolvido
+        }
+    }
+
+    /** IPv4 em decimal com 4 octetos de 1 a 3 digitos (0-255); zeros a esquerda sao aceitos. */
+    private static byte[] parseIpv4(String s) {
+        var m = IPV4.matcher(s);
+        if (!m.matches()) {
+            return null;
+        }
+        byte[] out = new byte[4];
+        for (int i = 0; i < 4; i++) {
+            int octet = Integer.parseInt(m.group(i + 1));
+            if (octet > 255) {
                 return null;
             }
+            out[i] = (byte) octet;
         }
-        return null;
+        return out;
+    }
+
+    /** IPv6 literal (RFC 4291), com "::" opcional e IPv4 embutido opcional no final. Sem zona ('%'). */
+    private static byte[] parseIpv6(String s) {
+        if (!IPV6_CHARS.matcher(s).matches()) {
+            return null;
+        }
+        int gap = s.indexOf("::");
+        if (gap >= 0 && s.lastIndexOf("::") != gap) {
+            return null; // mais de um "::" (inclui ":::")
+        }
+        byte[] out = new byte[16];
+        if (gap < 0) {
+            byte[] all = parseIpv6Side(s, true);
+            return all != null && all.length == 16 ? all : null;
+        }
+        byte[] head = parseIpv6Side(s.substring(0, gap), false);
+        byte[] tail = parseIpv6Side(s.substring(gap + 2), true);
+        if (head == null || tail == null || head.length + tail.length > 14) {
+            return null; // "::" representa ao menos um grupo de zeros
+        }
+        System.arraycopy(head, 0, out, 0, head.length);
+        System.arraycopy(tail, 0, out, 16 - tail.length, tail.length);
+        return out;
+    }
+
+    /** Converte grupos separados por ':' em bytes; o ultimo pode ser IPv4 se allowV4Tail. */
+    private static byte[] parseIpv6Side(String side, boolean allowV4Tail) {
+        if (side.isEmpty()) {
+            return new byte[0];
+        }
+        String[] tokens = side.split(":", -1);
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        for (int i = 0; i < tokens.length; i++) {
+            String t = tokens[i];
+            if (t.indexOf('.') >= 0) {
+                byte[] v4 = allowV4Tail && i == tokens.length - 1 ? parseIpv4(t) : null;
+                if (v4 == null) {
+                    return null;
+                }
+                out.write(v4, 0, 4);
+            } else {
+                if (t.isEmpty() || t.length() > 4) {
+                    return null;
+                }
+                int group = Integer.parseInt(t, 16);
+                out.write(group >> 8);
+                out.write(group & 0xFF);
+            }
+        }
+        return out.toByteArray();
     }
 
     private static final class RemoteAddrOverride extends HttpServletRequestWrapper {
