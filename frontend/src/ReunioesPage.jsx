@@ -1,25 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaGerarAta } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
-
-const INITIAL_FORM = {
-  titulo: '',
-  tipo: 'ORDINARIA',
-  dataHora: '',
-  local: '',
-  link: '',
-  pauta: '',
-  resumo: '',
-  decisoes: '',
-  pendenciasGeradas: '',
-  participantesTexto: '',
-}
+import ReuniaoForm from './components/ReuniaoForm'
 
 function ReunioesPage() {
-  const [form, setForm] = useState(INITIAL_FORM)
+  const formRef = useRef(null)
+  const [editing, setEditing] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [ataLoading, setAtaLoading] = useState(null)
@@ -46,44 +34,19 @@ function ReunioesPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  function onChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  async function onSubmit(e) {
-    e.preventDefault()
+  function startEdit(reuniao) {
     setError('')
     setSuccess('')
-    setSubmitting(true)
-    try {
-      const participantes = form.participantesTexto
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((nome) => ({ nome, presente: true }))
+    setEditing(reuniao)
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
 
-      const payload = {
-        ...form,
-        dataHora: form.dataHora || null,
-        participantes,
-      }
-      delete payload.participantesTexto
-
-      const res = await apiFetch('/api/reunioes', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar reunião.'))
-      }
-      setSuccess('Reunião registrada com sucesso.')
-      setForm(INITIAL_FORM)
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+  async function onSaved({ wasEdit }) {
+    setSuccess(wasEdit ? 'Reunião atualizada com sucesso.' : 'Reunião registrada com sucesso.')
+    setEditing(null)
+    await load()
   }
 
   return (
@@ -96,21 +59,14 @@ function ReunioesPage() {
 
       <SuccessState message={success} />
 
-      <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova reunião</h2>
-        <form onSubmit={onSubmit} className="form-grid">
-          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
-          <label>Tipo<select name="tipo" value={form.tipo} onChange={onChange}><option value="ORDINARIA">Ordinária</option><option value="EXTRAORDINARIA">Extraordinária</option><option value="CONSELHO">Conselho</option><option value="ASSEMBLEIA">Assembleia</option></select></label>
-          <label>Data e horário *<input type="datetime-local" name="dataHora" value={form.dataHora} onChange={onChange} required /></label>
-          <label>Local<input name="local" value={form.local} onChange={onChange} maxLength={150} /></label>
-          <label className="full">Link<input name="link" value={form.link} onChange={onChange} maxLength={500} /></label>
-          <label className="full">Pauta<textarea name="pauta" value={form.pauta} onChange={onChange} rows={2} /></label>
-          <label className="full">Resumo<textarea name="resumo" value={form.resumo} onChange={onChange} rows={2} /></label>
-          <label className="full">Decisões<textarea name="decisoes" value={form.decisoes} onChange={onChange} rows={2} /></label>
-          <label className="full">Pendências geradas<textarea name="pendenciasGeradas" value={form.pendenciasGeradas} onChange={onChange} rows={2} /></label>
-          <label className="full">Participantes (1 por linha)<textarea name="participantesTexto" value={form.participantesTexto} onChange={onChange} rows={3} placeholder="Maria Silva\nJoão Souza" /></label>
-          <button type="submit" disabled={submitting} className="submit full">{submitting ? 'Salvando...' : 'Registrar reunião'}</button>
-        </form>
+      <section className="panel" style={{ marginTop: 20 }} ref={formRef}>
+        <h2>{editing ? 'Editar reunião' : 'Nova reunião'}</h2>
+        <ReuniaoForm
+          key={editing?.id ?? 'nova'}
+          item={editing}
+          onSaved={onSaved}
+          onCancel={editing ? () => setEditing(null) : undefined}
+        />
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
@@ -127,7 +83,10 @@ function ReunioesPage() {
             {r.pendenciasGeradas ? <p style={{ marginTop: 6 }}><strong>Pendências:</strong> {r.pendenciasGeradas}</p> : null}
             {r.participantes?.length ? <p className="muted">Participantes: {r.participantes.map((p) => p.nome).join(', ')}</p> : null}
 
-            <div style={{ marginTop: 10 }}>
+            <div className="item-actions" style={{ marginTop: 10 }}>
+              <button className="submit" style={{ fontSize: '0.82rem', padding: '7px 14px' }} onClick={() => startEdit(r)}>
+                Editar
+              </button>
               <button
                 className="submit"
                 style={{ fontSize: '0.82rem', padding: '7px 14px', background: '#6d28d9' }}

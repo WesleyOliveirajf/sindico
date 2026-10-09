@@ -1,31 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
+import AnotacaoForm from './components/AnotacaoForm'
+import { formatDateIso } from './components/formUtils'
 
-const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
-
-const INITIAL_FORM = { titulo: '', categoria: '', descricao: '', referencia: '', importancia: 'NORMAL', dataReferencia: '' }
 const INITIAL_FILTERS = { texto: '', dataInicio: '', dataFim: '' }
 
-/** Valor para input[type=date] a partir do JSON da API. */
-function formatDateIso(value) {
-  if (value == null) return ''
-  if (typeof value === 'string') return value.length >= 10 ? value.slice(0, 10) : value
-  if (Array.isArray(value) && value.length >= 3) {
-    const [y, m, d] = value
-    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-  }
-  return ''
-}
-
 function AnotacoesPage() {
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [editing, setEditing] = useState({})
+  const formRef = useRef(null)
+  const [editing, setEditing] = useState(null)
   const [items, setItems] = useState([])
   const [filters, setFilters] = useState(INITIAL_FILTERS)
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [pendingDeleteId, setPendingDeleteId] = useState(null)
@@ -59,10 +46,6 @@ function AnotacoesPage() {
     return () => clearTimeout(timer)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function onChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
   function onFilterChange(e) {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
@@ -77,82 +60,19 @@ function AnotacoesPage() {
     await load(INITIAL_FILTERS)
   }
 
-  function onEditChange(id, e) {
-    setEditing((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || {}), [e.target.name]: e.target.value },
-    }))
-  }
-
-  function startEdit(a) {
-    setEditing((prev) => ({
-      ...prev,
-      [a.id]: {
-        titulo: a.titulo,
-        categoria: a.categoria || '',
-        descricao: a.descricao || '',
-        referencia: a.referencia || '',
-        importancia: a.importancia,
-        dataReferencia: formatDateIso(a.dataReferencia),
-      },
-    }))
-  }
-
-  async function onSubmit(e) {
-    e.preventDefault()
+  function startEdit(anotacao) {
     setError('')
     setSuccess('')
-    setSubmitting(true)
-    try {
-      const payload = {
-        titulo: form.titulo,
-        categoria: form.categoria || null,
-        descricao: form.descricao || null,
-        referencia: form.referencia || null,
-        importancia: form.importancia,
-        dataReferencia: form.dataReferencia || null,
-      }
-      const res = await apiFetch('/api/anotacoes', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar anotação.'))
-      }
-      setSuccess('Anotação registrada com sucesso.')
-      setForm(INITIAL_FORM)
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+    setEditing(anotacao)
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
-  async function onUpdate(id) {
-    const data = editing[id]
-    if (!data?.titulo?.trim()) return
-    setError('')
-    setSuccess('')
-    try {
-      const res = await apiFetch(`/api/anotacoes/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          titulo: data.titulo,
-          categoria: data.categoria || null,
-          descricao: data.descricao || null,
-          referencia: data.referencia || null,
-          importancia: data.importancia,
-          dataReferencia: data.dataReferencia || null,
-        }),
-      })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar anotação.'))
-      setSuccess('Anotação atualizada com sucesso.')
-      setEditing((prev) => { const c = { ...prev }; delete c[id]; return c })
-      await load()
-    } catch (err) {
-      setError(err.message)
-    }
+  async function onSaved({ wasEdit }) {
+    setSuccess(wasEdit ? 'Anotação atualizada com sucesso.' : 'Anotação registrada com sucesso.')
+    setEditing(null)
+    await load()
   }
 
   async function onDelete(id) {
@@ -163,6 +83,7 @@ function AnotacoesPage() {
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir anotação.'))
       setSuccess('Anotação excluída com sucesso.')
       setPendingDeleteId(null)
+      if (editing?.id === id) setEditing(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -209,27 +130,14 @@ function AnotacoesPage() {
         </form>
       </section>
 
-      <section className="panel" style={{ marginTop: 20 }}>
-        <h2>Nova anotação</h2>
-        <form onSubmit={onSubmit} className="form-grid">
-          <label>Título *<input name="titulo" value={form.titulo} onChange={onChange} required maxLength={150} /></label>
-          <label>Categoria<input name="categoria" value={form.categoria} onChange={onChange} maxLength={50} placeholder="Ex: Manutenção, Financeiro..." /></label>
-          <label>
-            Data da ocorrência (opcional)
-            <input type="date" name="dataReferencia" value={form.dataReferencia} onChange={onChange} />
-          </label>
-          <label>
-            Importância
-            <select name="importancia" value={form.importancia} onChange={onChange}>
-              {IMPORTANCIAS.map((i) => <option key={i} value={i}>{i}</option>)}
-            </select>
-          </label>
-          <label>Referência<input name="referencia" value={form.referencia} onChange={onChange} maxLength={200} placeholder="Ex: nº documento, protocolo..." /></label>
-          <label className="full">Descrição<textarea name="descricao" value={form.descricao} onChange={onChange} rows={3} /></label>
-          <button type="submit" disabled={submitting} className="submit full">
-            {submitting ? 'Salvando...' : 'Registrar anotação'}
-          </button>
-        </form>
+      <section className="panel" style={{ marginTop: 20 }} ref={formRef}>
+        <h2>{editing ? 'Editar anotação' : 'Nova anotação'}</h2>
+        <AnotacaoForm
+          key={editing?.id ?? 'nova'}
+          item={editing}
+          onSaved={onSaved}
+          onCancel={editing ? () => setEditing(null) : undefined}
+        />
       </section>
 
       <section className="board" style={{ marginTop: 20 }}>
@@ -238,47 +146,22 @@ function AnotacoesPage() {
         {!loading && !error && items.length === 0 ? <EmptyState message="Nenhuma anotação encontrada para os filtros selecionados." /> : null}
         {items.map((a) => (
           <article key={a.id} className="item">
-            {editing[a.id] ? (
-              <>
-                <label>Título<input name="titulo" value={editing[a.id].titulo} onChange={(e) => onEditChange(a.id, e)} /></label>
-                <label>Categoria<input name="categoria" value={editing[a.id].categoria} onChange={(e) => onEditChange(a.id, e)} /></label>
-                <label>
-                  Importância
-                  <select name="importancia" value={editing[a.id].importancia} onChange={(e) => onEditChange(a.id, e)}>
-                    {IMPORTANCIAS.map((i) => <option key={i} value={i}>{i}</option>)}
-                  </select>
-                </label>
-                <label>Referência<input name="referencia" value={editing[a.id].referencia} onChange={(e) => onEditChange(a.id, e)} /></label>
-                <label>
-                  Data da ocorrência (opcional)
-                  <input type="date" name="dataReferencia" value={editing[a.id].dataReferencia ?? ''} onChange={(e) => onEditChange(a.id, e)} />
-                </label>
-                <label className="full">Descrição<textarea name="descricao" value={editing[a.id].descricao} onChange={(e) => onEditChange(a.id, e)} rows={3} /></label>
-                <div className="item-actions">
-                  <button className="submit" style={{ flex: 1 }} onClick={() => onUpdate(a.id)}>Salvar</button>
-                  <button className="submit cancel" onClick={() => setEditing((prev) => { const c = { ...prev }; delete c[a.id]; return c })}>Cancelar</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h3 style={{ margin: 0 }}>{a.titulo}</h3>
-                  <span className={importanciaClass(a.importancia)}>{a.importancia}</span>
-                </div>
-                {a.categoria ? <p className="muted" style={{ marginTop: 4 }}>Categoria: {a.categoria}</p> : null}
-                {formatDateIso(a.dataReferencia) ? (
-                  <p className="muted" style={{ marginTop: 4 }}>
-                    Data da ocorrência: {new Date(`${formatDateIso(a.dataReferencia)}T12:00:00`).toLocaleDateString('pt-BR')}
-                  </p>
-                ) : null}
-                {a.descricao ? <p style={{ marginTop: 6 }}>{a.descricao}</p> : null}
-                {a.referencia ? <p className="muted" style={{ marginTop: 4 }}>Ref: {a.referencia}</p> : null}
-                <div className="item-actions">
-                  <button className="submit" onClick={() => startEdit(a)}>Editar</button>
-                  <button className="submit danger" onClick={() => setPendingDeleteId(a.id)}>Excluir</button>
-                </div>
-              </>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: 0 }}>{a.titulo}</h3>
+              <span className={importanciaClass(a.importancia)}>{a.importancia}</span>
+            </div>
+            {a.categoria ? <p className="muted" style={{ marginTop: 4 }}>Categoria: {a.categoria}</p> : null}
+            {formatDateIso(a.dataReferencia) ? (
+              <p className="muted" style={{ marginTop: 4 }}>
+                Data da ocorrência: {new Date(`${formatDateIso(a.dataReferencia)}T12:00:00`).toLocaleDateString('pt-BR')}
+              </p>
+            ) : null}
+            {a.descricao ? <p style={{ marginTop: 6 }}>{a.descricao}</p> : null}
+            {a.referencia ? <p className="muted" style={{ marginTop: 4 }}>Ref: {a.referencia}</p> : null}
+            <div className="item-actions">
+              <button className="submit" onClick={() => startEdit(a)}>Editar</button>
+              <button className="submit danger" onClick={() => setPendingDeleteId(a.id)}>Excluir</button>
+            </div>
           </article>
         ))}
       </section>

@@ -1,24 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
+import MoradorForm from './components/MoradorForm'
 import Button from './components/ui/Button'
-import Input, { Select, Textarea } from './components/ui/Input'
-
-const PAPEIS = ['PROPRIETARIO', 'INQUILINO', 'DEPENDENTE', 'ZELADOR', 'OUTRO']
+import Input from './components/ui/Input'
 
 const INITIAL_UNIDADE = { bloco: '', numero: '', complemento: '' }
-const INITIAL_MORADOR = { unidadeId: '', nome: '', email: '', telefone: '', papel: 'PROPRIETARIO', observacoes: '' }
 
 function MoradoresPage() {
-  const [unidades, setUnidades] = useState([])
+  const formRef = useRef(null)
   const [moradores, setMoradores] = useState([])
   const [loading, setLoading] = useState(true)
   const [formUnidade, setFormUnidade] = useState(INITIAL_UNIDADE)
-  const [formMorador, setFormMorador] = useState(INITIAL_MORADOR)
   const [submittingUnidade, setSubmittingUnidade] = useState(false)
-  const [submittingMorador, setSubmittingMorador] = useState(false)
-  const [editingMorador, setEditingMorador] = useState({})
+  // Incrementado ao cadastrar unidade, para o formulário de morador recarregar as unidades
+  const [unidadesVersion, setUnidadesVersion] = useState(0)
+  const [editingMorador, setEditingMorador] = useState(null)
   const [pendingInativarId, setPendingInativarId] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -27,15 +25,9 @@ function MoradoresPage() {
     setLoading(true)
     setError('')
     try {
-      const [uRes, mRes] = await Promise.all([
-        apiFetch('/api/unidades'),
-        apiFetch('/api/moradores'),
-      ])
-      if (!uRes.ok) throw new Error(await parseError(uRes, 'Falha ao carregar unidades.'))
-      if (!mRes.ok) throw new Error(await parseError(mRes, 'Falha ao carregar moradores.'))
-      const [u, m] = await Promise.all([parseJson(uRes), parseJson(mRes)])
-      setUnidades(u)
-      setMoradores(m)
+      const res = await apiFetch('/api/moradores')
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar moradores.'))
+      setMoradores(await parseJson(res))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -54,29 +46,13 @@ function MoradoresPage() {
     setFormUnidade((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function onMoradorChange(e) {
-    setFormMorador((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  function onEditChange(id, e) {
-    setEditingMorador((prev) => ({
-      ...prev,
-      [id]: { ...(prev[id] || {}), [e.target.name]: e.target.value },
-    }))
-  }
-
-  function startEditMorador(m) {
-    setEditingMorador((prev) => ({
-      ...prev,
-      [m.id]: {
-        unidadeId: m.unidadeId,
-        nome: m.nome,
-        email: m.email || '',
-        telefone: m.telefone || '',
-        papel: m.papel,
-        observacoes: m.observacoes || '',
-      },
-    }))
+  function startEditMorador(morador) {
+    setError('')
+    setSuccess('')
+    setEditingMorador(morador)
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
   async function onSubmitUnidade(e) {
@@ -94,7 +70,7 @@ function MoradoresPage() {
       }
       setSuccess('Unidade cadastrada com sucesso.')
       setFormUnidade(INITIAL_UNIDADE)
-      await load()
+      setUnidadesVersion((v) => v + 1)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -102,46 +78,10 @@ function MoradoresPage() {
     }
   }
 
-  async function onSubmitMorador(e) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setSubmittingMorador(true)
-    try {
-      const res = await apiFetch('/api/moradores', {
-        method: 'POST',
-        body: JSON.stringify({ ...formMorador, unidadeId: formMorador.unidadeId || null }),
-      })
-      if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao cadastrar morador.'))
-      }
-      setSuccess('Morador cadastrado com sucesso.')
-      setFormMorador(INITIAL_MORADOR)
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmittingMorador(false)
-    }
-  }
-
-  async function onUpdateMorador(id) {
-    const data = editingMorador[id]
-    if (!data?.nome?.trim()) return
-    setError('')
-    setSuccess('')
-    try {
-      const res = await apiFetch(`/api/moradores/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ ...data, unidadeId: data.unidadeId || null }),
-      })
-      if (!res.ok) throw new Error(await parseError(res, 'Erro ao atualizar morador.'))
-      setSuccess('Morador atualizado com sucesso.')
-      setEditingMorador((prev) => { const c = { ...prev }; delete c[id]; return c })
-      await load()
-    } catch (err) {
-      setError(err.message)
-    }
+  async function onMoradorSaved({ wasEdit }) {
+    setSuccess(wasEdit ? 'Morador atualizado com sucesso.' : 'Morador cadastrado com sucesso.')
+    setEditingMorador(null)
+    await load()
   }
 
   async function onInativar(id) {
@@ -152,6 +92,7 @@ function MoradoresPage() {
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao inativar morador.'))
       setSuccess('Morador inativado com sucesso.')
       setPendingInativarId(null)
+      if (editingMorador?.id === id) setEditingMorador(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -181,33 +122,14 @@ function MoradoresPage() {
           </form>
         </section>
 
-        <section className="panel">
-          <h2>Novo morador</h2>
-          <form onSubmit={onSubmitMorador} className="form-grid">
-            <label className="full">
-              Unidade *
-              <Select name="unidadeId" value={formMorador.unidadeId} onChange={onMoradorChange} required>
-                <option value="">Selecione...</option>
-                {unidades.map((u) => <option key={u.id} value={u.id}>{u.rotulo}</option>)}
-              </Select>
-            </label>
-            <label>Nome *<Input name="nome" value={formMorador.nome} onChange={onMoradorChange} required maxLength={150} /></label>
-            <label>
-              Papel
-              <Select name="papel" value={formMorador.papel} onChange={onMoradorChange}>
-                {PAPEIS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </Select>
-            </label>
-            <label>Email<Input name="email" type="email" value={formMorador.email} onChange={onMoradorChange} maxLength={150} /></label>
-            <label>Telefone<Input name="telefone" value={formMorador.telefone} onChange={onMoradorChange} maxLength={30} /></label>
-            <label className="full">Observações<Textarea name="observacoes" value={formMorador.observacoes} onChange={onMoradorChange} rows={2} /></label>
-            <div className="notice-box full">
-              <strong>Aviso LGPD:</strong> Ao cadastrar dados de moradores, prestadores de serviço ou terceiros, declaro que possuo autorização, obrigação legal, relação contratual ou outra base legal adequada para realizar esse cadastro, responsabilizando-me pela exatidão das informações inseridas e pelo uso da plataforma conforme a LGPD.
-            </div>
-            <Button type="submit" disabled={submittingMorador} className="full">
-              {submittingMorador ? 'Salvando...' : 'Cadastrar morador'}
-            </Button>
-          </form>
+        <section className="panel" ref={formRef}>
+          <h2>{editingMorador ? 'Editar morador' : 'Novo morador'}</h2>
+          <MoradorForm
+            key={`${editingMorador?.id ?? 'novo'}-${unidadesVersion}`}
+            item={editingMorador}
+            onSaved={onMoradorSaved}
+            onCancel={editingMorador ? () => setEditingMorador(null) : undefined}
+          />
         </section>
       </div>
 
@@ -218,40 +140,13 @@ function MoradoresPage() {
         {!loading && !error && moradores.length === 0 ? <EmptyState message="Nenhum morador cadastrado." /> : null}
         {moradores.map((m) => (
           <article key={m.id} className="item">
-            {editingMorador[m.id] ? (
-              <>
-                <label className="full">
-                  Unidade
-                  <Select name="unidadeId" value={editingMorador[m.id].unidadeId} onChange={(e) => onEditChange(m.id, e)}>
-                    {unidades.map((u) => <option key={u.id} value={u.id}>{u.rotulo}</option>)}
-                  </Select>
-                </label>
-                <label>Nome<Input name="nome" value={editingMorador[m.id].nome} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label>
-                  Papel
-                  <Select name="papel" value={editingMorador[m.id].papel} onChange={(e) => onEditChange(m.id, e)}>
-                    {PAPEIS.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </Select>
-                </label>
-                <label>Email<Input name="email" type="email" value={editingMorador[m.id].email} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label>Telefone<Input name="telefone" value={editingMorador[m.id].telefone} onChange={(e) => onEditChange(m.id, e)} /></label>
-                <label className="full">Observações<Textarea name="observacoes" value={editingMorador[m.id].observacoes} onChange={(e) => onEditChange(m.id, e)} rows={2} /></label>
-                <div className="item-actions">
-                  <Button onClick={() => onUpdateMorador(m.id)}>Salvar</Button>
-                  <Button variant="secondary" onClick={() => setEditingMorador((prev) => { const c = { ...prev }; delete c[m.id]; return c })}>Cancelar</Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="item-title">{m.nome} <small className="muted">· {m.unidadeRotulo}</small></h3>
-                <p className="muted item-meta">{m.papel}{m.telefone ? ` · ${m.telefone}` : ''}{m.email ? ` · ${m.email}` : ''}</p>
-                {m.observacoes ? <p className="item-description">{m.observacoes}</p> : null}
-                <div className="item-actions">
-                  <Button onClick={() => startEditMorador(m)}>Editar</Button>
-                  <Button variant="danger" onClick={() => setPendingInativarId(m.id)}>Inativar</Button>
-                </div>
-              </>
-            )}
+            <h3 className="item-title">{m.nome} <small className="muted">· {m.unidadeRotulo}</small></h3>
+            <p className="muted item-meta">{m.papel}{m.telefone ? ` · ${m.telefone}` : ''}{m.email ? ` · ${m.email}` : ''}</p>
+            {m.observacoes ? <p className="item-description">{m.observacoes}</p> : null}
+            <div className="item-actions">
+              <Button onClick={() => startEditMorador(m)}>Editar</Button>
+              <Button variant="danger" onClick={() => setPendingInativarId(m.id)}>Inativar</Button>
+            </div>
           </article>
         ))}
       </section>

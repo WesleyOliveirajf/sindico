@@ -2,27 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaAnalisarGastos } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
-
-const TIPOS_GASTO = [
-  { value: 'AGUA',          label: 'Água' },
-  { value: 'LUZ',           label: 'Luz / Energia' },
-  { value: 'GAS',           label: 'Gás' },
-  { value: 'SEGURO',        label: 'Seguro' },
-  { value: 'LIMPEZA',       label: 'Limpeza' },
-  { value: 'MANUTENCAO',    label: 'Manutenção' },
-  { value: 'ADMINISTRACAO', label: 'Administração' },
-  { value: 'SALARIOS',      label: 'Salários / Funcionários' },
-  { value: 'IMPOSTOS',      label: 'Impostos / Taxas' },
-  { value: 'OUTROS',        label: 'Outros' },
-]
-
-const TIPOS_RECEBIMENTO = [
-  { value: 'TAXA_CONDOMINIO', label: 'Taxa de Condomínio' },
-  { value: 'ALUGUEL_AREA',   label: 'Aluguel de Área Comum' },
-  { value: 'MULTA',          label: 'Multa' },
-  { value: 'RESERVA_FUNDO',  label: 'Reserva / Fundo' },
-  { value: 'OUTROS',         label: 'Outros' },
-]
+import GastoForm from './components/GastoForm'
+import RecebimentoForm from './components/RecebimentoForm'
+import { TIPOS_GASTO, TIPOS_RECEBIMENTO } from './components/financeiroUtils'
 
 const MESES = [
   { value: '1',  label: 'Janeiro' },
@@ -39,24 +21,9 @@ const MESES = [
   { value: '12', label: 'Dezembro' },
 ]
 
-const INITIAL_GASTO = {
-  descricao: '',
-  tipo: 'OUTROS',
-  valor: '',
-  dataGasto: '',
-  fixo: false,
-  parcelado: false,
-  parcelaAtual: '',
-  parcelaTotal: '',
-  observacoes: '',
-}
-
-const INITIAL_RECEBIMENTO = {
-  descricao: '',
-  tipo: 'TAXA_CONDOMINIO',
-  valor: '',
-  dataRecebimento: '',
-  observacoes: '',
+const SUMMARY_VALUE_COLORS = {
+  danger: '#dc2626',
+  success: '#16a34a',
 }
 
 function tipoGastoLabel(value) {
@@ -95,28 +62,6 @@ function buildRecebimentoQuery(filtroMes, filtroAno) {
   return qs ? `/api/recebimentos?${qs}` : '/api/recebimentos'
 }
 
-function gastoToForm(gasto) {
-  return {
-    descricao: gasto.descricao || '',
-    tipo: gasto.tipo || 'OUTROS',
-    valor: gasto.valor != null ? String(gasto.valor) : '',
-    dataGasto: gasto.dataGasto || '',
-    fixo: Boolean(gasto.fixo),
-    parcelado: Boolean(gasto.parcelado),
-    parcelaAtual: gasto.parcelaAtual != null ? String(gasto.parcelaAtual) : '',
-    parcelaTotal: gasto.parcelaTotal != null ? String(gasto.parcelaTotal) : '',
-    observacoes: gasto.observacoes || '',
-  }
-}
-
-/* ─── Cards de resumo financeiro (CSS responsivo) ─────────────── */
-const SUMMARY_VALUE_COLORS = {
-  danger: '#dc2626',
-  success: '#16a34a',
-}
-
-/* ─── Abas ────────────────────────────────────────────────────── */
-
 /* ─── Componente principal ────────────────────────────────────── */
 function GastosPage() {
   const currentYear = new Date().getFullYear()
@@ -127,19 +72,15 @@ function GastosPage() {
     window.location.hash === '#recebimentos' ? 'recebimentos' : 'gastos'
   ))
 
-  // Formulário de gasto
+  // Gastos
   const gastoFormRef = useRef(null)
-  const [gastoForm, setGastoForm] = useState(INITIAL_GASTO)
-  const [editingGastoId, setEditingGastoId] = useState(null)
+  const [editingGasto, setEditingGasto] = useState(null)
   const [gastos, setGastos] = useState([])
   const [gastosLoading, setGastosLoading] = useState(true)
-  const [gastoSubmitting, setGastoSubmitting] = useState(false)
 
-  // Formulário de recebimento
-  const [recebimentoForm, setRecebimentoForm] = useState(INITIAL_RECEBIMENTO)
+  // Recebimentos
   const [recebimentos, setRecebimentos] = useState([])
   const [recebimentosLoading, setRecebimentosLoading] = useState(true)
-  const [recebimentoSubmitting, setRecebimentoSubmitting] = useState(false)
 
   // Estado compartilhado
   const [error, setError] = useState('')
@@ -210,99 +151,26 @@ function GastosPage() {
     loadAll('', '', '')
   }
 
-  function resetGastoForm() {
-    setEditingGastoId(null)
-    setGastoForm(INITIAL_GASTO)
-  }
-
+  /* ─── Formulários ───────────────────────────────────────────── */
   function onEditarGasto(gasto) {
     setActiveTab('gastos')
     setError('')
     setSuccess('')
-    setEditingGastoId(gasto.id)
-    setGastoForm(gastoToForm(gasto))
+    setEditingGasto(gasto)
     window.setTimeout(() => {
       gastoFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 0)
   }
 
-  /* ─── Formulário de gasto ───────────────────────────────────── */
-  function onGastoChange(e) {
-    const { name, value, type, checked } = e.target
-    setGastoForm((prev) => {
-      const updated = { ...prev, [name]: type === 'checkbox' ? checked : value }
-      // Limpar campos de parcela quando desmarcar parcelado
-      if (name === 'parcelado' && !checked) {
-        updated.parcelaAtual = ''
-        updated.parcelaTotal = ''
-      }
-      return updated
-    })
+  async function onGastoSaved({ wasEdit }) {
+    setSuccess(wasEdit ? 'Gasto atualizado com sucesso.' : 'Gasto registrado com sucesso.')
+    setEditingGasto(null)
+    await loadAll(filtroMes, filtroAno, filtroTipo)
   }
 
-  async function onGastoSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setGastoSubmitting(true)
-    try {
-      const payload = {
-        ...gastoForm,
-        valor: gastoForm.valor ? Number(gastoForm.valor) : null,
-        dataGasto: gastoForm.dataGasto || null,
-        parcelaAtual: gastoForm.parcelado && gastoForm.parcelaAtual ? Number(gastoForm.parcelaAtual) : null,
-        parcelaTotal: gastoForm.parcelado && gastoForm.parcelaTotal ? Number(gastoForm.parcelaTotal) : null,
-      }
-      const endpoint = editingGastoId ? `/api/gastos/${editingGastoId}` : '/api/gastos'
-      const res = await apiFetch(endpoint, {
-        method: editingGastoId ? 'PUT' : 'POST',
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        throw new Error(await parseError(res, editingGastoId ? 'Erro ao atualizar gasto.' : 'Erro ao registrar gasto.'))
-      }
-      setSuccess(editingGastoId ? 'Gasto atualizado com sucesso.' : 'Gasto registrado com sucesso.')
-      resetGastoForm()
-      await loadAll(filtroMes, filtroAno, filtroTipo)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setGastoSubmitting(false)
-    }
-  }
-
-  /* ─── Formulário de recebimento ─────────────────────────────── */
-  function onRecebimentoChange(e) {
-    const { name, value } = e.target
-    setRecebimentoForm((prev) => ({ ...prev, [name]: value }))
-  }
-
-  async function onRecebimentoSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setRecebimentoSubmitting(true)
-    try {
-      const payload = {
-        ...recebimentoForm,
-        valor: recebimentoForm.valor ? Number(recebimentoForm.valor) : null,
-        dataRecebimento: recebimentoForm.dataRecebimento || null,
-      }
-      const res = await apiFetch('/api/recebimentos', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      if (!res.ok) {
-        throw new Error(await parseError(res, 'Erro ao registrar recebimento.'))
-      }
-      setSuccess('Recebimento registrado com sucesso.')
-      setRecebimentoForm(INITIAL_RECEBIMENTO)
-      await loadAll(filtroMes, filtroAno, filtroTipo)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setRecebimentoSubmitting(false)
-    }
+  async function onRecebimentoSaved() {
+    setSuccess('Recebimento registrado com sucesso.')
+    await loadAll(filtroMes, filtroAno, filtroTipo)
   }
 
   /* ─── Exclusão ──────────────────────────────────────────────── */
@@ -315,8 +183,8 @@ function GastosPage() {
         : `/api/recebimentos/${pendingDelete.id}`
       const res = await apiFetch(endpoint, { method: 'DELETE' })
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao remover registro.'))
-      if (pendingDelete.type === 'gasto' && pendingDelete.id === editingGastoId) {
-        resetGastoForm()
+      if (pendingDelete.type === 'gasto' && pendingDelete.id === editingGasto?.id) {
+        setEditingGasto(null)
       }
       setPendingDelete(null)
       await loadAll(filtroMes, filtroAno, filtroTipo)
@@ -443,136 +311,14 @@ function GastosPage() {
       {/* ━━━━━━━━━━━━━ ABA GASTOS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeTab === 'gastos' && (
         <>
-          {/* Formulário de gasto */}
           <section className="panel" style={{ marginTop: 20 }} ref={gastoFormRef}>
-            <h2>{editingGastoId ? 'Editar gasto' : 'Novo gasto'}</h2>
-            <form onSubmit={onGastoSubmit} className="form-grid">
-              <label>
-                Descrição *
-                <input
-                  name="descricao"
-                  value={gastoForm.descricao}
-                  onChange={onGastoChange}
-                  required
-                  maxLength={255}
-                  placeholder="Ex: Conta de água de maio"
-                />
-              </label>
-
-              <label>
-                Tipo *
-                <select name="tipo" value={gastoForm.tipo} onChange={onGastoChange}>
-                  {TIPOS_GASTO.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Valor (R$) *
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  name="valor"
-                  value={gastoForm.valor}
-                  onChange={onGastoChange}
-                  required
-                  placeholder="0,00"
-                />
-              </label>
-
-              <label>
-                Data do gasto *
-                <input
-                  type="date"
-                  name="dataGasto"
-                  value={gastoForm.dataGasto}
-                  onChange={onGastoChange}
-                  required
-                />
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  name="fixo"
-                  checked={gastoForm.fixo}
-                  onChange={onGastoChange}
-                  style={{ width: 'auto', marginTop: 0 }}
-                />
-                Gasto fixo (recorrente todo mês)
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  name="parcelado"
-                  checked={gastoForm.parcelado}
-                  onChange={onGastoChange}
-                  style={{ width: 'auto', marginTop: 0 }}
-                />
-                Gasto parcelado
-              </label>
-
-              {gastoForm.parcelado && (
-                <>
-                  <label>
-                    Parcela atual *
-                    <input
-                      type="number"
-                      min="1"
-                      name="parcelaAtual"
-                      value={gastoForm.parcelaAtual}
-                      onChange={onGastoChange}
-                      required
-                      placeholder="Ex: 3"
-                    />
-                  </label>
-                  <label>
-                    Total de parcelas *
-                    <input
-                      type="number"
-                      min="1"
-                      name="parcelaTotal"
-                      value={gastoForm.parcelaTotal}
-                      onChange={onGastoChange}
-                      required
-                      placeholder="Ex: 4"
-                    />
-                  </label>
-                </>
-              )}
-
-              <label className="full">
-                Observações
-                <textarea
-                  name="observacoes"
-                  value={gastoForm.observacoes}
-                  onChange={onGastoChange}
-                  rows={2}
-                  placeholder="Informações adicionais..."
-                />
-              </label>
-
-              <div className="full" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button type="submit" disabled={gastoSubmitting} className="submit" style={{ flex: '1 1 220px' }}>
-                  {gastoSubmitting
-                    ? 'Salvando...'
-                    : editingGastoId ? 'Salvar alterações' : 'Registrar gasto'}
-                </button>
-                {editingGastoId && (
-                  <button
-                    type="button"
-                    className="submit"
-                    style={{ flex: '0 1 160px', background: 'var(--color-muted, #888)' }}
-                    onClick={resetGastoForm}
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            </form>
+            <h2>{editingGasto ? 'Editar gasto' : 'Novo gasto'}</h2>
+            <GastoForm
+              key={editingGasto?.id ?? 'novo'}
+              item={editingGasto}
+              onSaved={onGastoSaved}
+              onCancel={editingGasto ? () => setEditingGasto(null) : undefined}
+            />
           </section>
 
           {/* Análise IA */}
@@ -681,71 +427,9 @@ function GastosPage() {
       {/* ━━━━━━━━━━━━━ ABA RECEBIMENTOS ━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       {activeTab === 'recebimentos' && (
         <>
-          {/* Formulário de recebimento */}
           <section className="panel" style={{ marginTop: 20 }}>
             <h2>Novo recebimento</h2>
-            <form onSubmit={onRecebimentoSubmit} className="form-grid">
-              <label>
-                Descrição *
-                <input
-                  name="descricao"
-                  value={recebimentoForm.descricao}
-                  onChange={onRecebimentoChange}
-                  required
-                  maxLength={255}
-                  placeholder="Ex: Taxa condominial - Maio/2026"
-                />
-              </label>
-
-              <label>
-                Tipo *
-                <select name="tipo" value={recebimentoForm.tipo} onChange={onRecebimentoChange}>
-                  {TIPOS_RECEBIMENTO.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Valor (R$) *
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  name="valor"
-                  value={recebimentoForm.valor}
-                  onChange={onRecebimentoChange}
-                  required
-                  placeholder="0,00"
-                />
-              </label>
-
-              <label>
-                Data do recebimento *
-                <input
-                  type="date"
-                  name="dataRecebimento"
-                  value={recebimentoForm.dataRecebimento}
-                  onChange={onRecebimentoChange}
-                  required
-                />
-              </label>
-
-              <label className="full">
-                Observações
-                <textarea
-                  name="observacoes"
-                  value={recebimentoForm.observacoes}
-                  onChange={onRecebimentoChange}
-                  rows={2}
-                  placeholder="Informações adicionais..."
-                />
-              </label>
-
-              <button type="submit" disabled={recebimentoSubmitting} className="submit full">
-                {recebimentoSubmitting ? 'Salvando...' : 'Registrar recebimento'}
-              </button>
-            </form>
+            <RecebimentoForm onSaved={onRecebimentoSaved} />
           </section>
 
           {/* Resumo de recebimentos */}

@@ -1,39 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson } from './api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
 import ConfirmDialog from './components/ConfirmDialog'
 import Button from './components/ui/Button'
 import Card from './components/ui/Card'
-import Input, { Select, Textarea } from './components/ui/Input'
+import CompromissoForm from './components/CompromissoForm'
 
 const TIPO_LABELS = { MANUTENCAO: 'Manutenção', REUNIAO: 'Reunião', OUTROS: 'Outros' }
 
-const INITIAL_FORM = {
-  titulo: '',
-  descricao: '',
-  inicioEm: '',
-  local: '',
-  tipo: 'OUTROS',
-}
-
-function formatDateIso(value) {
-  if (value == null) return ''
-  if (typeof value === 'string') return value.length >= 10 ? value.slice(0, 10) : value
-  if (Array.isArray(value) && value.length >= 3) {
-    const [y, m, d] = value
-    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-  }
-  return ''
-}
-
 function CompromissosPage() {
+  const formRef = useRef(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState(null)
+  // null = formulário fechado; { item: null } = novo; { item } = edição
+  const [formState, setFormState] = useState(null)
   const [filtro, setFiltro] = useState('abertos')
-  const [form, setForm] = useState(INITIAL_FORM)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [pendingDeleteId, setPendingDeleteId] = useState(null)
@@ -59,67 +40,30 @@ function CompromissosPage() {
     return () => clearTimeout(timer)
   }, [])
 
-  function onChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  function resetForm() {
-    setForm(INITIAL_FORM)
-    setEditingId(null)
-  }
-
   function openCreateForm() {
-    resetForm()
-    setShowForm(true)
     setError('')
     setSuccess('')
+    setFormState({ item: null })
   }
 
   function closeForm() {
-    setShowForm(false)
-    resetForm()
+    setFormState(null)
   }
 
   function startEdit(item) {
-    setEditingId(item.id)
-    setForm({
-      titulo: item.titulo || '',
-      descricao: item.descricao || '',
-      inicioEm: formatDateIso(item.inicioEm),
-      local: item.local || '',
-      tipo: item.tipo || 'OUTROS',
-    })
-    setShowForm(true)
     setError('')
     setSuccess('')
+    setFormState({ item })
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
   }
 
-  async function onSubmit(e) {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setSubmitting(true)
-    const wasEditing = Boolean(editingId)
-    try {
-      const res = await apiFetch(
-        editingId ? `/api/compromissos/${editingId}` : '/api/compromissos',
-        {
-          method: editingId ? 'PUT' : 'POST',
-          body: JSON.stringify(form),
-        },
-      )
-      if (!res.ok) {
-        throw new Error(await parseError(res, wasEditing ? 'Erro ao atualizar lembrete.' : 'Erro ao salvar lembrete.'))
-      }
-      setSuccess(wasEditing ? 'Lembrete atualizado com sucesso.' : 'Lembrete criado com sucesso.')
-      closeForm()
-      if (!wasEditing) setFiltro('abertos')
-      await load()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setSubmitting(false)
-    }
+  async function onSaved({ wasEdit }) {
+    setSuccess(wasEdit ? 'Lembrete atualizado com sucesso.' : 'Lembrete criado com sucesso.')
+    setFormState(null)
+    if (!wasEdit) setFiltro('abertos')
+    await load()
   }
 
   async function onConcluir(id) {
@@ -143,6 +87,7 @@ function CompromissosPage() {
       if (!res.ok) throw new Error(await parseError(res, 'Erro ao excluir lembrete.'))
       setSuccess('Lembrete excluído.')
       setPendingDeleteId(null)
+      if (formState?.item?.id === id) setFormState(null)
       await load()
     } catch (err) {
       setError(err.message)
@@ -167,6 +112,8 @@ function CompromissosPage() {
       hour: '2-digit', minute: '2-digit',
     })
   }
+
+  const editingId = formState?.item?.id ?? null
 
   return (
     <>
@@ -194,69 +141,22 @@ function CompromissosPage() {
           </button>
         </div>
         <Button
-          onClick={() => (showForm && !editingId ? closeForm() : openCreateForm())}
+          onClick={() => (formState && !editingId ? closeForm() : openCreateForm())}
           className="page-actions__primary"
         >
-          {showForm && !editingId ? 'Cancelar' : '+ Novo Lembrete'}
+          {formState && !editingId ? 'Cancelar' : '+ Novo Lembrete'}
         </Button>
       </div>
 
-      {showForm && (
-        <Card style={{ marginTop: 16 }}>
+      {formState && (
+        <Card style={{ marginTop: 16 }} ref={formRef}>
           <h2>{editingId ? 'Editar Lembrete' : 'Novo Lembrete'}</h2>
-          <form onSubmit={onSubmit} className="form-grid">
-            <label className="full">
-              Título *
-              <Input
-                name="titulo"
-                value={form.titulo}
-                onChange={onChange}
-                required
-                maxLength={150}
-                placeholder="Ex: Vistoria da bomba d'água"
-              />
-            </label>
-            <label>
-              Data de início *
-              <Input type="date" name="inicioEm" value={form.inicioEm} onChange={onChange} required />
-            </label>
-            <label>
-              Tipo
-              <Select name="tipo" value={form.tipo} onChange={onChange}>
-                <option value="OUTROS">Outros</option>
-                <option value="MANUTENCAO">Manutenção</option>
-                <option value="REUNIAO">Reunião</option>
-              </Select>
-            </label>
-            <label className="full">
-              Local
-              <Input
-                name="local"
-                value={form.local}
-                onChange={onChange}
-                maxLength={150}
-                placeholder="Ex: Sala de reuniões, Subsolo..."
-              />
-            </label>
-            <label className="full">
-              Descrição
-              <Textarea
-                name="descricao"
-                value={form.descricao}
-                onChange={onChange}
-                rows={2}
-                placeholder="Detalhes do lembrete..."
-              />
-            </label>
-            <Button type="submit" disabled={submitting} className="full">
-              {submitting ? 'Salvando...' : editingId ? 'Salvar alterações' : 'Criar lembrete'}
-            </Button>
-            {editingId ? (
-              <Button type="button" variant="secondary" className="full" onClick={closeForm}>
-                Cancelar edição
-              </Button>
-            ) : null}
-          </form>
+          <CompromissoForm
+            key={editingId ?? 'novo'}
+            item={formState.item}
+            onSaved={onSaved}
+            onCancel={closeForm}
+          />
         </Card>
       )}
 

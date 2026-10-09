@@ -612,6 +612,25 @@ textarea {
   color: var(--accent);
 }
 
+button.quick-action {
+  font: inherit;
+  cursor: pointer;
+}
+
+.dashboard-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.dashboard-row-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .prestador-item {
   padding: 16px;
 }
@@ -778,6 +797,12 @@ textarea {
 .ui-modal-title {
   margin: 0 0 8px;
   font-size: 1.1rem;
+}
+
+.ui-modal--wide {
+  width: min(100%, 880px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .confirm-overlay {
