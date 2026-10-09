@@ -17,7 +17,10 @@ public class ApiBearerEnforcementFilter extends OncePerRequestFilter {
     private static final Set<String> PUBLIC_API_PATHS = Set.of(
             "/api/auth/login",
             "/api/auth/register",
-            "/api/auth/google");
+            "/api/auth/google",
+            "/api/senha/esqueci",
+            "/api/senha/validar",
+            "/api/senha/redefinir");
 
     private final boolean enforceBearer;
 

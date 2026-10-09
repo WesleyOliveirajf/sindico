@@ -154,6 +154,7 @@ public class SecurityConfig {
                                 "/esqueci-senha", "/redefinir-senha",
                                 "/css/**", "/js/**", "/error",
                                 "/api/auth/login", "/api/auth/register", "/api/auth/google",
+                                "/api/senha/esqueci", "/api/senha/validar", "/api/senha/redefinir",
                                 "/actuator/health").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/ia/config").hasRole("ADMIN")

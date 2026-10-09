@@ -35,7 +35,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final Set<String> LOGIN_PATHS = Set.of("/api/auth/login", "/api/auth/google", "/login");
     private static final Set<String> ACCOUNT_PATHS =
-            Set.of("/api/auth/register", "/cadastro", "/esqueci-senha", "/redefinir-senha");
+            Set.of("/api/auth/register", "/cadastro", "/esqueci-senha", "/redefinir-senha",
+                    "/api/senha/esqueci", "/api/senha/redefinir");
 
     private final boolean enabled;
     private final FixedWindowRateLimiter loginLimiter;

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
-import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 import DashboardPage from "./DashboardPage";
+import CondominioPage from "./CondominioPage";
+import PerfilPage from "./PerfilPage";
+import EsqueciSenhaPage from "./EsqueciSenhaPage";
+import RedefinirSenhaPage from "./RedefinirSenhaPage";
 import CompromissosPage from "./CompromissosPage";
 import PrestadoresPage from "./PrestadoresPage";
 import AnotacoesPage from "./AnotacoesPage";
@@ -12,7 +16,7 @@ import GastosPage from "./GastosPage";
 import AssistenteIAPage from "./AssistenteIAPage";
 import LoginPage from "./LoginPage";
 import AdminPage from "./AdminPage";
-import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
+import { AUTH_EXPIRED_EVENT, getCondominioSelecionado, getMe, listarCondominios, logout } from "./api";
 
 const PAGES = {
   dashboard: "Início",
@@ -23,6 +27,8 @@ const PAGES = {
   moradores: "Moradores",
   prestadores: "Prestadores",
   gastos: "Controle de Gasto",
+  condominio: "Condomínio",
+  perfil: "Meu perfil",
 };
 
 const IA_PAGES = {
@@ -36,11 +42,14 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolbarGlow, setToolbarGlow] = useState({ x: "50%", y: "50%", visible: false });
   const [now, setNow] = useState(() => new Date());
+  const location = useLocation();
+  const [condominioAtivoNome, setCondominioAtivoNome] = useState("");
   const allPages = Object.entries(PAGES);
   const isAdmin = user?.roles?.includes("ROLE_ADMIN");
 
   const sindicoNome = user?.nome || user?.email || "Síndico";
   const condominioNome =
+    condominioAtivoNome ||
     user?.nomeCondominio || user?.condominioNome || user?.condominio?.nome || "Condomínio";
   const dataHoraTexto = now.toLocaleString("pt-BR", {
     dateStyle: "short",
@@ -64,6 +73,22 @@ function App() {
       active = false;
     };
   }, []);
+
+  // Mostra o nome do condominio escolhido pelo usuario (o padrao vem do /me).
+  useEffect(() => {
+    const escolhidoId = getCondominioSelecionado();
+    if (!user || !escolhidoId) return undefined;
+    let ativo = true;
+    listarCondominios()
+      .then((lista) => {
+        const escolhido = lista.find((c) => c.id === escolhidoId);
+        if (ativo && escolhido) setCondominioAtivoNome(escolhido.nome);
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     function handleAuthExpired() {
@@ -104,6 +129,10 @@ function App() {
   function handleToolbarMouseLeave() {
     setToolbarGlow((prev) => ({ ...prev, visible: false }));
   }
+
+  // Rotas publicas de recuperacao de senha: nao exigem sessao (o link chega por e-mail).
+  if (location.pathname === "/esqueci-senha") return <EsqueciSenhaPage />;
+  if (location.pathname === "/redefinir-senha") return <RedefinirSenhaPage />;
 
   if (!authChecked) {
     return (
@@ -212,6 +241,12 @@ function App() {
             <Route path="/moradores" element={<MoradoresPage />} />
             <Route path="/prestadores" element={<PrestadoresPage />} />
             <Route path="/gastos" element={<GastosPage />} />
+            <Route path="/condominio" element={<CondominioPage />} />
+            <Route path="/perfil" element={<PerfilPage />} />
+            <Route
+              path="/condominios/selecionar"
+              element={<Navigate to="/condominio" replace />}
+            />
             <Route path="/assistente" element={<AssistenteIAPage />} />
             <Route
               path="/config-ia"

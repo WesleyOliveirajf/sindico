@@ -16,6 +16,34 @@ function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY)
 }
 
+const CONDOMINIO_KEY = 'condominioSelecionado'
+
+// Condominio ativo escolhido pelo usuario. O backend so aceita ids permitidos ao usuario logado,
+// entao um valor antigo ou invalido cai no condominio padrao.
+export function getCondominioSelecionado() {
+  try {
+    return localStorage.getItem(CONDOMINIO_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setCondominioSelecionado(condominioId) {
+  try {
+    localStorage.setItem(CONDOMINIO_KEY, condominioId)
+  } catch {
+    // Armazenamento indisponivel (navegacao privada, bloqueio): usa o condominio padrao.
+  }
+}
+
+function clearCondominioSelecionado() {
+  try {
+    localStorage.removeItem(CONDOMINIO_KEY)
+  } catch {
+    // Nada a limpar se o armazenamento estiver indisponivel.
+  }
+}
+
 function shouldSendAuthHeader() {
   return AUTH_MODE === 'jwt' || AUTH_MODE === 'hybrid'
 }
@@ -36,8 +64,10 @@ export function apiFetch(path, options = {}) {
   const token = getToken()
   const useAuthHeader = shouldSendAuthHeader()
   const useCredentials = shouldSendCredentials()
+  const condominioId = getCondominioSelecionado()
   const headers = {
     ...(useAuthHeader && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(condominioId ? { 'X-Condominio-Id': condominioId } : {}),
     ...options.headers,
   }
 
@@ -177,6 +207,76 @@ export async function logout() {
     // Ignora erros de rede no logout
   }
   clearToken()
+  clearCondominioSelecionado()
+}
+
+// ---------------------------------------------------------------------------
+// Condomínio, perfil e recuperação de senha
+// ---------------------------------------------------------------------------
+
+export async function listarCondominios() {
+  const res = await apiFetch('/api/condominios')
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível carregar os condomínios.'))
+  return parseJson(res)
+}
+
+export async function getCondominio() {
+  const res = await apiFetch('/api/condominio')
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível carregar o condomínio.'))
+  return parseJson(res)
+}
+
+export async function salvarCondominio(payload) {
+  const res = await apiFetch('/api/condominio', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível salvar o condomínio.'))
+  return parseJson(res)
+}
+
+export async function getPerfil() {
+  const res = await apiFetch('/api/perfil')
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível carregar o perfil.'))
+  return parseJson(res)
+}
+
+export async function salvarDadosPerfil(payload) {
+  const res = await apiFetch('/api/perfil/dados', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível salvar os dados.'))
+  return parseJson(res)
+}
+
+export async function trocarSenha(payload) {
+  const res = await apiFetch('/api/perfil/senha', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível alterar a senha.'))
+}
+
+export async function solicitarResetSenha(email) {
+  const res = await apiFetch('/api/senha/esqueci', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível processar a solicitação.'))
+}
+
+export async function validarTokenReset(token) {
+  const res = await apiFetch(`/api/senha/validar?token=${encodeURIComponent(token)}`)
+  if (!res.ok) throw new Error(await parseError(res, 'Link inválido ou expirado. Solicite um novo.'))
+}
+
+export async function redefinirSenha(payload) {
+  const res = await apiFetch('/api/senha/redefinir', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(await parseError(res, 'Não foi possível redefinir a senha.'))
 }
 
 // ---------------------------------------------------------------------------
