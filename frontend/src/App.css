@@ -1398,14 +1398,31 @@ textarea {
   margin: 8px 0;
 }
 
+.sidebar-section-heading {
+  display: grid;
+  gap: 1px;
+  margin-top: 8px;
+  padding: 8px 12px 6px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-nav-group:first-child .sidebar-section-heading {
+  margin-top: 0;
+  border-top: 0;
+}
+
 .sidebar-section-label {
   display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
+  color: var(--accent-strong);
+}
+
+.sidebar-section-hint {
+  font-size: 0.75rem;
   color: var(--muted);
-  padding: 2px 12px 4px;
 }
 
 .sidebar-link--ia {
