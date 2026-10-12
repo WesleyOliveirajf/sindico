@@ -16,7 +16,8 @@ import { AUTH_EXPIRED_EVENT, getMe, logout } from "./shared/api";
 
 const NAVIGATION_GROUPS = [
   {
-    label: "Operação",
+    label: "Operações",
+    hint: "Rotina do condomínio",
     pages: [
       ["dashboard", "Início"],
       ["compromissos", "Lembretes"],
@@ -27,14 +28,16 @@ const NAVIGATION_GROUPS = [
   },
   {
     label: "Pessoas",
+    hint: "Moradores e prestadores",
     pages: [
       ["moradores", "Moradores"],
       ["prestadores", "Prestadores"],
     ],
   },
   {
-    label: "Financeiro",
-    pages: [["gastos", "Financeiro"]],
+    label: "Finanças",
+    hint: "Gastos e recebimentos",
+    pages: [["gastos", "Gastos e recebimentos"]],
   },
 ];
 
@@ -116,9 +119,12 @@ function App() {
       <aside id="app-sidebar" className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
         <div className="sidebar-brand">LiveSindIA</div>
         <nav className="sidebar-nav" aria-label="Módulos">
-          {NAVIGATION_GROUPS.map(({ label, pages }) => (
+          {NAVIGATION_GROUPS.map(({ label, hint, pages }) => (
             <div className="sidebar-nav-group" key={label}>
-              <span className="sidebar-section-label">{label}</span>
+              <div className="sidebar-section-heading">
+                <span className="sidebar-section-label">{label}</span>
+                <span className="sidebar-section-hint">{hint}</span>
+              </div>
               {pages.map(([key, pageLabel]) => (
                 <NavLink
                   key={key}
