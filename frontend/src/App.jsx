@@ -14,16 +14,29 @@ import LoginPage from "./features/auth/LoginPage";
 import AdminPage from "./features/admin/AdminPage";
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./shared/api";
 
-const PAGES = {
-  dashboard: "Início",
-  compromissos: "Lembretes",
-  manutencoes: "Manutenções",
-  reunioes: "Reuniões",
-  anotacoes: "Anotações",
-  moradores: "Moradores",
-  prestadores: "Prestadores",
-  gastos: "Controle de Gasto",
-};
+const NAVIGATION_GROUPS = [
+  {
+    label: "Operação",
+    pages: [
+      ["dashboard", "Início"],
+      ["compromissos", "Lembretes"],
+      ["manutencoes", "Manutenções"],
+      ["reunioes", "Reuniões"],
+      ["anotacoes", "Anotações"],
+    ],
+  },
+  {
+    label: "Pessoas",
+    pages: [
+      ["moradores", "Moradores"],
+      ["prestadores", "Prestadores"],
+    ],
+  },
+  {
+    label: "Financeiro",
+    pages: [["gastos", "Financeiro"]],
+  },
+];
 
 const IA_PAGES = {
   assistente: "Assistente IA",
@@ -34,19 +47,11 @@ function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [toolbarGlow, setToolbarGlow] = useState({ x: "50%", y: "50%", visible: false });
-  const [now, setNow] = useState(() => new Date());
-  const allPages = Object.entries(PAGES);
   const isAdmin = user?.roles?.includes("ROLE_ADMIN");
 
   const sindicoNome = user?.nome || user?.email || "Síndico";
   const condominioNome =
     user?.nomeCondominio || user?.condominioNome || user?.condominio?.nome || "Condomínio";
-  const dataHoraTexto = now.toLocaleString("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "medium",
-  });
-
   useEffect(() => {
     let active = true;
 
@@ -76,11 +81,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const timerId = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timerId);
-  }, []);
-
-  useEffect(() => {
     document.body.classList.toggle("menu-open", menuOpen);
     return () => document.body.classList.remove("menu-open");
   }, [menuOpen]);
@@ -92,17 +92,6 @@ function App() {
 
   function closeMenu() {
     setMenuOpen(false);
-  }
-
-  function handleToolbarMouseMove(event) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = `${event.clientX - rect.left}px`;
-    const y = `${event.clientY - rect.top}px`;
-    setToolbarGlow({ x, y, visible: true });
-  }
-
-  function handleToolbarMouseLeave() {
-    setToolbarGlow((prev) => ({ ...prev, visible: false }));
   }
 
   if (!authChecked) {
@@ -127,33 +116,39 @@ function App() {
       <aside id="app-sidebar" className={`sidebar ${menuOpen ? "sidebar--open" : ""}`}>
         <div className="sidebar-brand">LiveSindIA</div>
         <nav className="sidebar-nav" aria-label="Módulos">
-          {allPages.map(([key, label]) => (
-            <NavLink
-              key={key}
-              to={`/${key}`}
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
-              }
-            >
-              {label}
-            </NavLink>
+          {NAVIGATION_GROUPS.map(({ label, pages }) => (
+            <div className="sidebar-nav-group" key={label}>
+              <span className="sidebar-section-label">{label}</span>
+              {pages.map(([key, pageLabel]) => (
+                <NavLink
+                  key={key}
+                  to={`/${key}`}
+                  onClick={closeMenu}
+                  className={({ isActive }) =>
+                    `sidebar-link ${isActive ? "sidebar-link--active" : ""}`
+                  }
+                >
+                  {pageLabel}
+                </NavLink>
+              ))}
+            </div>
           ))}
 
-          <div className="sidebar-divider" />
-          <span className="sidebar-section-label">IA</span>
-          {Object.entries(IA_PAGES).map(([key, label]) => (
-            <NavLink
-              key={key}
-              to={`/${key}`}
-              onClick={closeMenu}
-              className={({ isActive }) =>
-                `sidebar-link sidebar-link--ia ${isActive ? "sidebar-link--active" : ""}`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          <div className="sidebar-nav-group sidebar-nav-group--ia">
+            <span className="sidebar-section-label">IA</span>
+            {Object.entries(IA_PAGES).map(([key, label]) => (
+              <NavLink
+                key={key}
+                to={`/${key}`}
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `sidebar-link sidebar-link--ia ${isActive ? "sidebar-link--active" : ""}`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </div>
 
           {isAdmin && (
             <NavLink
@@ -175,16 +170,7 @@ function App() {
       {menuOpen ? <button className="sidebar-backdrop" onClick={closeMenu} aria-label="Fechar menu" /> : null}
 
       <main className="content-wrap">
-        <header
-          className="content-header"
-          onMouseMove={handleToolbarMouseMove}
-          onMouseLeave={handleToolbarMouseLeave}
-          style={{
-            "--toolbar-glow-x": toolbarGlow.x,
-            "--toolbar-glow-y": toolbarGlow.y,
-            "--toolbar-glow-opacity": toolbarGlow.visible ? 1 : 0,
-          }}
-        >
+        <header className="content-header">
           <button
             className="menu-toggle"
             onClick={() => setMenuOpen((v) => !v)}
@@ -194,10 +180,9 @@ function App() {
           >
             {menuOpen ? "Fechar" : "Menu"}
           </button>
-          <div className="content-user" title={`${condominioNome} · ${sindicoNome} · ${dataHoraTexto}`}>
+          <div className="content-user" title={`${condominioNome} · ${sindicoNome}`}>
             <span className="content-user-line content-user-line--primary">{condominioNome}</span>
-            <span className="content-user-line content-user-line--secondary">Síndico: {sindicoNome}</span>
-            <span className="content-user-line content-user-line--secondary">Data e hora: {dataHoraTexto}</span>
+            <span className="content-user-line content-user-line--secondary">Olá, {sindicoNome}</span>
           </div>
         </header>
 
