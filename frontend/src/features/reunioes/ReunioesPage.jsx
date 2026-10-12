@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson, iaGerarAta } from './api'
-import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
+import { apiFetch, parseError, parseJson, iaGerarAta } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
 
 const INITIAL_FORM = {
   titulo: '',

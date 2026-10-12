@@ -5,8 +5,8 @@ import {
   getAdminUsuarios,
   reativarUsuario,
   rejeitarUsuario,
-} from './api'
-import ConfigIAPage from './ConfigIAPage'
+} from '../../shared/api'
+import ConfigIAPage from '../ia/ConfigIAPage'
 
 const STATUS_LABEL = {
   ativo: 'Ativo',

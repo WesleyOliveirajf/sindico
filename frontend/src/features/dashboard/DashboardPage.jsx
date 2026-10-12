@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
-import { EmptyState, ErrorState, LoadingState } from './components/PageFeedback'
+import { apiFetch, parseError, parseJson } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState } from '../../shared/components/PageFeedback'
 
 const quickActions = [
   { label: 'Novo gasto', to: '/gastos#gastos' },

@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
-import DashboardPage from "./DashboardPage";
-import CompromissosPage from "./CompromissosPage";
-import PrestadoresPage from "./PrestadoresPage";
-import AnotacoesPage from "./AnotacoesPage";
-import MoradoresPage from "./MoradoresPage";
-import ManutencoesPage from "./ManutencoesPage";
-import ReunioesPage from "./ReunioesPage";
-import GastosPage from "./GastosPage";
-import AssistenteIAPage from "./AssistenteIAPage";
-import LoginPage from "./LoginPage";
-import AdminPage from "./AdminPage";
-import { AUTH_EXPIRED_EVENT, getMe, logout } from "./api";
+import DashboardPage from "./features/dashboard/DashboardPage";
+import CompromissosPage from "./features/compromissos/CompromissosPage";
+import PrestadoresPage from "./features/prestadores/PrestadoresPage";
+import AnotacoesPage from "./features/anotacoes/AnotacoesPage";
+import MoradoresPage from "./features/moradores/MoradoresPage";
+import ManutencoesPage from "./features/manutencoes/ManutencoesPage";
+import ReunioesPage from "./features/reunioes/ReunioesPage";
+import GastosPage from "./features/gastos/GastosPage";
+import AssistenteIAPage from "./features/ia/AssistenteIAPage";
+import LoginPage from "./features/auth/LoginPage";
+import AdminPage from "./features/admin/AdminPage";
+import { AUTH_EXPIRED_EVENT, getMe, logout } from "./shared/api";
 
 const PAGES = {
   dashboard: "Início",

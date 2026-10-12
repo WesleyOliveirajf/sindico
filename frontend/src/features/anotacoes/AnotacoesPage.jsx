@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
-import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
-import ConfirmDialog from './components/ConfirmDialog'
+import { apiFetch, parseError, parseJson } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
+import ConfirmDialog from '../../shared/components/ConfirmDialog'
 
 const IMPORTANCIAS = ['NORMAL', 'IMPORTANTE', 'CRITICO']
 

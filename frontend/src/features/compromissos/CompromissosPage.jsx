@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { apiFetch, parseError, parseJson } from './api'
-import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
-import ConfirmDialog from './components/ConfirmDialog'
-import Button from './components/ui/Button'
-import Card from './components/ui/Card'
-import Input, { Select, Textarea } from './components/ui/Input'
+import { apiFetch, parseError, parseJson } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
+import ConfirmDialog from '../../shared/components/ConfirmDialog'
+import Button from '../../shared/components/ui/Button'
+import Card from '../../shared/components/ui/Card'
+import Input, { Select, Textarea } from '../../shared/components/ui/Input'
 
 const TIPO_LABELS = { MANUTENCAO: 'Manutenção', REUNIAO: 'Reunião', OUTROS: 'Outros' }
 

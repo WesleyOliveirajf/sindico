@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getIAConfig, saveIAConfig, testIAConfig } from './api'
-import { LoadingState, SuccessState } from './components/PageFeedback'
+import { getIAConfig, saveIAConfig, testIAConfig } from '../../shared/api'
+import { LoadingState, SuccessState } from '../../shared/components/PageFeedback'
 
 const PROVIDERS = [
   { value: 'OPENAI',        label: 'OpenAI',       modelHint: 'gpt-4o-mini, gpt-4o, gpt-4-turbo' },

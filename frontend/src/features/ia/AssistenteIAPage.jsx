@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { iaChat } from './api'
+import { iaChat } from '../../shared/api'
 
 const SUGGESTIONS = [
   'Quais manutenções estão pendentes no condomínio?',

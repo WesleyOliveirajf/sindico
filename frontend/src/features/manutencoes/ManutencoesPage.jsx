@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { apiFetch, parseError, parseJson, iaTriarManutencao } from './api'
-import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
-import Button from './components/ui/Button'
-import Input, { Select, Textarea } from './components/ui/Input'
+import { apiFetch, parseError, parseJson, iaTriarManutencao } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
+import Button from '../../shared/components/ui/Button'
+import Input, { Select, Textarea } from '../../shared/components/ui/Input'
 
 const INITIAL_FORM = {
   titulo: '',

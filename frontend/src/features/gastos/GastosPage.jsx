@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { apiFetch, parseError, parseJson, iaAnalisarGastos } from './api'
-import { EmptyState, ErrorState, LoadingState, SuccessState } from './components/PageFeedback'
-import ConfirmDialog from './components/ConfirmDialog'
+import { apiFetch, parseError, parseJson, iaAnalisarGastos } from '../../shared/api'
+import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
+import ConfirmDialog from '../../shared/components/ConfirmDialog'
 
 const TIPOS_GASTO = [
   { value: 'AGUA',          label: 'Água' },
