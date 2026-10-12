@@ -3,6 +3,11 @@ description:
 alwaysApply: true
 ---
 
+# Padrões de codificação
+
+As regras obrigatórias de implementação deste repositório estão em
+[`.agents/rules/code-standart.md`](.agents/rules/code-standart.md). Leia e aplique esse arquivo antes de criar ou alterar código. Em caso de conflito, as instruções deste `AGENTS.md` prevalecem.
+
 # Persona: Desenvolvedor Sênior de Qualidade de Software
 
 ## Papel principal
@@ -122,15 +127,18 @@ Ambas as superfícies coexistem no mesmo Spring Boot. A segurança é configurad
 src/main/java/br/com/sindico/app/
 ├── anexo/          # Upload e download de arquivos
 ├── anotacao/       # Anotações textuais
-├── auth/           # Autenticação JWT (AuthApiController)
+├── auth/           # Autenticação JWT: AuthApiController (HTTP) → AuthService; GoogleIdentityVerifier
 ├── cadastro/       # Cadastro de novos usuários/condominios
+├── admin/          # Área administrativa: AdminApiController (HTTP) → AdminService
 ├── compromisso/    # Agenda / compromissos
 ├── condominio/     # Entidade condomínio + multitenancy
 ├── config/         # Configurações Spring (Security, CORS, etc.)
 ├── dashboard/      # Dados do dashboard
 ├── email/          # Envio de e-mail (redefinição de senha)
 ├── gasto/          # Controle financeiro / gastos
-├── ia/             # Configuração de IA (introduzida em V14)
+├── ia/             # Assistente de IA (AIService/AIApiController)
+│   ├── llm/        #   clients por provedor (Anthropic, Gemini, OpenAI-compatible) + factory
+│   └── config/     #   configuração por condomínio + criptografia da chave (V14)
 ├── login/          # Páginas de login / Thymeleaf
 ├── manutencao/     # CRUD de manutenções
 ├── morador/        # Moradores e unidades
@@ -142,7 +150,16 @@ src/main/java/br/com/sindico/app/
 └── web/            # Handlers globais (ex.: erros)
 ```
 
-**Front-end React/Vite** em `frontend/`, páginas em `frontend/src/`. Comunicação com `/api/**` via `frontend/src/api.js`. Deploy no Vercel.
+**Front-end React/Vite** em `frontend/`, organizado por feature:
+```
+frontend/src/
+├── App.jsx, main.jsx          # shell, rotas, bootstrap
+├── features/<modulo>/         # uma pasta por módulo (auth, dashboard, compromissos, gastos, ia, admin, ...)
+└── shared/
+    ├── api.js                 # cliente HTTP único para /api/** (JWT, tratamento de 401)
+    └── components/            # ConfirmDialog, PageFeedback e ui/ (Button, Input, Card, Modal, Alert)
+```
+Deploy no Vercel.
 
 **Topologia de produção** (detalhes e rollback em `docs/DEPLOY.md`):
 
@@ -199,6 +216,7 @@ Navegador → Vercel (SPA + Edge Middleware frontend/middleware.js)
 | `APP_FLYWAY_REPAIR` | Não | `false` | Executa `flyway repair` antes da migração |
 | `APP_PUBLIC_BASE_URL` | Não | URL do front (Vercel) | URL pública do front, usada em links de e-mail |
 | `APP_ADMIN_EMAIL` / `APP_ADMIN_PASSWORD` | Não | vazio | Admin inicial (o e-mail é lido de `APP_ADMIN_EMAIL`, não `APP_ADMIN_USERNAME`) |
+| `GOOGLE_CLIENT_ID` | Não | vazio | Client ID do Google Sign-In. Vazio = login com Google desabilitado (valida assinatura, audience e e-mail verificado) |
 | `APP_TRUSTED_PROXY_SECRET` | **Sim em prod** | vazio | Segredo compartilhado com o middleware do Vercel (`PROXY_SHARED_SECRET`). Vazio = nenhum cabeçalho de IP é aceito |
 | `APP_STORAGE_PROVIDER` | Não | `local` | `local` (volume `uploads` da VPS) ou `supabase` (Supabase Storage) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_STORAGE_BUCKET` | Só com provider `supabase` | bucket `anexos` | Credenciais do Supabase Storage (bucket privado) |

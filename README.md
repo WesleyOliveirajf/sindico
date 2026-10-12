@@ -6,7 +6,14 @@ Aplicação web para centralizar rotinas de condomínios, com histórico, rastre
 
 [https://sindico-seven.vercel.app](https://sindico-seven.vercel.app)
 
-A demonstração utiliza autenticação. Para conhecer as telas antes de criar uma conta, consulte a documentação do projeto.
+A demonstração utiliza autenticação. Recrutadores podem acessar todas as telas com a conta de avaliação abaixo:
+
+| Campo | Acesso de demonstração |
+|---|---|
+| E-mail | `sindico@demo.local` |
+| Senha | `MudarSenha123!` |
+
+Esta é uma conta pública, criada exclusivamente para avaliação do produto. Evite cadastrar dados pessoais, dados confidenciais ou arquivos sensíveis; as informações de demonstração podem ser alteradas ou redefinidas sem aviso.
 
 ## Funcionalidades
 
@@ -124,7 +131,6 @@ O repositório contém testes para autenticação, autorização, cadastro, manu
 - [Requisitos do MVP](docs/requisitos-mvp.md)
 - [Modelo de dados](docs/modelo-dados.md)
 - [Deploy, variáveis e rollback](docs/DEPLOY.md)
-- [Relatório de QA](docs/QA-REPORT.md)
 
 ## Status
 
