@@ -1,4 +1,4 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.config;
 
 import java.util.Optional;
 import java.util.UUID;

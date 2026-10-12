@@ -1,4 +1,4 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;

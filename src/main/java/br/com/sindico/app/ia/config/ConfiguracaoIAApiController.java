@@ -1,4 +1,7 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.config;
+
+import br.com.sindico.app.ia.llm.LLMClient;
+import br.com.sindico.app.ia.llm.LLMClientFactory;
 
 import jakarta.validation.Valid;
 import java.util.Map;

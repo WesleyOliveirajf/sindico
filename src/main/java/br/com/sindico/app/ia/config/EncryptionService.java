@@ -1,4 +1,4 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.config;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;

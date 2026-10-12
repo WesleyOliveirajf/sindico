@@ -1,4 +1,4 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.llm;
 
 public enum LLMProvider {
     OPENAI,

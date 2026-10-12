@@ -1,5 +1,8 @@
 package br.com.sindico.app.ia;
 
+import br.com.sindico.app.ia.llm.LLMClient;
+import br.com.sindico.app.ia.llm.LLMClientFactory;
+
 import br.com.sindico.app.anotacao.Anotacao;
 import br.com.sindico.app.anotacao.AnotacaoRepository;
 import br.com.sindico.app.compromisso.Compromisso;

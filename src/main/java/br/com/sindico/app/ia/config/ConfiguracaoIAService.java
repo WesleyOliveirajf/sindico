@@ -1,4 +1,4 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.config;
 
 import br.com.sindico.app.security.TenantAccessor;
 import java.util.Optional;

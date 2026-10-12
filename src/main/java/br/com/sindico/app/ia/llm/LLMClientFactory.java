@@ -1,4 +1,7 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.llm;
+
+import br.com.sindico.app.ia.config.ConfiguracaoIA;
+import br.com.sindico.app.ia.config.ConfiguracaoIAService;
 
 import org.springframework.stereotype.Component;
 

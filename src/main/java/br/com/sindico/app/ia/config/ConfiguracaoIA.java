@@ -1,4 +1,6 @@
-package br.com.sindico.app.ia;
+package br.com.sindico.app.ia.config;
+
+import br.com.sindico.app.ia.llm.LLMProvider;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
