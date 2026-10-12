@@ -31,8 +31,13 @@
 
 .sidebar-nav {
   display: grid;
-  gap: 6px;
+  gap: 14px;
   align-content: start;
+}
+
+.sidebar-nav-group {
+  display: grid;
+  gap: 4px;
 }
 
 .sidebar-link,
@@ -2670,5 +2675,21 @@ textarea:focus,
   .auth-glass-panel {
     max-width: 100%;
     padding: 28px 20px;
+  }
+
+  /* Este bloco fica após o tema para preservar o layout de uma coluna no mobile. */
+  .app-shell {
+    display: block;
+    width: 100%;
+  }
+
+  .content-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page,
+  .app-global-footer {
+    width: 100%;
   }
 }
