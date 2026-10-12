@@ -39,6 +39,7 @@ VPS Ubuntu: Traefik (TLS) ─► container Spring Boot (:8080)  https://app.anal
 | VPS | `APP_CORS_ORIGINS`, `APP_PUBLIC_BASE_URL` | Origens do front, separadas por vírgula |
 | VPS | `APP_TRUSTED_PROXY_SECRET` | Igual a `PROXY_SHARED_SECRET` do Vercel; `openssl rand -hex 32` |
 | VPS | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | Opcionais (admin inicial) |
+| VPS | `GOOGLE_CLIENT_ID` | Obrigatório para login com Google (valida audience do token); vazio desabilita |
 | VPS | `APP_STORAGE_PROVIDER`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_STORAGE_BUCKET` | Chaves do Supabase só com provider `supabase` |
 | VPS | `SERVER_FORWARD_HEADERS_STRATEGY=native` | Já definida no compose (IP/scheme atrás do Traefik) |
 | Vercel | `PROXY_SHARED_SECRET` | Igual a `APP_TRUSTED_PROXY_SECRET` |
