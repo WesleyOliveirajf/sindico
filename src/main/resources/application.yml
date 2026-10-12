@@ -40,6 +40,10 @@ app:
     # Segredo compartilhado com o middleware do Vercel para receber o IP real do cliente
     # (cabecalho X-Sindico-Client-Ip). Vazio = nao confia em nenhum cabecalho.
     trusted-proxy-secret: ${APP_TRUSTED_PROXY_SECRET:}
+    # Segredo anterior (permite rotacao sem downtime aceitando o principal e o anterior)
+    trusted-proxy-secret-previous: ${APP_TRUSTED_PROXY_SECRET_PREVIOUS:}
+    # Intervalo minimo em segundos entre alertas de IP real ausente em /api/auth/*
+    trusted-proxy-warn-interval-seconds: ${APP_TRUSTED_PROXY_WARN_INTERVAL_SECONDS:60}
   condominio:
     # Alinhado a migration V5 (condominio padrao do MVP)
     default-id: "00000000-0000-0000-0000-000000000001"

@@ -38,6 +38,7 @@ VPS Ubuntu: Traefik (TLS) ─► container Spring Boot (:8080)  https://app.anal
 | VPS | `APP_JWT_SECRET` | Obrigatória; `openssl rand -base64 48` |
 | VPS | `APP_CORS_ORIGINS`, `APP_PUBLIC_BASE_URL` | Origens do front, separadas por vírgula |
 | VPS | `APP_TRUSTED_PROXY_SECRET` | Igual a `PROXY_SHARED_SECRET` do Vercel; `openssl rand -hex 32` |
+| VPS | `APP_TRUSTED_PROXY_SECRET_PREVIOUS` | Opcional; segredo anterior para rotação sem downtime |
 | VPS | `APP_ADMIN_EMAIL`, `APP_ADMIN_PASSWORD` | Opcionais (admin inicial) |
 | VPS | `GOOGLE_CLIENT_ID` | Obrigatório para login com Google (valida audience do token); vazio desabilita |
 | VPS | `APP_STORAGE_PROVIDER`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_STORAGE_BUCKET` | Chaves do Supabase só com provider `supabase` |
@@ -69,13 +70,27 @@ usarem o IP real:
    **último** hop de `x-forwarded-for`, nunca o primeiro).
 2. Se `PROXY_SHARED_SECRET` existe, envia `X-Sindico-Client-Ip` e `X-Sindico-Proxy-Secret`.
    Cabeçalhos `x-sindico-*` vindos do cliente são descartados.
-3. `TrustedProxyClientIpFilter` compara o segredo em tempo constante e, se confere, valida o IP
-   (IPv4/IPv6 literal, sem DNS) e passa a devolver esse valor em `getRemoteAddr()`.
+3. `TrustedProxyClientIpFilter` compara o segredo em tempo constante contra o segredo principal
+   (`APP_TRUSTED_PROXY_SECRET`) e o anterior (`APP_TRUSTED_PROXY_SECRET_PREVIOUS`). Se confere,
+   valida o IP (IPv4/IPv6 literal, sem DNS) e passa a devolver esse valor em `getRemoteAddr()`.
 4. `AuthRateLimitFilter` usa esse IP como chave.
 
 Sem o segredo no Vercel, o middleware registra `PROXY_SHARED_SECRET ausente em producao` nos logs
 e **todos os usuários compartilham o mesmo bucket** (um atacante bloqueia o login de todos).
-Sem o segredo na VPS, o filtro fica inativo e o cabeçalho é ignorado.
+Sem o segredo na VPS, o filtro fica inativo e o cabeçalho é ignorado. Quando o segredo está configurado
+no back-end mas requisições chegam em `/api/auth/*` sem o cabeçalho confiável (segredo errado ou ausente),
+o filtro emite alertas `WARN` nos logs com limitação de frequência (evitando inundar o log).
+
+### Rotação do segredo do proxy sem downtime
+
+Para rotacionar o segredo sem interromper o serviço e sem desalinhar rate limits:
+1. Gere um novo segredo: `openssl rand -hex 32`.
+2. Na VPS (`deploy/vps/.env`), defina `APP_TRUSTED_PROXY_SECRET=<novo>` e `APP_TRUSTED_PROXY_SECRET_PREVIOUS=<antigo>`, e rode `docker compose up -d`.
+3. No painel do Vercel, atualize `PROXY_SHARED_SECRET` com `<novo>` e faça redeploy.
+4. Monitore os logs da VPS (`docker compose logs -f app`) garantindo ausência de alertas `WARN`.
+5. Na VPS, limpe `APP_TRUSTED_PROXY_SECRET_PREVIOUS=` e rode `docker compose up -d`.
+
+Passo a passo detalhado em [`deploy/vps/README.md`](../deploy/vps/README.md).
 
 Validar: defina o segredo nos dois lados, faça redeploy e confira que 11 logins seguidos de um IP
 retornam `429` sem afetar outro IP.

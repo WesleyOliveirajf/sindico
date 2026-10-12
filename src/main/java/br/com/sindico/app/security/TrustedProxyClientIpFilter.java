@@ -9,7 +9,14 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,14 +25,41 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * Restaura o IP real do cliente quando a requisicao chega por um proxy de aplicacao nosso
  * (o middleware do Vercel), que conecta ao back-end a partir de IPs do proprio Vercel.
  *
- * O proxy envia o IP do usuario em {@value #CLIENT_IP_HEADER} junto com o segredo compartilhado
- * em {@value #SECRET_HEADER}. Somente quando o segredo confere o valor e aceito, e entao
- * {@link HttpServletRequest#getRemoteAddr()} passa a devolver o IP do usuario (usado pelo rate
- * limit e pelo registro de aceite LGPD). Sem segredo configurado o filtro fica inativo, e um
- * cliente qualquer nao consegue forjar o IP sem conhecer o segredo.
+ * <p><strong>Decisao de design:</strong>
+ * Este filtro proprio e adotado em vez de confiar cegamente em
+ * {@code server.forward-headers-strategy=native} ou no {@code RemoteIpValve} do Tomcat/Spring.
+ * Como o Vercel Edge Middleware utiliza IPs de saida dinamicos e nao fornece um bloco de CIDRs
+ * estavel ou previsivel para allowlist de proxies confiaveis (como exige o {@code RemoteIpValve}),
+ * a autenticacao da origem do cabecalho {@value #CLIENT_IP_HEADER} precisa depender exclusivamente
+ * de um segredo compartilhado ({@value #SECRET_HEADER}). Sem essa validacao por segredo, qualquer
+ * cliente que conectasse diretamente a VPS poderia forjar o IP do usuario final.
+ *
+ * <p><strong>Rotacao sem downtime:</strong>
+ * O filtro suporta simultaneamente um segredo principal ({@code app.security.trusted-proxy-secret})
+ * e um anterior ({@code app.security.trusted-proxy-secret-previous}). Ambos sao comparados em
+ * tempo constante ({@link MessageDigest#isEqual(byte[], byte[])}) para evitar ataques de temporizacao
+ * (timing attacks), permitindo atualizar primeiro o back-end com o novo segredo e o antigo em paralelo,
+ * depois o Vercel, e finalmente descartar o anterior sem que nenhum usuario perca seu bucket de rate limit.
+ *
+ * <p><strong>Sinal de saude / monitoramento:</strong>
+ * Quando requisicoes chegam em rotas criticas de autenticacao ({@code /api/auth/*}) sem um cabecalho
+ * confiavel aceito (por descompasso de segredo, IP ausente/invalido ou bypass do proxy), o filtro
+ * registra um log {@code WARN}. O registro possui limitacao de frequencia em memoria para evitar
+ * inundacao dos logs em cenarios de ataque de forca bruta ou falha massiva.
+ *
+ * <p><strong>Quando reavaliar esta implementacao:</strong>
+ * Reavaliar o uso deste filtro se:
+ * <ul>
+ *   <li>O Vercel passar a fornecer IPs de saida dedicados/estaticos (ex.: Secure Compute / Dedicated IPs);</li>
+ *   <li>A arquitetura migrar a borda para um servico com blocos estaticos de CIDR (ex.: Cloudflare ou API Gateway dedicado);</li>
+ *   <li>For estabelecida autenticacao mutua TLS (mTLS) entre a borda (proxy) e o container da VPS.</li>
+ * </ul>
+ * Nesses cenarios, pode-se reavaliar o retorno ao {@code RemoteIpValve} nativo do Tomcat com allowlist de IP.
  */
 @Component
 public class TrustedProxyClientIpFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
 
     static final String SECRET_HEADER = "X-Sindico-Proxy-Secret";
     static final String CLIENT_IP_HEADER = "X-Sindico-Client-Ip";
@@ -34,29 +68,114 @@ public class TrustedProxyClientIpFilter extends OncePerRequestFilter {
     private static final Pattern IPV6_CHARS = Pattern.compile("^[0-9a-fA-F:.]{2,45}$");
 
     private final byte[] secret;
+    private final byte[] previousSecret;
+    private final long warnIntervalMillis;
+    private final LongSupplier clock;
+    private final AtomicLong lastWarnTimestamp = new AtomicLong(Long.MIN_VALUE / 2);
+    private final AtomicInteger suppressedWarnCount = new AtomicInteger(0);
 
-    public TrustedProxyClientIpFilter(@Value("${app.security.trusted-proxy-secret:}") String secret) {
-        this.secret = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
+    @Autowired
+    public TrustedProxyClientIpFilter(
+            @Value("${app.security.trusted-proxy-secret:}") String secret,
+            @Value("${app.security.trusted-proxy-secret-previous:}") String previousSecret,
+            @Value("${app.security.trusted-proxy-warn-interval-seconds:60}") long warnIntervalSeconds) {
+        this(secret, previousSecret, warnIntervalSeconds, System::currentTimeMillis);
+    }
+
+    public TrustedProxyClientIpFilter(String secret) {
+        this(secret, null, 60, System::currentTimeMillis);
+    }
+
+    public TrustedProxyClientIpFilter(String secret, String previousSecret) {
+        this(secret, previousSecret, 60, System::currentTimeMillis);
+    }
+
+    TrustedProxyClientIpFilter(
+            String secret,
+            String previousSecret,
+            long warnIntervalSeconds,
+            LongSupplier clock) {
+        this.secret = toBytes(secret);
+        this.previousSecret = toBytes(previousSecret);
+        this.warnIntervalMillis = TimeUnit.SECONDS.toMillis(Math.max(1, warnIntervalSeconds));
+        this.clock = clock != null ? clock : System::currentTimeMillis;
+    }
+
+    private static byte[] toBytes(String s) {
+        return (s == null || s.isBlank()) ? new byte[0] : s.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return secret.length == 0;
+        return secret.length == 0 && previousSecret.length == 0;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String providedSecret = request.getHeader(SECRET_HEADER);
-        if (providedSecret != null
-                && MessageDigest.isEqual(secret, providedSecret.getBytes(StandardCharsets.UTF_8))) {
+        if (matchesAnySecret(providedSecret)) {
             String clientIp = normalizeIp(request.getHeader(CLIENT_IP_HEADER));
             if (clientIp != null) {
                 chain.doFilter(new RemoteAddrOverride(request, clientIp), response);
                 return;
             }
         }
+
+        if (isAuthRequest(request)) {
+            registrarAvisoIpAusente(request);
+        }
+
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Valida o segredo fornecido contra o atual e o anterior em tempo constante.
+     */
+    private boolean matchesAnySecret(String providedSecret) {
+        if (providedSecret == null) {
+            return false;
+        }
+        byte[] providedBytes = providedSecret.getBytes(StandardCharsets.UTF_8);
+        boolean matchesCurrent = secret.length > 0 && MessageDigest.isEqual(secret, providedBytes);
+        boolean matchesPrevious = previousSecret.length > 0 && MessageDigest.isEqual(previousSecret, providedBytes);
+        return matchesCurrent | matchesPrevious;
+    }
+
+    static boolean isAuthRequest(HttpServletRequest request) {
+        if (request == null || "OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return false;
+        }
+        return uri.equals("/api/auth") || uri.startsWith("/api/auth/");
+    }
+
+    private void registrarAvisoIpAusente(HttpServletRequest request) {
+        long now = clock.getAsLong();
+        long last = lastWarnTimestamp.get();
+        if (now - last >= warnIntervalMillis) {
+            if (lastWarnTimestamp.compareAndSet(last, now)) {
+                int omitidos = suppressedWarnCount.getAndSet(0);
+                String uri = request.getRequestURI();
+                String remoteAddr = request.getRemoteAddr();
+                if (omitidos > 0) {
+                    log.warn("Requisicao para '{}' sem cabecalho de IP confiavel (segredo ausente ou invalido); "
+                            + "rate limit usara o IP da conexao: {}. ({} alertas similares omitidos no intervalo)",
+                            uri, remoteAddr, omitidos);
+                } else {
+                    log.warn("Requisicao para '{}' sem cabecalho de IP confiavel (segredo ausente ou invalido); "
+                            + "rate limit usara o IP da conexao: {}",
+                            uri, remoteAddr);
+                }
+            } else {
+                suppressedWarnCount.incrementAndGet();
+            }
+        } else {
+            suppressedWarnCount.incrementAndGet();
+        }
     }
 
     /**

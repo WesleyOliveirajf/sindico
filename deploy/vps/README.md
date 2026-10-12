@@ -54,6 +54,52 @@ Backup so na mesma VPS nao protege contra perda da maquina: configure copia off-
 cd /opt/sindico && git pull && cd deploy/vps && docker compose up -d --build
 ```
 
+## Rotacao do segredo do proxy (sem downtime)
+
+O segredo compartilhado (`APP_TRUSTED_PROXY_SECRET` na VPS e `PROXY_SHARED_SECRET` no Vercel)
+autentica o IP real repassado pelo middleware para rate limit e auditoria LGPD.
+
+O back-end aceita simultaneamente dois segredos (`APP_TRUSTED_PROXY_SECRET` e `APP_TRUSTED_PROXY_SECRET_PREVIOUS`),
+permitindo rotacionar sem que nenhum usuario perca seu bucket de rate limit nem receba 429 indevido.
+
+Procedimento passo a passo:
+
+1. **Gerar novo segredo:**
+   ```bash
+   openssl rand -hex 32
+   ```
+
+2. **Atualizar o back-end (VPS) mantendo o antigo como anterior:**
+   No arquivo `/opt/sindico/deploy/vps/.env`:
+   - Defina `APP_TRUSTED_PROXY_SECRET=<novo_segredo>`
+   - Defina `APP_TRUSTED_PROXY_SECRET_PREVIOUS=<segredo_antigo>`
+   Aplique a alteracao no container:
+   ```bash
+   cd /opt/sindico/deploy/vps && docker compose up -d
+   ```
+   *Neste momento, o back-end aceita tanto o novo segredo quanto o anterior.*
+
+3. **Atualizar o front-end (Vercel):**
+   - Acesse o painel do Vercel > Settings > Environment Variables.
+   - Atualize `PROXY_SHARED_SECRET` com `<novo_segredo>`.
+   - Realize o redeploy da aplicacao para que a borda passe a enviar o novo segredo.
+
+4. **Verificar os logs na VPS:**
+   ```bash
+   docker compose logs -f app
+   ```
+   Acompanhe os logs. Se houver descompasso de segredo, o back-end registrara alertas `WARN`
+   para rotas `/api/auth/*` informando que o cabecalho confiavel nao foi validado.
+   Certifique-se de que os logins estao normais e sem novos alertas.
+
+5. **Remover o segredo anterior da VPS:**
+   Apos a propagacao do Vercel, no arquivo `/opt/sindico/deploy/vps/.env`:
+   - Deixe `APP_TRUSTED_PROXY_SECRET_PREVIOUS=` vazio.
+   Aplique a alteracao:
+   ```bash
+   cd /opt/sindico/deploy/vps && docker compose up -d
+   ```
+
 ## Rollback
 
 Ver `docs/DEPLOY.md` (secao Rollback).

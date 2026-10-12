@@ -25,12 +25,14 @@ import org.springframework.web.bind.annotation.RestController;
 @WebMvcTest(controllers = ProxyClientIpRateLimitTest.PingController.class,
         properties = {
             "app.security.rate-limit.enabled=true",
-            "app.security.trusted-proxy-secret=" + ProxyClientIpRateLimitTest.SEGREDO
+            "app.security.trusted-proxy-secret=" + ProxyClientIpRateLimitTest.SEGREDO,
+            "app.security.trusted-proxy-secret-previous=" + ProxyClientIpRateLimitTest.SEGREDO_ANTERIOR
         })
 @Import({SecurityConfig.class, ProxyClientIpRateLimitTest.PingController.class})
 class ProxyClientIpRateLimitTest extends WebMvcSecurityTestBase {
 
     static final String SEGREDO = "segredo-de-teste-issue-35";
+    static final String SEGREDO_ANTERIOR = "segredo-anterior-rotacao-issue-36";
     private static final int LIMITE_LOGIN = 10;
 
     @RestController
@@ -57,6 +59,21 @@ class ProxyClientIpRateLimitTest extends WebMvcSecurityTestBase {
 
         // Outro usuario atras do mesmo proxy tem bucket proprio.
         login(proxy, SEGREDO, clienteB).andExpect(status().isOk());
+    }
+
+    @Test
+    void comSegredoAnteriorCorretoOBucketTambemEhDoIpDoCliente() throws Exception {
+        String proxy = "10.35.4.1";
+        String clienteA = "198.51.100.71";
+        String clienteB = "198.51.100.72";
+
+        for (int i = 0; i < LIMITE_LOGIN; i++) {
+            login(proxy, SEGREDO_ANTERIOR, clienteA).andExpect(status().isOk());
+        }
+        login(proxy, SEGREDO_ANTERIOR, clienteA).andExpect(status().isTooManyRequests());
+
+        // Outro usuario atras do mesmo proxy tem bucket proprio usando o segredo anterior.
+        login(proxy, SEGREDO_ANTERIOR, clienteB).andExpect(status().isOk());
     }
 
     @Test
