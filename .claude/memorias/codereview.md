@@ -57,6 +57,7 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 11. **jjwt 0.12.6 → 0.13.0:** os PRs #4, #5 e #6 estavam sem CI e eram conflitantes entre si. Criei um PR único, #45 (branch `deps/jjwt-0.13.0`, só o `pom.xml`, 3 versões). CI verde (back-end build + testes, front-end, preview Vercel). Mesclado (squash, commit `654252d`); #4, #5 e #6 fechados com comentário apontando para o #45. Uso no código restrito a `JwtService`.
 
 12. **Achados 4 a 7 tratados** (achado 8 sem alteração): commit `65baa00`, push em `d067a1a..65baa00`. Build pela IDE ok; `AuthServiceTest` 21/21 local (2 testes novos). `CadastroServiceTest` e `CadastroControllerTest` não rodaram local (JVM sem memória, crash dumps `hs_err_pid*.log` apagados da raiz). CI da `main` após o push: **success** (back-end build + testes e front-end).
+13. **Auditoria da regra "no máximo 3 `if` seguidos"** em `src/main/java` (159 `if` no total): **0 violações**. Contei `if` irmãos consecutivos no mesmo bloco e cadeias `else if` com mais de 3 ramos. Dois pontos no limite exato de 3, dentro da regra: `AnotacaoService` linhas 73 a 81 (filtros opcionais da `Specification`) e `SecurityConfig` linhas 52 a 62 (validação das variáveis obrigatórias de produção). Nenhuma alteração. Tests e front-end ficaram de fora da auditoria.
 
 ## Decisões e lições
 
@@ -76,5 +77,5 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 2. Revisar o PR #42 (rotação do segredo do proxy), único PR de feature ainda aberto.
 3. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
 4. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
-5. Auditar o restante do código pela regra de no máximo 3 `if` seguidos.
+5. Se a regra dos 3 `if` crescer para o front-end ou os testes, repetir a auditoria (o script contava blocos irmãos e cadeias `else if`).
 6. `CLAUDE.md` e `frontend/package-lock.json` seguem modificados e fora dos commits.
