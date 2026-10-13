@@ -24,11 +24,11 @@ Pontos de atenção:
 | 1 | `AuthApiController` | `catch (Exception)` + `Map.of` com mensagem nula gerava 500 | Corrigido (commit `74be065`) |
 | 2 | `UploadExceptionHandler` | Chave `message` vs `error` e advice sem seletor | Falso positivo: o Javadoc explica a ausência de seletor e o `api.js:82` lê `message` |
 | 3 | `MultipartConfig` | Bean desligava o binding de `spring.servlet.multipart.*` | Corrigido: bean removido, limites no `application.yml` |
-| 4 | `AuthService` | Exceção como fluxo de controle e strings de status duplicadas | Pendente: criar enum `StatusUsuario` e tipo de resultado |
-| 5 | `AuthService` | `findByEmailNormalizado` ignora status; outros fluxos usam lookup só de ativos | Pendente: alinhar os lookups |
-| 6 | `AuthService` | `cadastrar` + nova consulta por e-mail não é atômico | Pendente: `cadastrar` retornar o `Usuario` e tratar chave duplicada |
-| 7 | `LoginPage.jsx` | Senha permanece no estado após o cadastro; `setMode` pode limpar `success` | Pendente: verificar |
-| 8 | `api.js` | `loginComGoogle` retorna `{pendente}` como se fosse usuário | Pendente: erro tipado ou tratamento em todos os chamadores |
+| 4 | `AuthService` | Exceção como fluxo de controle e strings de status duplicadas | Corrigido (commit `65baa00`): enum `StatusUsuario`. `CadastroPendenteException` mantida de propósito (o controller já a traduz em 202; um tipo de resultado reescreveria controller e testes sem ganho) |
+| 5 | `AuthService` | `findByEmailNormalizado` ignora status; outros fluxos usam lookup só de ativos | Corrigido: renomeado para `findQualquerStatusPorEmailNormalizado` com Javadoc; o comportamento é intencional (login Google precisa reconhecer conta pendente/inativa) |
+| 6 | `AuthService` | `cadastrar` + nova consulta por e-mail não é atômico | Corrigido: `cadastrar` retorna o `Usuario`; corrida tratada com `DataIntegrityViolationException` (2 testes novos) |
+| 7 | `LoginPage.jsx` | Senha permanece no estado após o cadastro; `setMode` pode limpar `success` | Corrigido: senha e confirmação limpas. `setMode` não limpa `success` (só os botões de alternar limpam) |
+| 8 | `api.js` | `loginComGoogle` retorna `{pendente}` como se fosse usuário | Sem alteração: o único chamador (`LoginPage`) já trata `user?.pendente` antes de `onLogin` |
 
 Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada no restante do código).
 
@@ -56,6 +56,8 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 10. **Merge dos 4 PRs rebaseados** (CI verde em todos, mesclados um por vez): #29 (`setup-java` 6), #30 (`setup-node` 7), #8 (`vite` 8.3.4), #10 (`eslint-plugin-react-refresh` 0.5.7). CI da `main` após os merges: `success`; o run do #8 apareceu `cancelled` só por ser substituído pelo seguinte.
 11. **jjwt 0.12.6 → 0.13.0:** os PRs #4, #5 e #6 estavam sem CI e eram conflitantes entre si. Criei um PR único, #45 (branch `deps/jjwt-0.13.0`, só o `pom.xml`, 3 versões). CI verde (back-end build + testes, front-end, preview Vercel). Mesclado (squash, commit `654252d`); #4, #5 e #6 fechados com comentário apontando para o #45. Uso no código restrito a `JwtService`.
 
+12. **Achados 4 a 7 tratados** (achado 8 sem alteração): commit `65baa00`, push em `d067a1a..65baa00`. Build pela IDE ok; `AuthServiceTest` 21/21 local (2 testes novos). `CadastroServiceTest` e `CadastroControllerTest` não rodaram local (JVM sem memória, crash dumps `hs_err_pid*.log` apagados da raiz). CI da `main` após o push: **success** (back-end build + testes e front-end).
+
 ## Decisões e lições
 
 - **Falso positivo do review:** o achado 2 (`UploadExceptionHandler` sem seletor) é intencional. O multipart falha antes de existir handler, então um advice com `annotations = RestController.class` não se aplicaria. Conferir o Javadoc e os chamadores antes de aceitar um achado.
@@ -64,13 +66,15 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 - **Ambiente sem Maven:** `mvn` e `mvnw` não existem na máquina; a validação dos testes depende do CI do GitHub Actions.
 - **Dependabot:** merges seguidos geram conflitos e deploys `CANCELED` no Vercel. Mesclar em lotes pequenos ou pedir `@dependabot rebase`.
 - **jjwt:** os PRs #4, #5 e #6 precisam ser mesclados juntos (mesma versão 0.13.0 em api, impl e jackson).
+- **Memória da máquina:** rodar vários testes pela IDE seguidos derrubou a JVM (`insufficient memory`) e deixou `hs_err_pid*.log`/`replay_pid*.log` na raiz do projeto. Rodar uma classe por vez e apagar os dumps.
+- **Renomear para revelar intenção:** um achado de "inconsistência" era só nome enganoso; renomear o método resolveu sem mudar comportamento.
 - **Ações externas** (fechar PR, mesclar, push) só são feitas depois de confirmação explícita do usuário.
 
 ## Pendências
 
 1. **Testar um login real** após o deploy do jjwt 0.13.0: não há teste de integração do fluxo de login, só build e testes unitários.
-2. Resolver os achados 4 a 8 (enum `StatusUsuario`, lookups de e-mail, `cadastrar` atômico, `LoginPage`, `loginComGoogle`).
-3. Revisar o PR #42 (rotação do segredo do proxy), único PR de feature ainda aberto.
-4. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
-5. Não há Maven local (`mvn`/`mvnw` ausentes): testes só rodam no CI.
-6. Commitar `.claude/memorias/codereview.md` (ainda sem commit); `CLAUDE.md` segue modificado e fora dos commits.
+2. Revisar o PR #42 (rotação do segredo do proxy), único PR de feature ainda aberto.
+3. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
+4. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
+5. Auditar o restante do código pela regra de no máximo 3 `if` seguidos.
+6. `CLAUDE.md` e `frontend/package-lock.json` seguem modificados e fora dos commits.
