@@ -31,7 +31,7 @@ Gere uma chave segura e de alta entropia (32 bytes hexadecimais):
 ```bash
 openssl rand -hex 32
 ```
-*Exemplo de saída:* `e8b2c45d6f1a8e932b7c41d0f5e6a98213b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8`
+*Exemplo de saída:* uma string hexadecimal de 64 caracteres
 
 ---
 
@@ -52,8 +52,8 @@ Atualize as variáveis:
 
 *Exemplo de configuração transitória:*
 ```env
-APP_TRUSTED_PROXY_SECRET=e8b2c45d6f1a8e932b7c41d0f5e6a98213b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8
-APP_TRUSTED_PROXY_SECRET_PREVIOUS=segredo_antigo_que_estava_em_uso
+APP_TRUSTED_PROXY_SECRET=<novo_segredo_gerado_no_passo_1>
+APP_TRUSTED_PROXY_SECRET_PREVIOUS=<segredo_antigo_que_estava_em_uso>
 ```
 
 Reinicie a aplicação para carregar as novas variáveis:

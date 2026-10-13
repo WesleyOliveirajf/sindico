@@ -6,13 +6,22 @@
 #    ./tunnel-vps.sh          → abre tunnel em background
 #    ./tunnel-vps.sh stop     → fecha o tunnel
 #    ./tunnel-vps.sh status   → verifica se está ativo
+#
+#  Variáveis de ambiente (nada de host/usuário real no repositório):
+#    VPS_HOST      (obrigatória no start) IP ou hostname da VPS
+#    VPS_USER      (obrigatória no start) usuário SSH não-root
+#    VPS_SSH_PORT  (opcional, padrão 22)
+#    LOCAL_PORT    (opcional, padrão 5433)
+#    REMOTE_PORT   (opcional, padrão 5433)
+#
+#  Exemplo: VPS_HOST=<VPS_IP> VPS_USER=<usuario> ./tunnel-vps.sh
 # ─────────────────────────────────────────────────────────────
 
-VPS_HOST="76.13.163.235"
-VPS_USER="root"
-VPS_SSH_PORT="22"
-LOCAL_PORT="5433"
-REMOTE_PORT="5433"
+VPS_HOST="${VPS_HOST:-}"
+VPS_USER="${VPS_USER:-}"
+VPS_SSH_PORT="${VPS_SSH_PORT:-22}"
+LOCAL_PORT="${LOCAL_PORT:-5433}"
+REMOTE_PORT="${REMOTE_PORT:-5433}"
 PID_FILE="/tmp/sindico-tunnel.pid"
 
 start() {
@@ -21,12 +30,22 @@ start() {
     return
   fi
 
+  if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ]; then
+    echo "❌ Defina VPS_HOST e VPS_USER (ex.: VPS_HOST=<VPS_IP> VPS_USER=<usuario> $0)"
+    exit 1
+  fi
+  if [ "$VPS_USER" = "root" ]; then
+    echo "❌ Não use root no túnel SSH. Crie e use um usuário não-root."
+    exit 1
+  fi
+
   echo "🔌 Abrindo SSH tunnel: localhost:${LOCAL_PORT} → ${VPS_HOST}:${REMOTE_PORT} ..."
   ssh -f -N \
     -L "${LOCAL_PORT}:127.0.0.1:${REMOTE_PORT}" \
     -p "${VPS_SSH_PORT}" \
     "${VPS_USER}@${VPS_HOST}" \
-    -o StrictHostKeyChecking=no \
+    -o StrictHostKeyChecking=accept-new \
+    -o ExitOnForwardFailure=yes \
     -o ServerAliveInterval=30 \
     -o ServerAliveCountMax=3
 

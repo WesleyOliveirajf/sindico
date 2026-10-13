@@ -6,6 +6,10 @@
 
 Este documento contém **apenas informações de arquitetura e estrutura**. Credenciais devem estar **exclusivamente** em arquivos `.env` que estão no `.gitignore`.
 
+**Também não registre aqui IPs, hostnames, usuários, portas ou URLs administrativas reais** (VPS, pgAdmin, SSH). Use placeholders como `<VPS_IP>` e `<DB_USER>`; os valores reais ficam em um cofre de senhas ou na documentação privada da equipe.
+
+> **Nota:** a topologia de produção vigente (Supabase PostgreSQL + back-end na VPS via Docker Compose/Traefik) está em [`DEPLOY.md`](DEPLOY.md). Este documento descreve o Postgres nativo da VPS e pode estar desatualizado em relação a ela.
+
 ---
 
 ## 🏗️ Arquitetura de Banco de Dados
@@ -15,7 +19,7 @@ Este documento contém **apenas informações de arquitetura e estrutura**. Cred
 | Ambiente | Localização | Configuração |
 |----------|-------------|--------------|
 | **Desenvolvimento** | Local (máquina do desenvolvedor) | Ver `.env.example` |
-| **VPS** | Hostinger VPS `76.13.163.235` | PostgreSQL 16 nativo |
+| **VPS** | Hostinger VPS `<VPS_IP>` | PostgreSQL 16 nativo |
 | **Produção** | (a definir) | Ver `application.yml` profile `prod` |
 
 ---
@@ -25,31 +29,27 @@ Este documento contém **apenas informações de arquitetura e estrutura**. Cred
 ### PostgreSQL Nativo
 
 - **Versão:** PostgreSQL 16
-- **IP da VPS:** `76.13.163.235` (IPv4) / `2a02:4780:6e:cebf::1` (IPv6)
-- **Porta:** `5433` (não padrão - porta 5432 ocupada por container Docker)
-- **IPs de escuta:**
-  - `127.0.0.1` (localhost)
-  - `172.17.0.1` (Docker bridge padrão)
-  - `172.24.0.1` (rede Docker do pgAdmin)
-  - `::1` (IPv6 localhost)
+- **IP da VPS:** `<VPS_IP>` (IPv4) / `<VPS_IPV6>` (IPv6)
+- **Porta:** `<DB_PORT>` (não padrão - a porta 5432 é ocupada por um container Docker)
+- **Escuta apenas em interfaces internas:** localhost (IPv4/IPv6), bridge Docker padrão e rede Docker do pgAdmin. Nunca em interface pública.
 
 ### Acesso via pgAdmin
 
-- **URL:** `http://76.13.163.235:5050/browser/`
-- **Host de conexão:** `172.24.0.1` (gateway da rede Docker do container pgAdmin)
-- **Porta:** `5433`
+- **Acesso:** somente por túnel SSH (`ssh -L 5050:localhost:5050 <usuario>@<VPS_IP>`) ou VPN; a porta do pgAdmin não deve ficar pública.
+- **Host de conexão:** gateway da rede Docker do container pgAdmin
+- **Porta:** `<DB_PORT>`
 - **Database:** `sindico`
-- **Username:** `sindico_user`
+- **Username:** `<DB_USER>` (ver cofre de senhas)
 - **Password:** `(ver .env.vps - NUNCA commitar)`
 
 ### Arquivos de Configuração no Servidor
 
 ```
 /etc/postgresql/16/main/postgresql.conf
-  └─ listen_addresses = 'localhost,172.17.0.1,172.24.0.1'
+  └─ listen_addresses = 'localhost,<IPs_internos_docker>'
 
 /etc/postgresql/16/main/pg_hba.conf
-  └─ Regras de acesso para redes Docker (172.17.0.0/16 e 172.24.0.0/16)
+  └─ Regras de acesso restritas às redes Docker internas (scram-sha-256)
 
 /var/lib/postgresql/16/main/
   └─ Diretório de dados (data_directory)
@@ -101,7 +101,7 @@ Este documento contém **apenas informações de arquitetura e estrutura**. Cred
 ```bash
 # Banco de dados
 DB_HOST=           # Endereço do servidor PostgreSQL
-DB_PORT=           # Porta (5433 no VPS)
+DB_PORT=           # Porta do PostgreSQL
 DB_NAME=           # Nome do banco (sindico)
 DB_USERNAME=       # Usuário do banco
 DB_PASSWORD=       # Senha (NUNCA commitar)
@@ -122,10 +122,10 @@ APP_ADMIN_PASSWORD=    # Senha admin (NUNCA commitar)
 **Como rotacionar:**
 ```bash
 # Conectar ao PostgreSQL
-sudo -u postgres psql -h 127.0.0.1 -p 5433
+sudo -u postgres psql -h 127.0.0.1 -p <DB_PORT>
 
 # Alterar senha do usuário
-ALTER USER sindico_user WITH PASSWORD 'nova_senha_forte_aqui';
+ALTER USER <DB_USER> WITH PASSWORD '<nova_senha_forte>';
 
 # Atualizar .env.vps
 # Reiniciar aplicação
@@ -148,7 +148,7 @@ spring:
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/sindico
+    url: jdbc:postgresql://localhost:${DB_PORT}/sindico
   flyway:
     baseline-on-migrate: true
     baseline-version: 3
@@ -158,7 +158,7 @@ spring:
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5433}/${DB_NAME}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
 ```
 
 ### Como Conectar via SSH Tunnel
@@ -182,7 +182,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=vps
 
 ### PostgreSQL
 
-- ✅ Usuário dedicado com permissões mínimas (`sindico_user`)
+- ✅ Usuário dedicado com permissões mínimas (`<DB_USER>`)
 - ✅ Autenticação `scram-sha-256` (não MD5)
 - ✅ Restrição de acesso por IP/rede no `pg_hba.conf`
 - ✅ Não exposto publicamente na internet
@@ -216,11 +216,11 @@ mvn spring-boot:run -Dspring-boot.run.profiles=vps
 ### Backup Manual
 
 ```bash
-# Conectar na VPS
-ssh root@76.13.163.235
+# Conectar na VPS (usuário não-root, autenticação por chave)
+ssh <usuario>@<VPS_IP>
 
-# Fazer backup
-PGPASSWORD='senha_aqui' pg_dump -h 127.0.0.1 -p 5433 -U sindico_user -d sindico \
+# Fazer backup (a senha vem de ~/.pgpass ou da variável PGPASSWORD exportada na sessão, nunca digitada no comando)
+pg_dump -h 127.0.0.1 -p <DB_PORT> -U <DB_USER> -d sindico \
   --no-owner --no-acl -F c -f /tmp/backup_sindico_$(date +%Y%m%d_%H%M%S).dump
 
 # Transferir backup para local seguro
@@ -230,11 +230,11 @@ PGPASSWORD='senha_aqui' pg_dump -h 127.0.0.1 -p 5433 -U sindico_user -d sindico 
 ### Restauração
 
 ```bash
-# Conectar na VPS
-ssh root@76.13.163.235
+# Conectar na VPS (usuário não-root, autenticação por chave)
+ssh <usuario>@<VPS_IP>
 
-# Restaurar backup
-PGPASSWORD='senha_aqui' pg_restore -h 127.0.0.1 -p 5433 -U sindico_user -d sindico_restore \
+# Restaurar backup (senha via ~/.pgpass ou PGPASSWORD exportada na sessão)
+pg_restore -h 127.0.0.1 -p <DB_PORT> -U <DB_USER> -d sindico_restore \
   --no-owner --no-acl /tmp/backup_sindico_YYYYMMDD_HHMMSS.dump
 ```
 
@@ -242,7 +242,7 @@ PGPASSWORD='senha_aqui' pg_restore -h 127.0.0.1 -p 5433 -U sindico_user -d sindi
 
 ```bash
 # Conectar no PostgreSQL
-PGPASSWORD='senha' psql -h 127.0.0.1 -p 5433 -U sindico_user -d sindico
+psql -h 127.0.0.1 -p <DB_PORT> -U <DB_USER> -d sindico
 
 # Verificar conexões ativas
 SELECT count(*) FROM pg_stat_activity WHERE datname = 'sindico';
@@ -288,8 +288,8 @@ sudo cat /etc/postgresql/16/main/postgresql.conf | grep listen_addresses
 sudo cat /etc/postgresql/16/main/pg_hba.conf
 
 # Resetar senha se necessário
-sudo -u postgres psql -h 127.0.0.1 -p 5433
-ALTER USER sindico_user WITH PASSWORD 'nova_senha';
+sudo -u postgres psql -h 127.0.0.1 -p <DB_PORT>
+ALTER USER <DB_USER> WITH PASSWORD '<nova_senha_forte>';
 ```
 
 ### Problema: pgAdmin não conecta
@@ -297,8 +297,8 @@ ALTER USER sindico_user WITH PASSWORD 'nova_senha';
 **Causa:** Host incorreto ou rede Docker errada.
 
 **Solução:**
-- ✅ Usar host `172.24.0.1` (gateway da rede do container pgAdmin)
-- ✅ Usar porta `5433`
+- ✅ Usar o host do gateway da rede Docker do container pgAdmin
+- ✅ Usar a porta `<DB_PORT>`
 - ✅ Verificar que PostgreSQL está escutando nesse IP
 
 ---

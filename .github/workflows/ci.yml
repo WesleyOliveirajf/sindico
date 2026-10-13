@@ -35,6 +35,19 @@ jobs:
           path: target/surefire-reports
           retention-days: 7
 
+  secrets:
+    name: Varredura de segredos (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historico completo: segredos antigos continuam vazados mesmo apos remocao.
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   frontend:
     name: Front-end (lint + build)
     runs-on: ubuntu-latest
