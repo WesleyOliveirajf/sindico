@@ -5,6 +5,7 @@ import br.com.sindico.app.cadastro.CadastroService;
 import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.JwtService;
 import br.com.sindico.app.security.UsuarioTenantPrincipal;
+import br.com.sindico.app.usuario.StatusUsuario;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,8 +31,6 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private static final long INTERVALO_ULTIMO_ACESSO_MIN = 5;
-    private static final String STATUS_ATIVO = "ativo";
-    private static final String STATUS_PENDENTE = "pendente";
 
     private final AuthenticationManager authenticationManager;
     private final CadastroService cadastroService;
@@ -109,7 +109,7 @@ public class AuthService {
                 : identidade.nome();
 
         String emailNorm = email.trim().toLowerCase();
-        Usuario usuario = usuarioRepository.findByEmailNormalizado(emailNorm)
+        Usuario usuario = usuarioRepository.findQualquerStatusPorEmailNormalizado(emailNorm)
                 .orElseGet(() -> cadastrarViaGoogle(emailNorm, email, nome, body, ipAddress, userAgent));
         exigirContaAtiva(usuario);
 
@@ -118,10 +118,10 @@ public class AuthService {
 
     /** Cadastros novos nascem pendentes; so contas ativas recebem token. */
     private static void exigirContaAtiva(Usuario usuario) {
-        if (STATUS_PENDENTE.equals(usuario.getStatus())) {
+        if (StatusUsuario.PENDENTE.corresponde(usuario.getStatus())) {
             throw new CadastroPendenteException();
         }
-        if (!STATUS_ATIVO.equals(usuario.getStatus())) {
+        if (!StatusUsuario.ATIVO.corresponde(usuario.getStatus())) {
             throw new IllegalArgumentException("Conta inativa. Fale com o administrador.");
         }
     }
@@ -136,10 +136,13 @@ public class AuthService {
         form.setConfirmarSenha(form.getSenha());
         form.setAceitouTermos(body.aceitouTermos());
         form.setAceitouMarketing(body.aceitouMarketing());
-        cadastroService.cadastrar(form, ipAddress, userAgent, "google");
-
-        return usuarioRepository.findByEmailNormalizado(emailNorm)
-                .orElseThrow(() -> new IllegalStateException("Erro ao recuperar usuário criado via Google."));
+        try {
+            return cadastroService.cadastrar(form, ipAddress, userAgent, "google");
+        } catch (DataIntegrityViolationException corrida) {
+            // Primeiro login simultaneo do mesmo e-mail: outra requisicao ja criou a conta.
+            return usuarioRepository.findQualquerStatusPorEmailNormalizado(emailNorm)
+                    .orElseThrow(() -> new IllegalStateException("Erro ao recuperar usuário criado via Google.", corrida));
+        }
     }
 
     private void registrarUltimoAcesso(UUID usuarioId) {

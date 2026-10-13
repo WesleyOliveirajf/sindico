@@ -13,8 +13,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     @Query("SELECT u FROM Usuario u WHERE LOWER(TRIM(u.email)) = :emailNorm AND u.status = 'ativo'")
     Optional<Usuario> findAtivoPorEmailNormalizado(@Param("emailNorm") String emailNorm);
 
+    /** Ignora o status de proposito: usado onde conta pendente/inativa precisa ser reconhecida (ex.: login Google). */
     @Query("SELECT u FROM Usuario u WHERE LOWER(TRIM(u.email)) = :emailNorm")
-    Optional<Usuario> findByEmailNormalizado(@Param("emailNorm") String emailNorm);
+    Optional<Usuario> findQualquerStatusPorEmailNormalizado(@Param("emailNorm") String emailNorm);
 
     @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE LOWER(TRIM(u.email)) = :emailNorm")
     boolean existsByEmailNormalizado(@Param("emailNorm") String emailNorm);

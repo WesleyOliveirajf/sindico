@@ -1,6 +1,7 @@
 package br.com.sindico.app.admin;
 
 import br.com.sindico.app.condominio.CondominioRepository;
+import br.com.sindico.app.usuario.StatusUsuario;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
@@ -18,9 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AdminService {
 
-    private static final String STATUS_ATIVO = "ativo";
-    private static final String STATUS_INATIVO = "inativo";
-    private static final String STATUS_PENDENTE = "pendente";
     private static final long JANELA_ONLINE_MIN = 15;
 
     private final UsuarioRepository usuarioRepository;
@@ -40,9 +38,9 @@ public class AdminService {
     public Map<String, Object> estatisticas() {
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("totalUsuarios", usuarioRepository.count());
-        stats.put("pendentes", usuarioRepository.countByStatus(STATUS_PENDENTE));
-        stats.put("ativos", usuarioRepository.countByStatus(STATUS_ATIVO));
-        stats.put("inativos", usuarioRepository.countByStatus(STATUS_INATIVO));
+        stats.put("pendentes", usuarioRepository.countByStatus(StatusUsuario.PENDENTE.valor()));
+        stats.put("ativos", usuarioRepository.countByStatus(StatusUsuario.ATIVO.valor()));
+        stats.put("inativos", usuarioRepository.countByStatus(StatusUsuario.INATIVO.valor()));
         stats.put("totalCondominios", condominioRepository.count());
         stats.put("onlineAgora",
                 usuarioRepository.countOnlineRecentemente(LocalDateTime.now().minusMinutes(JANELA_ONLINE_MIN)));
@@ -78,24 +76,24 @@ public class AdminService {
     /** @return false se o usuario nao existe */
     @Transactional
     public boolean aprovar(UUID id) {
-        return alterarStatus(id, STATUS_ATIVO);
+        return alterarStatus(id, StatusUsuario.ATIVO);
     }
 
     /** @return false se o usuario nao existe */
     @Transactional
     public boolean rejeitar(UUID id) {
-        return alterarStatus(id, STATUS_INATIVO);
+        return alterarStatus(id, StatusUsuario.INATIVO);
     }
 
     /** @return false se o usuario nao existe */
     @Transactional
     public boolean reativar(UUID id) {
-        return alterarStatus(id, STATUS_ATIVO);
+        return alterarStatus(id, StatusUsuario.ATIVO);
     }
 
-    private boolean alterarStatus(UUID id, String status) {
+    private boolean alterarStatus(UUID id, StatusUsuario status) {
         return usuarioRepository.findById(id).map(u -> {
-            u.setStatus(status);
+            u.setStatus(status.valor());
             usuarioRepository.save(u);
             return true;
         }).orElse(false);

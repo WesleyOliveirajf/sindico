@@ -3,6 +3,7 @@ package br.com.sindico.app.cadastro;
 import br.com.sindico.app.condominio.Condominio;
 import br.com.sindico.app.condominio.CondominioRepository;
 import br.com.sindico.app.security.PasswordPolicy;
+import br.com.sindico.app.usuario.StatusUsuario;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
@@ -41,7 +42,7 @@ public class CadastroService {
      * Qualquer falha faz rollback completo.
      */
     @Transactional
-    public void cadastrar(CadastroForm form, String ipAddress, String userAgent, String origem) {
+    public Usuario cadastrar(CadastroForm form, String ipAddress, String userAgent, String origem) {
         String nome = textoObrigatorio(form.getNome(), "Informe seu nome");
         String emailNorm = textoObrigatorio(form.getEmail(), "Informe o e-mail").toLowerCase(Locale.ROOT);
         String nomeCondominio = textoObrigatorio(form.getNomeCondominio(), "Informe o nome do condominio");
@@ -62,7 +63,7 @@ public class CadastroService {
         usuario.setEmail(emailNorm);
         usuario.setSenhaHash(passwordEncoder.encode(form.getSenha()));
         // Novos cadastros ficam pendentes ate aprovacao pelo admin
-        usuario.setStatus("pendente");
+        usuario.setStatus(StatusUsuario.PENDENTE.valor());
         usuario = usuarioRepository.save(usuario);
 
         // 2. Cria condominio
@@ -87,6 +88,7 @@ public class CadastroService {
         consentimento.setMarketingConsent(form.isAceitouMarketing());
         consentimento.setOrigem(origem);
         usuarioConsentimentoRepository.save(consentimento);
+        return usuario;
     }
 
     private static String textoObrigatorio(String valor, String mensagem) {

@@ -153,6 +153,8 @@ function LoginPage({ onLogin }) {
         await register({ nome, email, nomeCondominio, senha, confirmarSenha, aceitouTermos, aceitouMarketing })
         // Cadastro nasce pendente: login imediato falharia com "Credenciais inválidas".
         setSuccess('Cadastro realizado! Aguarde a aprovação do administrador para acessar.')
+        setSenha('')
+        setConfirmarSenha('')
         setMode('login')
         return
       }

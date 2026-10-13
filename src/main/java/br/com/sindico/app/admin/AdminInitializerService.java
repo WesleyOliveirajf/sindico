@@ -2,6 +2,7 @@ package br.com.sindico.app.admin;
 
 import br.com.sindico.app.condominio.Condominio;
 import br.com.sindico.app.condominio.CondominioRepository;
+import br.com.sindico.app.usuario.StatusUsuario;
 import br.com.sindico.app.usuario.Usuario;
 import br.com.sindico.app.usuario.UsuarioCondominio;
 import br.com.sindico.app.usuario.UsuarioCondominioRepository;
@@ -62,7 +63,7 @@ public class AdminInitializerService implements CommandLineRunner {
 
         if (usuarioRepository.existsByEmailNormalizado(emailNorm)) {
             // Conta ja existe — verificar se ja tem vinculo ADMIN
-            admin = usuarioRepository.findByEmailNormalizado(emailNorm).orElse(null);
+            admin = usuarioRepository.findQualquerStatusPorEmailNormalizado(emailNorm).orElse(null);
             if (admin == null) {
                 log.warn("[Admin] Inconsistencia: email existe mas usuario nao encontrado.");
                 return;
@@ -90,7 +91,7 @@ public class AdminInitializerService implements CommandLineRunner {
         }
 
         // Garantir status ativo
-        admin.setStatus("ativo");
+        admin.setStatus(StatusUsuario.ATIVO.valor());
         admin = usuarioRepository.save(admin);
 
         // Criar (ou reusar) condominio reservado para o admin
