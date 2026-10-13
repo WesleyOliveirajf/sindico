@@ -59,6 +59,8 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 12. **Achados 4 a 7 tratados** (achado 8 sem alteração): commit `65baa00`, push em `d067a1a..65baa00`. Build pela IDE ok; `AuthServiceTest` 21/21 local (2 testes novos). `CadastroServiceTest` e `CadastroControllerTest` não rodaram local (JVM sem memória, crash dumps `hs_err_pid*.log` apagados da raiz). CI da `main` após o push: **success** (back-end build + testes e front-end).
 13. **Auditoria da regra "no máximo 3 `if` seguidos"** em `src/main/java` (159 `if` no total): **0 violações**. Contei `if` irmãos consecutivos no mesmo bloco e cadeias `else if` com mais de 3 ramos. Dois pontos no limite exato de 3, dentro da regra: `AnotacaoService` linhas 73 a 81 (filtros opcionais da `Specification`) e `SecurityConfig` linhas 52 a 62 (validação das variáveis obrigatórias de produção). Nenhuma alteração. Tests e front-end ficaram de fora da auditoria.
 
+14. **Revisão do PR #42** (rotação do segredo do proxy, issue #36): revisão postada como comentário no PR. Veredito: aprovável com ajustes pequenos; a lógica de segurança estava correta (`MessageDigest.isEqual` sem curto-circuito, filtro inativo sem segredo, cooldown de log seguro contra concorrência). Ajustes aplicados em commit `4406cba` na branch do PR: (1) doc sem a promessa de "zero downtime", com aviso de que `docker compose up -d` recria o container; (2) emergência sem sugerir desligar o rate limit de login; (3) Javadoc com HTML válido e sem acentos; (4) `ListAppender` movido para `@BeforeEach`/`@AfterEach`; (5) dois testes novos (segredo válido sem IP ou com IP inválido alerta e mantém `remoteAddr`). `TrustedProxyClientIpFilterTest` 30/30 local. CI do PR verde; mesclado (squash, commit `faf501f`), issue #36 fechada automaticamente. CI da `main` após o merge: **success**. Fica manual: reescrever a descrição do PR (caractere de controle corrompido e resumo do Sourcery repetido); o PR já está mesclado.
+
 ## Decisões e lições
 
 - **Falso positivo do review:** o achado 2 (`UploadExceptionHandler` sem seletor) é intencional. O multipart falha antes de existir handler, então um advice com `annotations = RestController.class` não se aplicaria. Conferir o Javadoc e os chamadores antes de aceitar um achado.
@@ -69,13 +71,15 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 - **jjwt:** os PRs #4, #5 e #6 precisam ser mesclados juntos (mesma versão 0.13.0 em api, impl e jackson).
 - **Memória da máquina:** rodar vários testes pela IDE seguidos derrubou a JVM (`insufficient memory`) e deixou `hs_err_pid*.log`/`replay_pid*.log` na raiz do projeto. Rodar uma classe por vez e apagar os dumps.
 - **Renomear para revelar intenção:** um achado de "inconsistência" era só nome enganoso; renomear o método resolveu sem mudar comportamento.
+- **PR de terceiros no próprio repositório:** a revisão virou comentário no PR e os ajustes foram um commit na branch dele, com `git stash` só dos arquivos locais não relacionados (`CLAUDE.md`, `package-lock.json`) para poder trocar de branch. Voltar para a `main` e restaurar o stash ao final.
+- **Scripts com aspas e heredoc:** um script Python longo passado por heredoc no shell quebrou por aspas; gravar o script em arquivo (scratchpad) e executar.
 - **Ações externas** (fechar PR, mesclar, push) só são feitas depois de confirmação explícita do usuário.
 
 ## Pendências
 
 1. **Testar um login real** após o deploy do jjwt 0.13.0: não há teste de integração do fluxo de login, só build e testes unitários.
-2. Revisar o PR #42 (rotação do segredo do proxy), único PR de feature ainda aberto.
-3. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
-4. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
-5. Se a regra dos 3 `if` crescer para o front-end ou os testes, repetir a auditoria (o script contava blocos irmãos e cadeias `else if`).
+2. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
+3. Rotação do segredo do proxy: `APP_TRUSTED_PROXY_SECRET_PREVIOUS` só deve ser preenchida durante uma rotação (procedimento em `deploy/vps/ROTACAO_SEGREDO_PROXY.md`).
+4. Issues abertas continuam válidas; #12 e #13 (P1 de segurança) dependem de ação do dono.
+5. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
 6. `CLAUDE.md` e `frontend/package-lock.json` seguem modificados e fora dos commits.
