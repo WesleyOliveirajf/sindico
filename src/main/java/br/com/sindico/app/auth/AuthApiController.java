@@ -64,14 +64,17 @@ public class AuthApiController {
         try {
             return ResponseEntity.ok(
                     authService.loginComGoogle(body, request.getRemoteAddr(), request.getHeader("User-Agent")));
+        } catch (CadastroPendenteException ex) {
+            return ResponseEntity.accepted().body(Map.of("message", ex.getMessage(), "pendente", true));
         } catch (GoogleIdentityVerifier.TokenInvalidoException ex) {
             return erro(401, ex.getMessage());
-        } catch (Exception ex) {
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             return erro(400, ex.getMessage());
         }
     }
 
     private static ResponseEntity<Map<String, Object>> erro(int status, String mensagem) {
-        return ResponseEntity.status(status).body(Map.of("error", mensagem, "status", status));
+        String texto = mensagem != null ? mensagem : "Requisicao invalida";
+        return ResponseEntity.status(status).body(Map.of("error", texto, "status", status));
     }
 }

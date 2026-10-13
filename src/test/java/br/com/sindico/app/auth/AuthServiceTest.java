@@ -226,7 +226,7 @@ class AuthServiceTest {
     void loginComGoogleEmUsuarioExistenteNaoCadastraDeNovoEEmiteToken() {
         when(googleIdentityVerifier.verificar("tok"))
                 .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("  Maria@Cond.com ", "Maria"));
-        when(usuarioRepository.findAtivoPorEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
         stubVinculo("sindico");
         stubPayload();
         when(jwtService.generateToken(any())).thenReturn("jwt-google");
@@ -238,16 +238,16 @@ class AuthServiceTest {
     }
 
     @Test
-    void loginComGoogleCadastraUsuarioNovoComNomeDoEmailQuandoSemNome() {
+    void loginComGoogleCadastraUsuarioNovoComoPendenteSemEmitirToken() {
+        usuario.setStatus("pendente");
         when(googleIdentityVerifier.verificar("tok"))
                 .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("novo@cond.com", null));
-        when(usuarioRepository.findAtivoPorEmailNormalizado("novo@cond.com"))
+        when(usuarioRepository.findByEmailNormalizado("novo@cond.com"))
                 .thenReturn(Optional.empty(), Optional.of(usuario));
-        stubVinculo("sindico");
-        stubPayload();
-        when(jwtService.generateToken(any())).thenReturn("jwt");
 
-        service.loginComGoogle(new GoogleAuthDto("tok", true, true), "1.1.1.1", "UA");
+        assertThatThrownBy(() -> service.loginComGoogle(new GoogleAuthDto("tok", true, true), "1.1.1.1", "UA"))
+                .isInstanceOf(CadastroPendenteException.class)
+                .hasMessageContaining("aprovação");
 
         ArgumentCaptor<CadastroForm> form = ArgumentCaptor.forClass(CadastroForm.class);
         verify(cadastroService).cadastrar(form.capture(), eq("1.1.1.1"), eq("UA"), eq("google"));
@@ -255,13 +255,42 @@ class AuthServiceTest {
         assertThat(form.getValue().getNomeCondominio()).isEqualTo("Condomínio de novo");
         assertThat(form.getValue().getSenha()).isEqualTo(form.getValue().getConfirmarSenha());
         assertThat(form.getValue().isAceitouMarketing()).isTrue();
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void loginComGoogleEmContaPendenteNaoRecadastraNemEmiteToken() {
+        usuario.setStatus("pendente");
+        when(googleIdentityVerifier.verificar("tok"))
+                .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("maria@cond.com", "Maria"));
+        when(usuarioRepository.findByEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.loginComGoogle(new GoogleAuthDto("tok", true, false), "ip", "ua"))
+                .isInstanceOf(CadastroPendenteException.class);
+
+        verify(cadastroService, never()).cadastrar(any(), any(), any(), any());
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void loginComGoogleEmContaInativaEhRecusadoSemToken() {
+        usuario.setStatus("inativo");
+        when(googleIdentityVerifier.verificar("tok"))
+                .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("maria@cond.com", "Maria"));
+        when(usuarioRepository.findByEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
+
+        assertThatThrownBy(() -> service.loginComGoogle(new GoogleAuthDto("tok", true, false), "ip", "ua"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Conta inativa");
+
+        verify(jwtService, never()).generateToken(any());
     }
 
     @Test
     void loginComGoogleFalhaQuandoUsuarioNaoExisteAposCadastro() {
         when(googleIdentityVerifier.verificar("tok"))
                 .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("novo@cond.com", "Novo"));
-        when(usuarioRepository.findAtivoPorEmailNormalizado("novo@cond.com")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmailNormalizado("novo@cond.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.loginComGoogle(new GoogleAuthDto("tok", true, false), "ip", "ua"))
                 .isInstanceOf(IllegalStateException.class)
@@ -272,7 +301,7 @@ class AuthServiceTest {
     void loginComGoogleFalhaQuandoUsuarioNaoTemCondominio() {
         when(googleIdentityVerifier.verificar("tok"))
                 .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("maria@cond.com", "Maria"));
-        when(usuarioRepository.findAtivoPorEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
         when(usuarioCondominioRepository.findByUsuario_IdOrderByCondominio_NomeAsc(usuarioId)).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.loginComGoogle(new GoogleAuthDto("tok", true, false), "ip", "ua"))
@@ -286,7 +315,7 @@ class AuthServiceTest {
     void loginComGoogleUsaPerfilUsuarioQuandoVinculoSemPerfil() {
         when(googleIdentityVerifier.verificar("tok"))
                 .thenReturn(new GoogleIdentityVerifier.GoogleIdentity("maria@cond.com", "Maria"));
-        when(usuarioRepository.findAtivoPorEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByEmailNormalizado("maria@cond.com")).thenReturn(Optional.of(usuario));
         stubVinculo("  ");
         stubPayload();
         when(jwtService.generateToken(any())).thenReturn("jwt");

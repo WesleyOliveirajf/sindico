@@ -29,6 +29,8 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private static final long INTERVALO_ULTIMO_ACESSO_MIN = 5;
+    private static final String STATUS_ATIVO = "ativo";
+    private static final String STATUS_PENDENTE = "pendente";
 
     private final AuthenticationManager authenticationManager;
     private final CadastroService cadastroService;
@@ -107,10 +109,21 @@ public class AuthService {
                 : identidade.nome();
 
         String emailNorm = email.trim().toLowerCase();
-        Usuario usuario = usuarioRepository.findAtivoPorEmailNormalizado(emailNorm)
+        Usuario usuario = usuarioRepository.findByEmailNormalizado(emailNorm)
                 .orElseGet(() -> cadastrarViaGoogle(emailNorm, email, nome, body, ipAddress, userAgent));
+        exigirContaAtiva(usuario);
 
         return payloadComToken(montarPrincipal(usuario));
+    }
+
+    /** Cadastros novos nascem pendentes; so contas ativas recebem token. */
+    private static void exigirContaAtiva(Usuario usuario) {
+        if (STATUS_PENDENTE.equals(usuario.getStatus())) {
+            throw new CadastroPendenteException();
+        }
+        if (!STATUS_ATIVO.equals(usuario.getStatus())) {
+            throw new IllegalArgumentException("Conta inativa. Fale com o administrador.");
+        }
     }
 
     private Usuario cadastrarViaGoogle(
@@ -125,7 +138,7 @@ public class AuthService {
         form.setAceitouMarketing(body.aceitouMarketing());
         cadastroService.cadastrar(form, ipAddress, userAgent, "google");
 
-        return usuarioRepository.findAtivoPorEmailNormalizado(emailNorm)
+        return usuarioRepository.findByEmailNormalizado(emailNorm)
                 .orElseThrow(() -> new IllegalStateException("Erro ao recuperar usuário criado via Google."));
     }
 

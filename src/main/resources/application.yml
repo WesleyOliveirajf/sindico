@@ -5,6 +5,11 @@ spring:
     default: supabase
   thymeleaf:
     cache: false
+  servlet:
+    multipart:
+      # Alinhado a app.storage.max-file-size-bytes; folga de 1 MB para os demais campos do formulario.
+      max-file-size: ${APP_MAX_FILE_SIZE_BYTES:10485760}
+      max-request-size: ${APP_MAX_REQUEST_SIZE_BYTES:11534336}
   jpa:
     open-in-view: false
     hibernate:

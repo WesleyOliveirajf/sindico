@@ -71,6 +71,10 @@ function LoginPage({ onLogin }) {
         aceitouTermos: aceitouTermosRef.current,
         aceitouMarketing: aceitouMarketingRef.current
       })
+      if (user?.pendente) {
+        setSuccess(user.message)
+        return
+      }
       setSuccess('Autenticação com o Google realizada com sucesso!')
       onLogin(user)
     } catch (err) {
@@ -147,7 +151,10 @@ function LoginPage({ onLogin }) {
           throw new Error('Você precisa ler e aceitar os Termos de Uso e a Política de Privacidade.')
         }
         await register({ nome, email, nomeCondominio, senha, confirmarSenha, aceitouTermos, aceitouMarketing })
-        setSuccess('Cadastro realizado com sucesso! Entrando na sua conta...')
+        // Cadastro nasce pendente: login imediato falharia com "Credenciais inválidas".
+        setSuccess('Cadastro realizado! Aguarde a aprovação do administrador para acessar.')
+        setMode('login')
+        return
       }
       const user = await login(email, senha)
       onLogin(user)

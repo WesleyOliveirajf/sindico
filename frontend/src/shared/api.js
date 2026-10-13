@@ -131,9 +131,10 @@ export async function login(email, senha) {
 /**
  * Autentica o usuário utilizando o fluxo de login social do Google.
  * Em caso de sucesso salva o token JWT e retorna os dados do usuario; do contrario, lanca erro.
+ * Conta aguardando aprovacao responde 202 com `{ pendente: true, message }` e sem token.
  *
  * @param {{ credentialToken: string, aceitouTermos: boolean, aceitouMarketing: boolean }} payload
- * @returns {Promise<{email: string, condominioId: string, token?: string}>}
+ * @returns {Promise<{email?: string, condominioId?: string, token?: string, pendente?: boolean, message?: string}>}
  */
 export async function loginComGoogle(payload) {
   const res = await apiFetch('/api/auth/google', {
