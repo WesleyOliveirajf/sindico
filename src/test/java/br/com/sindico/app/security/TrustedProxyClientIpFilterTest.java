@@ -11,6 +11,8 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockFilterChain;
@@ -21,6 +23,21 @@ class TrustedProxyClientIpFilterTest {
 
     private static final String SECRET = "segredo-compartilhado-de-teste";
     private static final String CONEXAO = "76.76.21.21"; // IP do proxy (Vercel)
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
+    private ListAppender<ILoggingEvent> appender;
+
+    @BeforeEach
+    void anexarCapturaDeLog() {
+        appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void removerCapturaDeLog() {
+        logger.detachAppender(appender);
+    }
 
     /** Executa o filtro e devolve o remoteAddr que a cadeia seguinte enxerga. */
     private String remoteAddrVistoPelaCadeia(String configuredSecret, String secretHeader, String ipHeader)
@@ -227,68 +244,42 @@ class TrustedProxyClientIpFilterTest {
 
     @Test
     void alertaEmitidoNoLogQuandoRequisicaoAuthChegaSemSegredo() throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        remoteAddrVistoPelaCadeia(SECRET, null, null, "201.10.20.30");
 
-        try {
-            remoteAddrVistoPelaCadeia(SECRET, null, null, "201.10.20.30");
-            boolean temAlerta = appender.list.stream().anyMatch(e ->
-                    e.getLevel() == Level.WARN && e.getFormattedMessage().contains("/api/auth/login"));
-            assertTrue(temAlerta, "Deveria emitir alerta de log para rota /api/auth/* sem segredo");
-        } finally {
-            logger.detachAppender(appender);
-        }
+        assertTrue(temWarnParaLogin(), "Deveria emitir alerta de log para rota /api/auth/* sem segredo");
     }
 
     @Test
     void alertaEmitidoNoLogQuandoRequisicaoAuthChegaComSegredoErrado() throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        remoteAddrVistoPelaCadeia(SECRET, null, "segredo-errado", "201.10.20.30");
 
-        try {
-            remoteAddrVistoPelaCadeia(SECRET, null, "segredo-errado", "201.10.20.30");
-            boolean temAlerta = appender.list.stream().anyMatch(e ->
-                    e.getLevel() == Level.WARN && e.getFormattedMessage().contains("/api/auth/login"));
-            assertTrue(temAlerta, "Deveria emitir alerta de log para rota /api/auth/* com segredo errado");
-        } finally {
-            logger.detachAppender(appender);
-        }
+        assertTrue(temWarnParaLogin(), "Deveria emitir alerta de log para rota /api/auth/* com segredo errado");
+    }
+
+    @Test
+    void alertaEmitidoQuandoSegredoValidoChegaSemIpDoClienteEMantemRemoteAddr() throws Exception {
+        assertEquals(CONEXAO, remoteAddrVistoPelaCadeia(SECRET, null, SECRET, null));
+        assertTrue(temWarnParaLogin(), "Segredo valido sem IP do cliente deve alertar");
+    }
+
+    @Test
+    void alertaEmitidoQuandoSegredoValidoChegaComIpInvalidoEMantemRemoteAddr() throws Exception {
+        assertEquals(CONEXAO, remoteAddrVistoPelaCadeia(SECRET, null, SECRET, "nao-e-ip"));
+        assertTrue(temWarnParaLogin(), "Segredo valido com IP invalido deve alertar");
     }
 
     @Test
     void alertaNaoEmitidoQuandoRequisicaoAuthChegaComSegredoValido() throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        remoteAddrVistoPelaCadeia(SECRET, null, SECRET, "201.10.20.30");
 
-        try {
-            remoteAddrVistoPelaCadeia(SECRET, null, SECRET, "201.10.20.30");
-            boolean temAlerta = appender.list.stream().anyMatch(e -> e.getLevel() == Level.WARN);
-            assertFalse(temAlerta, "Nao deveria emitir alerta para requisicao com segredo valido");
-        } finally {
-            logger.detachAppender(appender);
-        }
+        assertFalse(temWarn(), "Nao deveria emitir alerta para requisicao com segredo valido");
     }
 
     @Test
     void alertaNaoEmitidoParaRotasForaDeAuth() throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        remoteAddrVistoPelaCadeia(SECRET, null, null, "201.10.20.30", "/api/moradores");
 
-        try {
-            remoteAddrVistoPelaCadeia(SECRET, null, null, "201.10.20.30", "/api/moradores");
-            boolean temAlerta = appender.list.stream().anyMatch(e -> e.getLevel() == Level.WARN);
-            assertFalse(temAlerta, "Nao deveria emitir alerta para rotas fora de /api/auth/*");
-        } finally {
-            logger.detachAppender(appender);
-        }
+        assertFalse(temWarn(), "Nao deveria emitir alerta para rotas fora de /api/auth/*");
     }
 
     @Test
@@ -296,60 +287,46 @@ class TrustedProxyClientIpFilterTest {
         AtomicLong relogio = new AtomicLong(100_000L);
         long intervalo = 60_000L;
         TrustedProxyClientIpFilter filtro = new TrustedProxyClientIpFilter(SECRET, null, intervalo, relogio::get);
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/login");
+        req.setRemoteAddr(CONEXAO);
 
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        // 1a requisicao no instante 100_000 -> emite o primeiro log
+        filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+        assertEquals(1, appender.list.size());
+        assertEquals(0, filtro.getSuppressedWarnCount());
 
-        try {
-            MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/login");
-            req.setRemoteAddr(CONEXAO);
-
-            // 1ª requisição no instante 100_000 -> emite o primeiro log
+        // 2a, 3a e 4a requisicoes dentro da janela de 60s -> suprimidas
+        for (int i = 0; i < 3; i++) {
+            relogio.addAndGet(10_000L);
             filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
-            assertEquals(1, appender.list.size());
-            assertEquals(0, filtro.getSuppressedWarnCount());
-
-            // 2ª, 3ª e 4ª requisições dentro da janela de 60s -> suprimidas
-            relogio.addAndGet(10_000L); // 110_000
-            filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
-            relogio.addAndGet(10_000L); // 120_000
-            filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
-            relogio.addAndGet(10_000L); // 130_000
-            filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
-
-            assertEquals(1, appender.list.size(), "Logs dentro do intervalo devem ser suprimidos");
-            assertEquals(3, filtro.getSuppressedWarnCount(), "Deveria contabilizar 3 chamadas suprimidas");
-
-            // Avança o relógio além do intervalo de 60s -> 5ª requisição emite log com contagem de suprimidas
-            relogio.addAndGet(40_000L); // 170_000 (diferença de 70_000 > 60_000)
-            filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
-
-            assertEquals(2, appender.list.size(), "Deveria emitir novo log apos expirar o intervalo");
-            assertEquals(0, filtro.getSuppressedWarnCount(), "Contador de suprimidas deve ser resetado apos logar");
-
-            String segundoLog = appender.list.get(1).getFormattedMessage();
-            assertTrue(segundoLog.contains("3 requisicoes similares suprimidas"),
-                    "Mensagem deveria reportar as 3 requisicoes suprimidas: " + segundoLog);
-        } finally {
-            logger.detachAppender(appender);
         }
+        assertEquals(1, appender.list.size(), "Logs dentro do intervalo devem ser suprimidos");
+        assertEquals(3, filtro.getSuppressedWarnCount(), "Deveria contabilizar 3 chamadas suprimidas");
+
+        // Passado o intervalo (diferenca de 70_000 > 60_000) -> novo log com a contagem de suprimidas
+        relogio.addAndGet(40_000L);
+        filtro.doFilter(req, new MockHttpServletResponse(), new MockFilterChain());
+
+        assertEquals(2, appender.list.size(), "Deveria emitir novo log apos expirar o intervalo");
+        assertEquals(0, filtro.getSuppressedWarnCount(), "Contador de suprimidas deve ser resetado apos logar");
+        String segundoLog = appender.list.get(1).getFormattedMessage();
+        assertTrue(segundoLog.contains("3 requisicoes similares suprimidas"),
+                "Mensagem deveria reportar as 3 requisicoes suprimidas: " + segundoLog);
     }
 
     @Test
     void semSegredoConfiguradoNaoEmiteAlerta() throws Exception {
-        Logger logger = (Logger) LoggerFactory.getLogger(TrustedProxyClientIpFilter.class);
-        ListAppender<ILoggingEvent> appender = new ListAppender<>();
-        appender.start();
-        logger.addAppender(appender);
+        remoteAddrVistoPelaCadeia("", null, null, "201.10.20.30");
 
-        try {
-            remoteAddrVistoPelaCadeia("", null, null, "201.10.20.30");
-            boolean temAlerta = appender.list.stream().anyMatch(e -> e.getLevel() == Level.WARN);
-            assertFalse(temAlerta, "Sem segredo configurado (dev/test), o filtro e inativo e nao loga alerta");
-        } finally {
-            logger.detachAppender(appender);
-        }
+        assertFalse(temWarn(), "Sem segredo configurado (dev/test), o filtro e inativo e nao loga alerta");
+    }
+
+    private boolean temWarn() {
+        return appender.list.stream().anyMatch(e -> e.getLevel() == Level.WARN);
+    }
+
+    private boolean temWarnParaLogin() {
+        return appender.list.stream()
+                .anyMatch(e -> e.getLevel() == Level.WARN && e.getFormattedMessage().contains("/api/auth/login"));
     }
 }

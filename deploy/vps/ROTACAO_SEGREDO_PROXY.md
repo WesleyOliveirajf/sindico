@@ -1,6 +1,6 @@
-# Procedimento de Rotação do Segredo do Proxy sem Downtime
+# Procedimento de Rotação do Segredo do Proxy
 
-Este documento descreve o procedimento operacional para rotacionar o segredo compartilhado entre o **Vercel Edge Middleware** e o **back-end na VPS** (`APP_TRUSTED_PROXY_SECRET` / `PROXY_SHARED_SECRET`), garantindo zero indisponibilidade para os usuários e preservando a integridade das regras de rate limit e auditoria LGPD.
+Este documento descreve o procedimento operacional para rotacionar o segredo compartilhado entre o **Vercel Edge Middleware** e o **back-end na VPS** (`APP_TRUSTED_PROXY_SECRET` / `PROXY_SHARED_SECRET`), sem janela de segredo divergente entre Vercel e VPS (que derrubaria o IP real e o rate limit por usuário) e preservando a integridade das regras de rate limit e auditoria LGPD.
 
 ---
 
@@ -61,6 +61,8 @@ Reinicie a aplicação para carregar as novas variáveis:
 docker compose up -d
 ```
 
+> **Atenção:** `docker compose up -d` recria o container e a API fica indisponível por alguns segundos durante o reinício. Faça em horário de baixo uso.
+>
 > **Importante:** A partir deste momento, o back-end aceita tanto o segredo novo quanto o antigo. Requisições em trânsito com o segredo antigo continuam funcionando sem qualquer interrupção.
 
 ---
@@ -107,7 +109,7 @@ APP_TRUSTED_PROXY_SECRET_PREVIOUS=
 docker compose up -d
 ```
 
-A rotação está concluída com sucesso e zero downtime!
+A rotação está concluída. Não houve janela de segredo divergente; cada `docker compose up -d` recria o container e causa alguns segundos de indisponibilidade da API durante o reinício.
 
 ---
 
@@ -118,4 +120,5 @@ Caso o segredo atual tenha sido comprometido:
 2. Gere um novo segredo: `openssl rand -hex 32`.
 3. Defina o novo segredo imediatamente em `APP_TRUSTED_PROXY_SECRET` na VPS e rode `docker compose up -d`.
 4. Atualize imediatamente `PROXY_SHARED_SECRET` na Vercel e dispare redeploy instantâneo.
-5. Se necessário, desligue temporariamente o rate limit na VPS caso haja janela entre deploys (`APP_SECURITY_RATE_LIMIT_ENABLED=false`).
+5. Durante a janela entre a troca na VPS e o redeploy do Vercel, todos os usuários caem no mesmo bucket de rate limit. **Não desligue o rate limit de login**: isso abre brute-force. Prefira encurtar a janela (deixe o redeploy do Vercel pronto antes de reiniciar a VPS).
+6. Só em último caso, se o bucket compartilhado estiver bloqueando usuários legítimos, siga a orientação do Rollback em [`docs/DEPLOY.md`](../../docs/DEPLOY.md) (`APP_SECURITY_RATE_LIMIT_ENABLED=false` exige adicionar a variável em `environment:` do `docker-compose.yml`) e reative o rate limit assim que o redeploy terminar.

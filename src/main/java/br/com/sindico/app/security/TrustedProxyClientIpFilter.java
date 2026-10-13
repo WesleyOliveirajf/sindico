@@ -20,49 +20,41 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Restaura o IP real do cliente quando a requisição chega por um proxy de aplicação nosso
- * (o middleware do Vercel), que conecta ao back-end a partir de IPs do próprio Vercel.
+ * Restaura o IP real do cliente quando a requisicao chega por um proxy de aplicacao nosso
+ * (o middleware do Vercel), que conecta ao back-end a partir de IPs do proprio Vercel.
  *
- * <p>O proxy envia o IP do usuário em {@value #CLIENT_IP_HEADER} junto com o segredo compartilhado
- * em {@value #SECRET_HEADER}. Somente quando o segredo confere o valor é aceito, e então
- * {@link HttpServletRequest#getRemoteAddr()} passa a devolver o IP do usuário (usado pelo rate
+ * <p>O proxy envia o IP do usuario em {@value #CLIENT_IP_HEADER} junto com o segredo compartilhado
+ * em {@value #SECRET_HEADER}. Somente quando o segredo confere o valor e aceito, e entao
+ * {@link HttpServletRequest#getRemoteAddr()} passa a devolver o IP do usuario (usado pelo rate
  * limit e pelo registro de aceite LGPD). Sem segredo configurado o filtro fica inativo, e um
- * cliente qualquer não consegue forjar o IP sem conhecer o segredo.</p>
+ * cliente qualquer nao consegue forjar o IP sem conhecer o segredo.</p>
  *
- * <p><b>Decisão de design — por que um filtro próprio com segredo em vez de
- * {@code server.forward-headers-strategy=native} / {@code RemoteIpValve} do Spring/Tomcat:</b><br>
- * Os nós de borda da rede do Vercel (Edge Middleware) utilizam endereços IP dinâmicos e
- * compartilhados por múltiplos clientes da plataforma Vercel. Por isso, não é viável nem
- * seguro configurar uma allowlist de CIDRs/IPs confiáveis no Tomcat/Spring (como exige o
- * {@code RemoteIpValve}): qualquer outro locatário do Vercel que realizasse requisições à nossa
- * VPS compartilharia a mesma faixa de IPs e conseguiria forjar cabeçalhos {@code X-Forwarded-For}
- * arbitrários. A relação de confiança com a borda depende, portanto, da posse do segredo
- * compartilhado pré-acordado transportado em {@value #SECRET_HEADER}.</p>
+ * <p><b>Decisao de design:</b> um filtro proprio com segredo, em vez de
+ * {@code server.forward-headers-strategy=native} / {@code RemoteIpValve} do Spring/Tomcat. Os
+ * nos de borda do Vercel usam IPs dinamicos e compartilhados por varios clientes da plataforma,
+ * entao uma allowlist de CIDRs/IPs confiaveis (exigida pelo {@code RemoteIpValve}) nao e viavel
+ * nem segura: qualquer outro locatario do Vercel compartilharia a faixa e poderia forjar
+ * {@code X-Forwarded-For}. A confianca depende da posse do segredo transportado em
+ * {@value #SECRET_HEADER}.</p>
  *
- * <p><b>Rotação de segredo sem downtime:</b><br>
- * Para permitir a troca periódica ou emergencial do segredo sem indisponibilidade e sem desviar
- * clientes legítimos para o bucket compartilhado de rate limit, o filtro aceita simultaneamente
- * o segredo ativo ({@code app.security.trusted-proxy-secret}) e o segredo anterior em transição
- * ({@code app.security.trusted-proxy-secret-previous}). Ambos são validados via comparação em
- * tempo constante ({@link MessageDigest#isEqual(byte[], byte[])}) para prevenir ataques de
- * temporização (timing attacks).</p>
+ * <p><b>Rotacao de segredo:</b> o filtro aceita simultaneamente o segredo ativo
+ * ({@code app.security.trusted-proxy-secret}) e o anterior em transicao
+ * ({@code app.security.trusted-proxy-secret-previous}), evitando a janela em que Vercel e VPS
+ * divergem e os usuarios caem no bucket compartilhado de rate limit. Ambos sao comparados em
+ * tempo constante ({@link MessageDigest#isEqual(byte[], byte[])}).</p>
  *
- * <p><b>Sinal de saúde e alerta:</b><br>
- * Requisições para rotas de autenticação ({@code /api/auth/*}) que chegam sem o cabeçalho
- * confiável ou com segredo inválido emitem alerta em log com limitação de frequência (cooldown)
- * para não sobrecarregar os registros em caso de ataque, reportando a contagem de mensagens
- * suprimidas no período.</p>
+ * <p><b>Sinal de saude:</b> requisicoes para {@code /api/auth/*} sem cabecalho confiavel valido
+ * (segredo ausente, errado ou IP invalido) geram alerta em log com limite de frequencia,
+ * reportando quantas ocorrencias foram suprimidas no intervalo.</p>
  *
- * <p><b>Quando reavaliar este design:</b>
+ * <p><b>Quando reavaliar este design:</b></p>
  * <ul>
- *   <li>Se a comunicação entre o front-end/borda e a VPS passar a ocorrer por rede privada ou VPN
- *       dedicada (ex.: VPC Peering, Tailscale/WireGuard ou Cloudflare Tunnel autenticado);</li>
- *   <li>Se o provedor de borda (Vercel ou outro) passar a fornecer IPs de saída estáticos dedicados
- *       ou suporte a mTLS nativo (autenticação mútua via certificado client);</li>
- *   <li>Se o roteamento e rate limit forem transferidos integralmente para um API Gateway de borda
- *       com autenticação criptográfica antes de atingir a VPS.</li>
+ *   <li>se a ligacao entre a borda e a VPS passar a usar rede privada ou VPN dedicada
+ *       (ex.: Tailscale/WireGuard ou Cloudflare Tunnel autenticado);</li>
+ *   <li>se o provedor de borda oferecer IPs de saida estaticos dedicados ou mTLS nativo;</li>
+ *   <li>se roteamento e rate limit migrarem para um API Gateway de borda com autenticacao
+ *       criptografica antes de chegar a VPS.</li>
  * </ul>
- * </p>
  */
 @Component
 public class TrustedProxyClientIpFilter extends OncePerRequestFilter {
