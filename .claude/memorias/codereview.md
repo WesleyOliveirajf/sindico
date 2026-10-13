@@ -13,7 +13,7 @@
 | Proteção | SSO ativo (`all_except_custom_domains`); sem senha |
 
 Pontos de atenção:
-- `framework: null` no projeto: o Vercel não detectou Vite. Funciona porque o `frontend/` tem build próprio, mas vale conferir o Root Directory e o Build Command.
+- `framework: null` no projeto: é só o valor guardado na UI. Quem manda no build é o `frontend/vercel.json` (`framework: vite`, `buildCommand: npm run build`, `outputDirectory: dist`). Não é problema. Root Directory e Build Command conferidos por evidência indireta (item 15 do histórico).
 - Merges seguidos do Dependabot geram deploys `CANCELED`. É esperado, não é falha.
 - O SSO bloqueia o domínio `*.vercel.app` para quem não tem login; o domínio próprio fica aberto.
 
@@ -61,6 +61,8 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 
 14. **Revisão do PR #42** (rotação do segredo do proxy, issue #36): revisão postada como comentário no PR. Veredito: aprovável com ajustes pequenos; a lógica de segurança estava correta (`MessageDigest.isEqual` sem curto-circuito, filtro inativo sem segredo, cooldown de log seguro contra concorrência). Ajustes aplicados em commit `4406cba` na branch do PR: (1) doc sem a promessa de "zero downtime", com aviso de que `docker compose up -d` recria o container; (2) emergência sem sugerir desligar o rate limit de login; (3) Javadoc com HTML válido e sem acentos; (4) `ListAppender` movido para `@BeforeEach`/`@AfterEach`; (5) dois testes novos (segredo válido sem IP ou com IP inválido alerta e mantém `remoteAddr`). `TrustedProxyClientIpFilterTest` 30/30 local. CI do PR verde; mesclado (squash, commit `faf501f`), issue #36 fechada automaticamente. CI da `main` após o merge: **success**. Fica manual: reescrever a descrição do PR (caractere de controle corrompido e resumo do Sourcery repetido); o PR já está mesclado.
 
+15. **Conferência do Root Directory do Vercel:** a API do Vercel não expõe Root Directory nem Build Command (`get_project`), os logs deram 403 (conector sem permissão no escopo `wesley-oliveiras-projects-4feaf766`) e a lista de arquivos do deploy deu 404 (deploy vindo do Git). Conclusão por evidência: **Root Directory = `frontend`**. Motivos: não existe `vercel.json` na raiz do repositório, só `frontend/vercel.json`, e o Vercel só lê esse arquivo no Root Directory; `package.json`, `vite.config.js` e `middleware.js` ficam em `frontend/`; em produção (`www.wesleyoliveira.tech` e `sindico-seven.vercel.app`) a SPA responde 200 com `Content-Language: pt-BR` (cabeçalho definido no `frontend/vercel.json`) e `/api/auth/me` responde 401 em JSON, ou seja, o proxy para a VPS funciona. Confirmação definitiva é manual: Settings > General > Root Directory no painel, ou `vercel project inspect sindico`.
+
 ## Decisões e lições
 
 - **Falso positivo do review:** o achado 2 (`UploadExceptionHandler` sem seletor) é intencional. O multipart falha antes de existir handler, então um advice com `annotations = RestController.class` não se aplicaria. Conferir o Javadoc e os chamadores antes de aceitar um achado.
@@ -73,12 +75,13 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 - **Renomear para revelar intenção:** um achado de "inconsistência" era só nome enganoso; renomear o método resolveu sem mudar comportamento.
 - **PR de terceiros no próprio repositório:** a revisão virou comentário no PR e os ajustes foram um commit na branch dele, com `git stash` só dos arquivos locais não relacionados (`CLAUDE.md`, `package-lock.json`) para poder trocar de branch. Voltar para a `main` e restaurar o stash ao final.
 - **Scripts com aspas e heredoc:** um script Python longo passado por heredoc no shell quebrou por aspas; gravar o script em arquivo (scratchpad) e executar.
+- **Conector do Vercel com escopo limitado:** o MCP lê projeto, domínios e deploys, mas não logs nem arquivos de deploy Git (403/404). Para configuração de build, inferir pelo `vercel.json` do repositório e testar a produção com `curl`; confirmar no painel quando precisar de certeza.
 - **Ações externas** (fechar PR, mesclar, push) só são feitas depois de confirmação explícita do usuário.
 
 ## Pendências
 
 1. **Testar um login real** após o deploy do jjwt 0.13.0: não há teste de integração do fluxo de login, só build e testes unitários.
-2. Conferir o Root Directory e o Build Command do projeto no Vercel (`framework: null`).
+2. Confirmar manualmente o Root Directory (`frontend`) no painel do Vercel: Settings > General. Pela evidência já está correto; é só confirmação visual.
 3. Rotação do segredo do proxy: `APP_TRUSTED_PROXY_SECRET_PREVIOUS` só deve ser preenchida durante uma rotação (procedimento em `deploy/vps/ROTACAO_SEGREDO_PROXY.md`).
 4. Issues abertas continuam válidas; #12 e #13 (P1 de segurança) dependem de ação do dono.
 5. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
