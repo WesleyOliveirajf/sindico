@@ -1,17 +1,20 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import "./App.css";
-import DashboardPage from "./features/dashboard/DashboardPage";
-import CompromissosPage from "./features/compromissos/CompromissosPage";
-import PrestadoresPage from "./features/prestadores/PrestadoresPage";
-import AnotacoesPage from "./features/anotacoes/AnotacoesPage";
-import MoradoresPage from "./features/moradores/MoradoresPage";
-import ManutencoesPage from "./features/manutencoes/ManutencoesPage";
-import ReunioesPage from "./features/reunioes/ReunioesPage";
-import GastosPage from "./features/gastos/GastosPage";
-import AssistenteIAPage from "./features/ia/AssistenteIAPage";
-import LoginPage from "./features/auth/LoginPage";
-import AdminPage from "./features/admin/AdminPage";
+import { LoadingState } from "./shared/components/PageFeedback";
+
+// Code splitting por rota: o bundle inicial carrega só o shell; cada módulo vem sob demanda.
+const DashboardPage = lazy(() => import("./features/dashboard/DashboardPage"));
+const CompromissosPage = lazy(() => import("./features/compromissos/CompromissosPage"));
+const PrestadoresPage = lazy(() => import("./features/prestadores/PrestadoresPage"));
+const AnotacoesPage = lazy(() => import("./features/anotacoes/AnotacoesPage"));
+const MoradoresPage = lazy(() => import("./features/moradores/MoradoresPage"));
+const ManutencoesPage = lazy(() => import("./features/manutencoes/ManutencoesPage"));
+const ReunioesPage = lazy(() => import("./features/reunioes/ReunioesPage"));
+const GastosPage = lazy(() => import("./features/gastos/GastosPage"));
+const AssistenteIAPage = lazy(() => import("./features/ia/AssistenteIAPage"));
+const LoginPage = lazy(() => import("./features/auth/LoginPage"));
+const AdminPage = lazy(() => import("./features/admin/AdminPage"));
 import { AUTH_EXPIRED_EVENT, getMe, logout } from "./shared/api";
 
 const NAVIGATION_GROUPS = [
@@ -111,7 +114,11 @@ function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={(u) => setUser(u)} />;
+    return (
+      <Suspense fallback={<LoadingState message="Carregando..." />}>
+        <LoginPage onLogin={(u) => setUser(u)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -193,27 +200,29 @@ function App() {
         </header>
 
         <section className="page">
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/compromissos" element={<CompromissosPage />} />
-            <Route path="/manutencoes" element={<ManutencoesPage />} />
-            <Route path="/reunioes" element={<ReunioesPage />} />
-            <Route path="/anotacoes" element={<AnotacoesPage />} />
-            <Route path="/moradores" element={<MoradoresPage />} />
-            <Route path="/prestadores" element={<PrestadoresPage />} />
-            <Route path="/gastos" element={<GastosPage />} />
-            <Route path="/assistente" element={<AssistenteIAPage />} />
-            <Route
-              path="/config-ia"
-              element={<Navigate to={isAdmin ? "/admin" : "/assistente"} replace />}
-            />
-            <Route
-              path="/admin"
-              element={isAdmin ? <AdminPage /> : <Navigate to="/compromissos" replace />}
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<LoadingState />}>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/compromissos" element={<CompromissosPage />} />
+              <Route path="/manutencoes" element={<ManutencoesPage />} />
+              <Route path="/reunioes" element={<ReunioesPage />} />
+              <Route path="/anotacoes" element={<AnotacoesPage />} />
+              <Route path="/moradores" element={<MoradoresPage />} />
+              <Route path="/prestadores" element={<PrestadoresPage />} />
+              <Route path="/gastos" element={<GastosPage />} />
+              <Route path="/assistente" element={<AssistenteIAPage />} />
+              <Route
+                path="/config-ia"
+                element={<Navigate to={isAdmin ? "/admin" : "/assistente"} replace />}
+              />
+              <Route
+                path="/admin"
+                element={isAdmin ? <AdminPage /> : <Navigate to="/compromissos" replace />}
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </section>
 
         <footer className="app-global-footer">

@@ -2710,3 +2710,57 @@ textarea:focus,
     width: 100%;
   }
 }
+
+/* ---- Desempenho e ergonomia mobile ---- */
+.app-shell,
+.auth-page {
+  min-height: 100dvh;
+}
+
+.sidebar {
+  height: 100dvh;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 980px) {
+  /* 100vh passa da área visível no mobile e escondia o botão "Sair" atrás da barra do navegador. */
+  .sidebar {
+    height: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    visibility: hidden;
+    transition: transform 0.22s ease, visibility 0s linear 0.22s;
+  }
+
+  /* Menu fechado sai da ordem de tabulação/leitor de tela e deixa de ser pintado. */
+  .sidebar--open {
+    visibility: visible;
+    transition: transform 0.22s ease, visibility 0s;
+  }
+
+  /* blur em tempo real é caro em GPUs de entrada e o header já é quase opaco. */
+  .content-header {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
