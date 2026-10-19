@@ -48,6 +48,7 @@ const INITIAL_GASTO = {
   parcelado: false,
   parcelaAtual: '',
   parcelaTotal: '',
+  valorParcela: '',
   observacoes: '',
 }
 
@@ -105,6 +106,7 @@ function gastoToForm(gasto) {
     parcelado: Boolean(gasto.parcelado),
     parcelaAtual: gasto.parcelaAtual != null ? String(gasto.parcelaAtual) : '',
     parcelaTotal: gasto.parcelaTotal != null ? String(gasto.parcelaTotal) : '',
+    valorParcela: gasto.valorParcela != null ? String(gasto.valorParcela) : '',
     observacoes: gasto.observacoes || '',
   }
 }
@@ -252,6 +254,7 @@ function GastosPage() {
         dataGasto: gastoForm.dataGasto || null,
         parcelaAtual: gastoForm.parcelado && gastoForm.parcelaAtual ? Number(gastoForm.parcelaAtual) : null,
         parcelaTotal: gastoForm.parcelado && gastoForm.parcelaTotal ? Number(gastoForm.parcelaTotal) : null,
+        valorParcela: gastoForm.parcelado && gastoForm.valorParcela ? Number(gastoForm.valorParcela) : null,
       }
       const endpoint = editingGastoId ? `/api/gastos/${editingGastoId}` : '/api/gastos'
       const res = await apiFetch(endpoint, {
@@ -268,6 +271,19 @@ function GastosPage() {
       setError(err.message)
     } finally {
       setGastoSubmitting(false)
+    }
+  }
+
+  async function onMarcarParcela(gastoId, parcela) {
+    try {
+      const res = await apiFetch(`/api/gastos/${gastoId}/parcelas/${parcela.numero}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ paga: !parcela.paga }),
+      })
+      if (!res.ok) throw new Error(await parseError(res, 'Não foi possível atualizar a parcela.'))
+      await loadGastos(filtroMes, filtroAno, filtroTipo)
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -326,7 +342,7 @@ function GastosPage() {
   }
 
   /* ─── Totais ────────────────────────────────────────────────── */
-  const totalGastos = gastos.reduce((sum, g) => sum + Number(g.valor || 0), 0)
+  const totalGastos = gastos.reduce((sum, g) => sum + Number(g.parcelado ? g.valorPago || 0 : g.valor || 0), 0)
   const totalRecebimentos = recebimentos.reduce((sum, r) => sum + Number(r.valor || 0), 0)
   const saldoReal = totalRecebimentos - totalGastos
   const isLoading = gastosLoading || recebimentosLoading
@@ -469,7 +485,7 @@ function GastosPage() {
               </label>
 
               <label>
-                Valor (R$) *
+                Valor total da obra (R$) *
                 <input
                   type="number"
                   step="0.01"
@@ -527,6 +543,19 @@ function GastosPage() {
                       onChange={onGastoChange}
                       required
                       placeholder="Ex: 3"
+                    />
+                  </label>
+                  <label>
+                    Valor de cada parcela (R$) *
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      name="valorParcela"
+                      value={gastoForm.valorParcela}
+                      onChange={onGastoChange}
+                      required
+                      placeholder="Ex: 500,00"
                     />
                   </label>
                   <label>
@@ -639,6 +668,22 @@ function GastosPage() {
                       {' · '}{formatDate(g.dataGasto)}
                     </p>
                     <p style={{ marginTop: 6, fontWeight: 600 }}>{formatCurrency(g.valor)}</p>
+                    {g.parcelado && g.parcelas?.length > 0 && (
+                      <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
+                        <span className="muted">Pago: {formatCurrency(g.valorPago)} · Saldo: {formatCurrency(g.saldoDevedor)}</span>
+                        {g.parcelas.map((parcela) => (
+                          <label key={parcela.numero} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                            <input
+                              type="checkbox"
+                              checked={parcela.paga}
+                              onChange={() => onMarcarParcela(g.id, parcela)}
+                              style={{ width: 'auto', marginTop: 0 }}
+                            />
+                            Parcela {parcela.numero}: {formatCurrency(parcela.valor)}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                     {g.observacoes ? <p className="muted" style={{ marginTop: 4 }}>Obs: {g.observacoes}</p> : null}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
