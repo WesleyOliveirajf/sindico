@@ -39,6 +39,9 @@ public class Gasto {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal valor;
 
+    @Column(name = "valor_parcela", precision = 12, scale = 2)
+    private BigDecimal valorParcela;
+
     @Column(name = "data_gasto", nullable = false)
     private LocalDate dataGasto;
 
@@ -76,6 +79,8 @@ public class Gasto {
     public void setTipo(GastoTipo tipo) { this.tipo = tipo; }
     public BigDecimal getValor() { return valor; }
     public void setValor(BigDecimal valor) { this.valor = valor; }
+    public BigDecimal getValorParcela() { return valorParcela; }
+    public void setValorParcela(BigDecimal valorParcela) { this.valorParcela = valorParcela; }
     public LocalDate getDataGasto() { return dataGasto; }
     public void setDataGasto(LocalDate dataGasto) { this.dataGasto = dataGasto; }
     public boolean isFixo() { return fixo; }

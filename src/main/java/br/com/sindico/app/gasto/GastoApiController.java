@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,8 @@ public class GastoApiController {
             @RequestParam(required = false) Integer mes,
             @RequestParam(required = false) Integer ano,
             @RequestParam(required = false) GastoTipo tipo) {
-        return gastoService.listar(mes, ano, tipo).stream().map(GastoResponse::from).toList();
+        return gastoService.listar(mes, ano, tipo).stream()
+                .map(g -> GastoResponse.from(g, gastoService.parcelas(g.getId()))).toList();
     }
 
     @PostMapping
@@ -44,7 +46,14 @@ public class GastoApiController {
 
     @PutMapping("/{id}")
     public GastoResponse atualizar(@PathVariable UUID id, @Valid @RequestBody GastoRequest request) {
-        return GastoResponse.from(gastoService.atualizar(id, request));
+        Gasto g = gastoService.atualizar(id, request);
+        return GastoResponse.from(g, gastoService.parcelas(g.getId()));
+    }
+
+    @PatchMapping("/{id}/parcelas/{numero}")
+    public GastoParcela marcarParcela(@PathVariable UUID id, @PathVariable Integer numero,
+                                      @RequestBody ParcelaStatusRequest request) {
+        return gastoService.marcarParcela(id, numero, request.paga());
     }
 
     @DeleteMapping("/{id}")

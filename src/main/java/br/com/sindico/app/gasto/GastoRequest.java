@@ -32,5 +32,14 @@ public record GastoRequest(
         Integer parcelaTotal,
 
         @Size(max = 5000, message = "Observacoes deve ter no maximo 5000 caracteres")
-        String observacoes
-) {}
+        String observacoes,
+
+        @DecimalMin(value = "0.01", message = "Valor da parcela deve ser maior que zero")
+        BigDecimal valorParcela
+) {
+    public GastoRequest(String descricao, GastoTipo tipo, BigDecimal valor, LocalDate dataGasto,
+                        boolean fixo, boolean parcelado, Integer parcelaAtual, Integer parcelaTotal,
+                        String observacoes) {
+        this(descricao, tipo, valor, dataGasto, fixo, parcelado, parcelaAtual, parcelaTotal, observacoes, null);
+    }
+}
