@@ -206,10 +206,8 @@ function GastosPage() {
   async function loadSaldoResumo(mes, ano) {
     try {
       const res = await apiFetch(buildSaldoQuery(mes, ano))
-      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar saldo.'))
-      setSaldoResumo(await parseJson(res))
-    } catch (err) {
-      setError(err.message)
+      setSaldoResumo(res.ok ? await parseJson(res) : null)
+    } catch {
       setSaldoResumo(null)
     }
   }

@@ -99,24 +99,26 @@ function DashboardPage() {
     const { mes, ano } = currentMonthParams()
 
     try {
-      const requests = await Promise.all([
-        apiFetch(`/api/gastos?mes=${mes}&ano=${ano}`),
-        apiFetch(`/api/recebimentos?mes=${mes}&ano=${ano}`),
-        apiFetch(`/api/financeiro/saldo?mes=${mes}&ano=${ano}`),
-        apiFetch('/api/compromissos'),
-        apiFetch('/api/manutencoes'),
-        apiFetch('/api/reunioes'),
-        apiFetch('/api/anotacoes'),
-      ])
+      const [gastosRes, recebimentosRes, saldoRes, compromissosRes, manutencoesRes, reunioesRes, anotacoesRes] =
+        await Promise.all([
+          apiFetch(`/api/gastos?mes=${mes}&ano=${ano}`),
+          apiFetch(`/api/recebimentos?mes=${mes}&ano=${ano}`),
+          apiFetch(`/api/financeiro/saldo?mes=${mes}&ano=${ano}`),
+          apiFetch('/api/compromissos'),
+          apiFetch('/api/manutencoes'),
+          apiFetch('/api/reunioes'),
+          apiFetch('/api/anotacoes'),
+        ])
 
-      const failed = requests.find((res) => !res.ok)
+      const required = [gastosRes, recebimentosRes, compromissosRes, manutencoesRes, reunioesRes, anotacoesRes]
+      const failed = required.find((res) => !res.ok)
       if (failed) throw new Error(await parseError(failed, 'Falha ao carregar dashboard.'))
 
-      const [gastos, recebimentos, saldo, compromissos, manutencoes, reunioes, anotacoes] =
-        await Promise.all(requests.map(parseJson))
+      const [gastos, recebimentos, compromissos, manutencoes, reunioes, anotacoes] =
+        await Promise.all(required.map(parseJson))
 
       setData({ gastos, recebimentos, compromissos, manutencoes, reunioes, anotacoes })
-      setSaldoMes(saldo)
+      setSaldoMes(saldoRes.ok ? await parseJson(saldoRes) : null)
     } catch (err) {
       setError(err.message)
     } finally {
