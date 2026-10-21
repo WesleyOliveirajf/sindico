@@ -86,3 +86,4 @@ Regra do projeto: no máximo 3 `if` seguidos por solução (ainda não auditada 
 4. Issues abertas continuam válidas; #12 e #13 (P1 de segurança) dependem de ação do dono.
 5. Não há Maven local (`mvn`/`mvnw` ausentes): testes rodam no CI ou pela IDE (uma classe por vez).
 6. `CLAUDE.md` e `frontend/package-lock.json` seguem modificados e fora dos commits.
+7. Ajuste de saldo por período (21/10/2026): o que foi feito, a fórmula e o 404 do dashboard estão em `memoria.md` na raiz do repositório. A VPS ainda precisa do deploy para a V21 gravar o ajuste.
