@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { apiFetch, parseError, parseJson, iaAnalisarGastos } from '../../shared/api'
 import { EmptyState, ErrorState, LoadingState, SuccessState } from '../../shared/components/PageFeedback'
 import ConfirmDialog from '../../shared/components/ConfirmDialog'
+import Modal from '../../shared/components/ui/Modal'
 
 const TIPOS_GASTO = [
   { value: 'AGUA',          label: 'Água' },
@@ -96,6 +97,14 @@ function buildRecebimentoQuery(filtroMes, filtroAno) {
   return qs ? `/api/recebimentos?${qs}` : '/api/recebimentos'
 }
 
+function buildSaldoQuery(filtroMes, filtroAno) {
+  const params = new URLSearchParams()
+  if (filtroMes) params.set('mes', filtroMes)
+  if (filtroAno) params.set('ano', filtroAno)
+  const qs = params.toString()
+  return qs ? `/api/financeiro/saldo?${qs}` : '/api/financeiro/saldo'
+}
+
 function gastoToForm(gasto) {
   return {
     descricao: gasto.descricao || '',
@@ -157,6 +166,13 @@ function GastosPage() {
   const [filtroAno, setFiltroAno] = useState(String(currentYear))
   const [filtroTipo, setFiltroTipo] = useState('')
 
+  // Ajuste de saldo (não altera lançamentos)
+  const [saldoResumo, setSaldoResumo] = useState(null)
+  const [ajusteModalOpen, setAjusteModalOpen] = useState(false)
+  const [ajusteSaldoDesejado, setAjusteSaldoDesejado] = useState('')
+  const [ajusteObservacao, setAjusteObservacao] = useState('')
+  const [ajusteSubmitting, setAjusteSubmitting] = useState(false)
+
   const anos = Array.from({ length: 7 }, (_, i) => String(currentYear - 5 + i))
 
   /* ─── Carregamento de dados ─────────────────────────────────── */
@@ -187,9 +203,21 @@ function GastosPage() {
     }
   }
 
+  async function loadSaldoResumo(mes, ano) {
+    try {
+      const res = await apiFetch(buildSaldoQuery(mes, ano))
+      if (!res.ok) throw new Error(await parseError(res, 'Falha ao carregar saldo.'))
+      setSaldoResumo(await parseJson(res))
+    } catch (err) {
+      setError(err.message)
+      setSaldoResumo(null)
+    }
+  }
+
   function loadAll(mes, ano, tipo) {
     loadGastos(mes, ano, tipo)
     loadRecebimentos(mes, ano)
+    void loadSaldoResumo(mes, ano)
   }
 
   useEffect(() => {
@@ -341,10 +369,57 @@ function GastosPage() {
     }
   }
 
+  function abrirAjusteSaldo() {
+    if (!filtroMes || !filtroAno) {
+      setError('Selecione mês e ano nos filtros para ajustar o saldo do período.')
+      return
+    }
+    setError('')
+    const saldoAtual = saldoResumo?.saldoReal ?? saldoCalculado
+    setAjusteSaldoDesejado(saldoAtual != null ? String(saldoAtual) : '')
+    setAjusteObservacao(saldoResumo?.observacao || '')
+    setAjusteModalOpen(true)
+  }
+
+  async function onSalvarAjusteSaldo(e) {
+    e.preventDefault()
+    if (!filtroMes || !filtroAno) return
+    setError('')
+    setSuccess('')
+    setAjusteSubmitting(true)
+    try {
+      const res = await apiFetch('/api/financeiro/saldo-ajuste', {
+        method: 'PUT',
+        body: JSON.stringify({
+          mes: Number(filtroMes),
+          ano: Number(filtroAno),
+          saldoRealDesejado: Number(ajusteSaldoDesejado),
+          observacao: ajusteObservacao.trim() || null,
+        }),
+      })
+      if (!res.ok) throw new Error(await parseError(res, 'Não foi possível salvar o ajuste de saldo.'))
+      setSaldoResumo(await parseJson(res))
+      setSuccess('Saldo real ajustado. Os lançamentos de gastos e recebimentos não foram alterados.')
+      setAjusteModalOpen(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setAjusteSubmitting(false)
+    }
+  }
+
   /* ─── Totais ────────────────────────────────────────────────── */
-  const totalGastos = gastos.reduce((sum, g) => sum + Number(g.parcelado ? g.valorPago || 0 : g.valor || 0), 0)
-  const totalRecebimentos = recebimentos.reduce((sum, r) => sum + Number(r.valor || 0), 0)
-  const saldoReal = totalRecebimentos - totalGastos
+  const totalGastos = saldoResumo?.totalGastos != null
+    ? Number(saldoResumo.totalGastos)
+    : gastos.reduce((sum, g) => sum + Number(g.parcelado ? g.valorPago || 0 : g.valor || 0), 0)
+  const totalRecebimentos = saldoResumo?.totalRecebimentos != null
+    ? Number(saldoResumo.totalRecebimentos)
+    : recebimentos.reduce((sum, r) => sum + Number(r.valor || 0), 0)
+  const saldoCalculado = saldoResumo?.saldoCalculado != null
+    ? Number(saldoResumo.saldoCalculado)
+    : totalRecebimentos - totalGastos
+  const ajusteSaldo = Number(saldoResumo?.ajusteSaldo || 0)
+  const saldoReal = saldoResumo?.saldoReal != null ? Number(saldoResumo.saldoReal) : saldoCalculado + ajusteSaldo
   const isLoading = gastosLoading || recebimentosLoading
 
   return (
@@ -388,10 +463,63 @@ function GastosPage() {
             >
               {formatCurrency(saldoReal)}
             </p>
-            <p className="financial-summary-meta">Recebimentos − Gastos</p>
+            <p className="financial-summary-meta">
+              {ajusteSaldo !== 0
+                ? `Calculado ${formatCurrency(saldoCalculado)} + ajuste ${formatCurrency(ajusteSaldo)}`
+                : 'Recebimentos − Gastos'}
+            </p>
+            <button
+              type="button"
+              className="submit"
+              style={{ marginTop: 10, fontSize: '0.82rem', padding: '6px 12px', width: '100%' }}
+              onClick={abrirAjusteSaldo}
+            >
+              Ajustar saldo
+            </button>
           </div>
         </div>
       )}
+
+      <Modal open={ajusteModalOpen} title="Ajuste de saldo" onClose={() => setAjusteModalOpen(false)}>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Informe o saldo real do caixa (ex.: extrato bancário). Gastos e recebimentos lançados permanecem iguais;
+          o sistema guarda apenas a diferença como ajuste do período.
+        </p>
+        <form onSubmit={onSalvarAjusteSaldo} className="form-grid" style={{ marginTop: 12 }}>
+          <label className="full">
+            Saldo calculado (lançamentos)
+            <input type="text" readOnly value={formatCurrency(saldoCalculado)} />
+          </label>
+          <label className="full">
+            Saldo real desejado (R$) *
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={ajusteSaldoDesejado}
+              onChange={(e) => setAjusteSaldoDesejado(e.target.value)}
+              placeholder="0,00"
+            />
+          </label>
+          <label className="full">
+            Motivo / observação
+            <textarea
+              rows={2}
+              value={ajusteObservacao}
+              onChange={(e) => setAjusteObservacao(e.target.value)}
+              placeholder="Ex.: conciliação com extrato, saldo anterior ao sistema..."
+            />
+          </label>
+          <div className="full form-actions">
+            <button type="submit" className="submit" disabled={ajusteSubmitting}>
+              {ajusteSubmitting ? 'Salvando...' : 'Salvar ajuste'}
+            </button>
+            <button type="button" className="submit cancel" onClick={() => setAjusteModalOpen(false)}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* ─── Filtros ───────────────────────────────────────────── */}
       <section className="panel" style={{ marginTop: 20 }}>

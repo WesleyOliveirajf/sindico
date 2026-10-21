@@ -91,6 +91,7 @@ function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [saldoMes, setSaldoMes] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -101,6 +102,7 @@ function DashboardPage() {
       const requests = await Promise.all([
         apiFetch(`/api/gastos?mes=${mes}&ano=${ano}`),
         apiFetch(`/api/recebimentos?mes=${mes}&ano=${ano}`),
+        apiFetch(`/api/financeiro/saldo?mes=${mes}&ano=${ano}`),
         apiFetch('/api/compromissos'),
         apiFetch('/api/manutencoes'),
         apiFetch('/api/reunioes'),
@@ -110,10 +112,11 @@ function DashboardPage() {
       const failed = requests.find((res) => !res.ok)
       if (failed) throw new Error(await parseError(failed, 'Falha ao carregar dashboard.'))
 
-      const [gastos, recebimentos, compromissos, manutencoes, reunioes, anotacoes] =
+      const [gastos, recebimentos, saldo, compromissos, manutencoes, reunioes, anotacoes] =
         await Promise.all(requests.map(parseJson))
 
       setData({ gastos, recebimentos, compromissos, manutencoes, reunioes, anotacoes })
+      setSaldoMes(saldo)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -129,9 +132,15 @@ function DashboardPage() {
   }, [])
 
   const summary = useMemo(() => {
-    const totalGastos = data.gastos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
-    const totalRecebimentos = data.recebimentos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
-    const saldo = totalRecebimentos - totalGastos
+    const totalGastos = saldoMes?.totalGastos != null
+      ? Number(saldoMes.totalGastos)
+      : data.gastos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
+    const totalRecebimentos = saldoMes?.totalRecebimentos != null
+      ? Number(saldoMes.totalRecebimentos)
+      : data.recebimentos.reduce((sum, item) => sum + Number(item.valor || 0), 0)
+    const saldo = saldoMes?.saldoReal != null
+      ? Number(saldoMes.saldoReal)
+      : totalRecebimentos - totalGastos
 
     const compromissosAFazer = data.compromissos
       .filter(isCompromissoPendente)
@@ -166,7 +175,7 @@ function DashboardPage() {
         .sort((a, b) => toTime(b.date) - toTime(a.date))
         .slice(0, 5),
     }
-  }, [data])
+  }, [data, saldoMes])
 
   return (
     <>
